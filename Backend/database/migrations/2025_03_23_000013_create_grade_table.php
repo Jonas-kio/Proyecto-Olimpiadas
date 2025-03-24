@@ -11,13 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('category_level', function (Blueprint $table) {
+        Schema::create('grade', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('area_id')->constrained('area')->cascadeOnDelete();
-            $table->foreignId('grade_id')->constrained('grade')->cascadeOnDelete();
-            $table->string('code', 16)->unique();
-            $table->string('name', 20);
-            $table->string('description', 150);
+            $table->string('min', 3);
+            $table->string('max', 3)->nullable();
+            $table->string('name', 15);
             $table->timestamps();
         });
     }
@@ -27,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('category_level');
+        Schema::dropIfExists('grade');
     }
 };
