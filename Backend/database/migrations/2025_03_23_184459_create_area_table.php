@@ -11,8 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('area', function (Blueprint $table) {
+        Schema::create('areas', function (Blueprint $table) {
             $table->id();
+            $table->string('nombre');
+            $table->text('descripcion');
+            $table->boolean('activo')->default(true);
             $table->timestamps();
         });
     }
