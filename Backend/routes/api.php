@@ -10,7 +10,7 @@ Route::get('/user', function (Request $request) {
 })->middleware('auth:sanctum');
 
 // Rutas para Áreas de Competencia
-Route::apiResource('areas', AreaController::class);
+Route::apiResource('area', AreaController::class);
 
 // Ruta para cambiar el estado de un área
-Route::patch('areas/{id}/status', [AreaController::class, 'changeStatus']);
+Route::patch('area/{id}/status', [AreaController::class, 'changeStatus']);
