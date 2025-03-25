@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('category_level', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('area_id')->constrained('areas')->cascadeOnDelete();
+            $table->foreignId('area_id')->constrained('area')->cascadeOnDelete();
             $table->string('name', 20);
             $table->string('description', 150);
             $table->enum('grade_name', [
