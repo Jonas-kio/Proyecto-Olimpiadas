@@ -1,0 +1,72 @@
+/* Estilos para Tablas */
+.table-container {
+    overflow-x: auto;
+    width: 100%;
+    padding: 0;
+  }
+  
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  .data-table th {
+    text-align: left;
+    padding: 12px 15px;
+    font-size: var(--font-size-sm);
+    color: var(--text-dark);
+    font-weight: 500;
+    border-bottom: 1px solid var(--border-color);
+    background-color: #f9f9f9;
+  }
+  
+  .data-table td {
+    padding: 10px 15px;
+    font-size: var(--font-size-sm);
+    color: var(--text-dark);
+    border-bottom: 1px solid var(--border-color);
+  }
+  
+  .data-table tr:hover {
+    background-color: #f5f8fd;
+  }
+  
+  .action-buttons {
+    display: flex;
+    gap: 12px;
+  }
+  
+  .icon-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+    border-radius: var(--border-radius);
+    transition: background-color var(--transition-fast);
+  }
+  
+  .icon-button:hover {
+    background-color: #f0f0f0;
+  }
+  
+  .icon-button.edit:hover {
+    background-color: rgba(10, 63, 125, 0.1);
+  }
+  
+  .icon-button.delete:hover {
+    background-color: rgba(228, 30, 38, 0.1);
+  }
+  
+  /* Media queries */
+  @media (max-width: 480px) {
+    .data-table {
+      font-size: var(--font-size-xs);
+    }
+    
+    .data-table th, .data-table td {
+      padding: 8px 5px;
+    }
+  }
