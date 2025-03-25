@@ -22,3 +22,4 @@ Route::patch('areas/{id}/status', [AreaController::class, 'changeStatus']);
 Route::apiResource('categoryLavel', CategoryLevelController::class);
 
 Route::patch('categoryLavel/{id}', [CategoryLevelController::class, 'update']);
+Route::delete('categoryLavel/{id}', [CategoryLevelController::class, 'destroy']);

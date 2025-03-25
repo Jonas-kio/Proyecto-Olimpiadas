@@ -27,20 +27,20 @@ class CategoryLevelController extends Controller
             if ($categoryLevels->isEmpty()) {
                 return response()->json([
                     'success' => true,
-                    'message' => 'No se encontraron niveles de categoría',
+                    'message' => 'No se encontraron niveles/categoría',
                     'data' => []
                 ], 200);
             }
 
             return response()->json([
                 'success' => true,
-                'message' => 'Niveles de categoría obtenidos exitosamente',
+                'message' => 'Niveles/categoría obtenidos exitosamente',
                 'data' => $categoryLevels
             ], 200);
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error al obtener los niveles de categoría: ' . $e->getMessage()
+                'message' => 'Error al obtener los niveles/categoría: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -52,13 +52,13 @@ class CategoryLevelController extends Controller
             $categoryLevel = $this->categoryLevelService->createCategoryLevel($request->validated());
             return response()->json([
                 'success' => true,
-                'message' => 'Nivel de categoría creado exitosamente',
+                'message' => 'Nivel/categoría creado exitosamente',
                 'data' => $categoryLevel
             ], 201);
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error al crear el nivel de categoría: ' . $e->getMessage()
+                'message' => 'Error al crear el nivel/categoría: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -96,7 +96,7 @@ class CategoryLevelController extends Controller
             if (!is_numeric($id) || $id <= 0) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'ID de nivel de categoría inválido'
+                    'message' => 'ID de nivel/categoría inválido'
                 ], 400);
             }
 
@@ -120,7 +120,7 @@ class CategoryLevelController extends Controller
             if ($e->getCode() == 404) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Nivel de categoría no encontrado'
+                    'message' => 'Nivel/categoría no encontrado'
                 ], 404);
             }
 
