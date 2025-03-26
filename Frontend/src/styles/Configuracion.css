@@ -1,0 +1,107 @@
+.configuracion-container {
+  padding: 20px;
+}
+
+.config-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.config-tabs button {
+  background: #f1f1f1;
+  border: none;
+  padding: 8px 16px;
+  cursor: pointer;
+}
+
+.config-tabs .active {
+  background: #007bff;
+  color: white;
+}
+
+.cost-section {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.cost-box {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.cost-box input {
+  width: 100px;
+  padding: 5px;
+}
+
+.cost-box button {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+}
+
+.info-text {
+  font-size: 12px;
+  color: gray;
+}
+
+.new-cost-form {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.new-cost-form input,
+.new-cost-form select {
+  padding: 5px;
+}
+
+.buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.cancel {
+  background: gray;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+}
+
+.save {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+table th, table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+}
+
+table th {
+  background: #f1f1f1;
+}
+
+.edit, .delete {
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.delete {
+  color: red;
+}
