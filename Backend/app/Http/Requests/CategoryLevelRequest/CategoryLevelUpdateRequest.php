@@ -1,35 +1,30 @@
 <?php
 
-namespace App\Http\Requests;
+namespace App\Http\Requests\CategoryLevelRequest;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
-class AreaStoreRequest extends FormRequest
+class CategoryLevelUpdateRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
+
     public function authorize(): bool
     {
-        return true; // Puedes implementar la autorización aquí
+        return true;
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     */
+
     public function rules(): array
     {
         return [
-            'nombre' => 'required|string|max:255|unique:area',
-            'descripcion' => 'required|string'
+            'name' => 'sometimes|string|max:20',
+            'description' => 'sometimes|string|max:150',
+            'grade_min' => 'sometimes|string|max:3',
+            'grade_max' => 'sometimes|string|max:3'
         ];
     }
 
-    /**
-     * Handle a failed validation attempt.
-     */
     protected function failedValidation(Validator $validator)
     {
         throw new HttpResponseException(response()->json([
