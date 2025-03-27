@@ -1,4 +1,3 @@
-//import React from "react";
 import React, { useState } from "react";
 import "../styles/Configuracion.css";
 
@@ -10,29 +9,31 @@ const Configuracion = () => {
     { id: 3, name: "Inscripción Matemáticas Avanzado", value: 60, area: "Matemáticas", category: "Universitaria" },
   ]);
   const [newCost, setNewCost] = useState({ name: "", value: "", area: "Todas", category: "Todas" });
+  const [showNewCostForm, setShowNewCostForm] = useState(false); // Estado para mostrar u ocultar el formulario
 
+  // Manejo de cambios en los inputs
   const handleGeneralCostChange = (e) => setGeneralCost(e.target.value);
+  const handleNewCostChange = (e) => setNewCost({ ...newCost, [e.target.name]: e.target.value });
 
-  const handleNewCostChange = (e) => {
-    setNewCost({ ...newCost, [e.target.name]: e.target.value });
-  };
-
+  // Agregar nuevo costo
   const addNewCost = () => {
     if (newCost.name && newCost.value) {
       setSpecificCosts([...specificCosts, { ...newCost, id: specificCosts.length + 1 }]);
       setNewCost({ name: "", value: "", area: "Todas", category: "Todas" });
+      setShowNewCostForm(false); // Ocultar el formulario después de agregar
     }
   };
 
-  const deleteCost = (id) => {
-    setSpecificCosts(specificCosts.filter((cost) => cost.id !== id));
-  };
+  // Eliminar un costo
+  const deleteCost = (id) => setSpecificCosts(specificCosts.filter((cost) => cost.id !== id));
 
   return (
     <div className="configuracion-container">
-      <h2>Panel de Administración</h2>
-      <p>Gestiona las olimpiadas, configura áreas y revisa inscripciones</p>
+      {/* Título principal */}
+      <h2 className="title">Panel de Administración</h2>
+      <p className="subtitle">Gestiona las olimpiadas, configura áreas y revisa inscripciones</p>
 
+      {/* Tabs de navegación */}
       <div className="config-tabs">
         <button>Áreas</button>
         <button>Niveles</button>
@@ -43,39 +44,48 @@ const Configuracion = () => {
 
       {/* Costo General */}
       <div className="cost-section">
-        <h3>Costo General de Inscripción</h3>
+        <h3 className="section-title">Costo General de Inscripción</h3>
         <div className="cost-box">
           <input type="number" value={generalCost} onChange={handleGeneralCostChange} />
-          <button>Guardar</button>
+          <button className="save">Guardar</button>
         </div>
         <p className="info-text">Este costo se aplicará a todas las inscripciones que no tengan un costo específico asignado.</p>
       </div>
 
       {/* Costos Específicos */}
       <div className="cost-section">
-        <h3>Costos Específicos</h3>
+        <h3 className="section-title">Costos Específicos</h3>
 
-        {/* Nuevo Costo */}
-        <div className="new-cost-form">
-          <h4>Nuevo Costo</h4>
-          <input type="text" name="name" placeholder="Nombre del Costo" value={newCost.name} onChange={handleNewCostChange} />
-          <input type="number" name="value" placeholder="Valor (Bs.)" value={newCost.value} onChange={handleNewCostChange} />
-          <select name="area" value={newCost.area} onChange={handleNewCostChange}>
-            <option value="Todas">Todas</option>
-            <option value="Matemáticas">Matemáticas</option>
-          </select>
-          <select name="category" value={newCost.category} onChange={handleNewCostChange}>
-            <option value="Todas">Todas</option>
-            <option value="Universitaria">Universitaria</option>
-          </select>
-          <div className="buttons">
-            <button className="cancel">Cancelar</button>
-            <button className="save" onClick={addNewCost}>Guardar</button>
+        {/* Botón de nuevo costo */}
+        <button className="new-cost-button" onClick={() => setShowNewCostForm(!showNewCostForm)}>
+          {showNewCostForm ? "Cancelar" : "Nuevo Costo"}
+        </button>
+
+        {/* Formulario de nuevo costo (visible solo si showNewCostForm es true) */}
+        {showNewCostForm && (
+          <div className="new-cost-form">
+            <h4 className="form-title">Nuevo Costo</h4>
+            <div className="cost-grid">
+              <input type="text" name="name" placeholder="Nombre del Costo" value={newCost.name} onChange={handleNewCostChange} />
+              <input type="number" name="value" placeholder="Valor (Bs.)" value={newCost.value} onChange={handleNewCostChange} />
+              <select name="area" value={newCost.area} onChange={handleNewCostChange}>
+                <option value="Todas">Todas</option>
+                <option value="Matemáticas">Matemáticas</option>
+              </select>
+              <select name="category" value={newCost.category} onChange={handleNewCostChange}>
+                <option value="Todas">Todas</option>
+                <option value="Universitaria">Universitaria</option>
+              </select>
+            </div>
+            <div className="buttons">
+              <button className="cancel" onClick={() => setShowNewCostForm(false)}>Cancelar</button>
+              <button className="save" onClick={addNewCost}>Guardar</button>
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Tabla de Costos */}
-        <table>
+        {/* Tabla de costos específicos */}
+        <table className="cost-table">
           <thead>
             <tr>
               <th>Nombre</th>

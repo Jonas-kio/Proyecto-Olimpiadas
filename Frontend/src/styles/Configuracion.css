@@ -1,107 +1,175 @@
+/* Configuración del contenedor principal */
 .configuracion-container {
+  width: 80%;
+  max-width: 800px;
+  background: white;
   padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
 }
 
+/* Títulos */
+.title {
+  font-size: 24px;
+  font-weight: bold;
+  color: #0c04fa;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: #6c757d;
+}
+
+/* Estilos para las pestañas */
 .config-tabs {
   display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
+  gap: 15px;
+  margin-top: 10px;
+  border-bottom: 2px solid #dee2e6;
 }
 
 .config-tabs button {
-  background: #f1f1f1;
+  background: none;
   border: none;
-  padding: 8px 16px;
+  padding: 10px 15px;
+  font-size: 16px;
+  color: #6c757d;
   cursor: pointer;
 }
 
-.config-tabs .active {
-  background: #007bff;
-  color: white;
+.config-tabs button.active {
+  font-weight: bold;
+  color: #007bff;
+  border-bottom: 3px solid #007bff;
 }
 
+/* Sección de costos */
 .cost-section {
   background: white;
-  padding: 20px;
   border-radius: 8px;
-  margin-bottom: 20px;
+  padding: 20px;
+  margin-top: 20px;
+  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+.section-title {
+  font-size: 18px;
+  font-weight: bold;
+  color: #0436e9f5;
+  margin-bottom: 10px;
+}
+
+/* Caja de costo general */
 .cost-box {
   display: flex;
-  gap: 10px;
   align-items: center;
+  gap: 10px;
 }
 
 .cost-box input {
   width: 100px;
-  padding: 5px;
+  padding: 8px;
+  border: 1px solid #ced4da;
+  border-radius: 5px;
 }
 
-.cost-box button {
-  background: #007bff;
+.save {
+  background-color: #007bff;
   color: white;
   border: none;
-  padding: 5px 10px;
+  padding: 8px 12px;
+  border-radius: 5px;
+  cursor: pointer;
 }
 
 .info-text {
   font-size: 12px;
-  color: gray;
+  color: #6c757d;
+  background: #e9f5ff;
+  padding: 10px;
+  border-radius: 5px;
+  margin-top: 10px;
 }
 
+/* Tabla de costos */
+.cost-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+}
+
+.cost-table th, .cost-table td {
+  border-bottom: 1px solid #000000;
+  padding: 10px;
+  text-align: left;
+  color:#000000;
+}
+
+.cost-table th {
+  background-color: #f8f9fa;
+  font-weight: bold;
+}
+
+.cost-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* Acciones */
+.edit, .delete {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  margin-right: 5px;
+}
+
+.edit {
+  color: #007bff;
+}
+
+.delete {
+  color: #dc3545;
+}
+
+/* Botón de nuevo costo */
 .new-cost-form {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
-  margin-bottom: 20px;
+  background: white;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+  margin-top: 15px;
 }
 
-.new-cost-form input,
-.new-cost-form select {
-  padding: 5px;
+.form-title {
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.cost-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.cost-grid input, .cost-grid select {
+  padding: 8px;
+  border: 1px solid #ced4da;
+  border-radius: 5px;
 }
 
 .buttons {
   display: flex;
+  justify-content: flex-end;
   gap: 10px;
-}
-
-.cancel {
-  background: gray;
-  color: white;
-  border: none;
-  padding: 5px 10px;
-}
-
-.save {
-  background: #007bff;
-  color: white;
-  border: none;
-  padding: 5px 10px;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
   margin-top: 10px;
 }
 
-table th, table td {
-  border: 1px solid #ddd;
-  padding: 8px;
-}
-
-table th {
-  background: #f1f1f1;
-}
-
-.edit, .delete {
+.cancel {
+  background-color: #6c757d;
+  color: white;
   border: none;
-  background: none;
+  padding: 8px 12px;
+  border-radius: 5px;
   cursor: pointer;
-}
-
-.delete {
-  color: red;
 }
