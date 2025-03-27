@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react"; 
+import { useNavigate } from "react-router-dom";
 import Sidebar from "../../components/layout/Sidebar";
 import MainContent from "../../components/layout/MainContent";
 import Tabs from "../../components/ui/Tabs";
@@ -9,7 +10,8 @@ import Button from "../../components/common/Button";
 import { getAllAreas, createArea, updateArea, deleteArea } from "../../services/areasService";
 
 const AreasConfig = () => {
-  // Estados
+  const navigate = useNavigate();
+
   const [activeTab, setActiveTab] = useState("areas");
   const [areas, setAreas] = useState([]);
   const [showAreaForm, setShowAreaForm] = useState(false);
@@ -20,16 +22,13 @@ const AreasConfig = () => {
   });
   const [loading, setLoading] = useState(false);
 
-  // Definición de tabs
   const tabs = [
     { id: "areas", label: "Áreas" },
-    { id: "levels", label: "Niveles" },
-    { id: "categories", label: "Categorías" },
+    { id: "levels_categories", label: "Niveles y Categorías" },
     { id: "costs", label: "Costos" },
     { id: "forms", label: "Formularios" },
   ];
 
-  // Definición de columnas para la tabla
   const columns = [
     { key: "name", title: "Nombre" },
     { key: "description", title: "Descripción" },
@@ -37,7 +36,6 @@ const AreasConfig = () => {
     { key: "participants", title: "Participantes" },
   ];
 
-  // Definición de campos para el formulario
   const areaFields = [
     {
       name: "name",
@@ -53,12 +51,10 @@ const AreasConfig = () => {
     },
   ];
 
-  // Cargar datos al iniciar
   useEffect(() => {
     fetchAreas();
   }, []);
 
-  // Función para cargar áreas
   const fetchAreas = async () => {
     try {
       setLoading(true);
@@ -66,34 +62,27 @@ const AreasConfig = () => {
       setAreas(data);
     } catch (error) {
       console.error("Error al cargar las áreas:", error);
-      // Aquí podrías mostrar un mensaje de error
     } finally {
       setLoading(false);
     }
   };
 
-  // Manejar envío del formulario
   const handleSubmit = async () => {
     try {
       setLoading(true);
-      
+
       if (!formValues.name.trim()) {
         alert("El nombre del área es obligatorio");
         return;
       }
 
       if (editingAreaId !== null) {
-        // Actualizar área existente
         await updateArea(editingAreaId, formValues);
       } else {
-        // Crear nueva área
         await createArea(formValues);
       }
-      
-      // Recargar la lista de áreas
+
       await fetchAreas();
-      
-      // Resetear el formulario
       resetForm();
     } catch (error) {
       console.error("Error al guardar el área:", error);
@@ -103,13 +92,12 @@ const AreasConfig = () => {
     }
   };
 
-  // Manejar eliminación
   const handleDelete = async (id) => {
     try {
       if (!window.confirm("¿Está seguro que desea eliminar esta área?")) {
         return;
       }
-      
+
       setLoading(true);
       await deleteArea(id);
       await fetchAreas();
@@ -121,7 +109,6 @@ const AreasConfig = () => {
     }
   };
 
-  // Iniciar edición
   const startEditing = (area) => {
     setEditingAreaId(area.id);
     setFormValues({
@@ -130,8 +117,7 @@ const AreasConfig = () => {
     });
     setShowAreaForm(true);
   };
-  
-  // Resetear formulario
+
   const resetForm = () => {
     setShowAreaForm(false);
     setEditingAreaId(null);
@@ -141,7 +127,6 @@ const AreasConfig = () => {
     });
   };
 
-  // Manejar cambios en el formulario
   const handleFormChange = (field, value) => {
     setFormValues({
       ...formValues,
@@ -149,9 +134,16 @@ const AreasConfig = () => {
     });
   };
 
-  // Componente de acción para la tarjeta
+  const handleTabChange = (tabId) => {
+    if (tabId === "levels_categories") {
+      navigate("/config/niveles-categorias");
+    } else {
+      setActiveTab(tabId);
+    }
+  };
+
   const cardAction = (
-    <Button 
+    <Button
       onClick={() => setShowAreaForm(!showAreaForm)}
       icon={<span className="plus-icon">{showAreaForm ? "-" : "+"}</span>}
     >
@@ -162,21 +154,11 @@ const AreasConfig = () => {
   return (
     <div className="app-container">
       <Sidebar />
-      
-      <MainContent 
-        title="Panel de Administración" 
-        subtitle="Gestión de olimpiadas"
-      >
-        <Tabs 
-          tabs={tabs} 
-          activeTab={activeTab} 
-          onTabChange={setActiveTab} 
-        />
-        
-        <Card 
-          title="Áreas de Competencia" 
-          action={cardAction}
-        >
+
+      <MainContent title="Panel de Administración" subtitle="Gestión de olimpiadas">
+        <Tabs tabs={tabs} activeTab={activeTab} onTabChange={handleTabChange} />
+
+        <Card title="Áreas de Competencia" action={cardAction}>
           {showAreaForm && (
             <Form
               title={editingAreaId ? "Editar Área" : "Nueva Área"}
@@ -188,13 +170,8 @@ const AreasConfig = () => {
               submitLabel={editingAreaId ? "Actualizar" : "Guardar"}
             />
           )}
-          
-          <Table 
-            columns={columns} 
-            data={areas} 
-            onEdit={startEditing} 
-            onDelete={handleDelete} 
-          />
+
+          <Table columns={columns} data={areas} onEdit={startEditing} onDelete={handleDelete} />
         </Card>
       </MainContent>
     </div>
