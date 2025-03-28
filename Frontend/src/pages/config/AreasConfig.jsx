@@ -155,7 +155,7 @@ const AreasConfig = () => {
     <div className="app-container">
       <Sidebar />
 
-      <MainContent title="Panel de Administración" subtitle="Gestión de olimpiadas">
+      <MainContent title="Panel de Administración" subtitle="Gestiona las olimpiadas, configura áreas y revisa inscripciones">
         <Tabs tabs={tabs} activeTab={activeTab} onTabChange={handleTabChange} />
 
         <Card title="Áreas de Competencia" action={cardAction}>

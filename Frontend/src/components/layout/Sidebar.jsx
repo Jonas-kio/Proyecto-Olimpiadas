@@ -1,6 +1,10 @@
+
+
 import React from 'react';
 import { LayoutGrid, Settings, FileText, Users, LogOut } from 'lucide-react';
 import '../../styles/components/Sidebar.css';
+import { Link } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 
 const Sidebar = () => {
   return (
@@ -27,10 +31,12 @@ const Sidebar = () => {
           <Settings size={20} />
           <span>Configuración</span>
         </a>
-        <a href="#" className="nav-item">
-          <FileText size={20} />
-          <span>Reportes</span>
-        </a>
+        
+        <Link to="/reportes" className="nav-item">
+        <FileText size={20} />
+        <span>Reportes</span>
+         </Link>
+
         <a href="#" className="nav-item">
           <Users size={20} />
           <span>Participantes</span>
