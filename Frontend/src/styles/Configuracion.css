@@ -1,46 +1,42 @@
-/* Configuración del contenedor principal */
+/* Contenedor principal (sin biselado general) */
 .configuracion-container {
-  width: 80%;
-  max-width: 800px;
+  width: 90%;
+  max-width: 1000px;
   background: white;
   padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  margin: 20px auto;
 }
-
-/* Títulos */
-.title {
-  font-size: 24px;
-  text-align: center;
-  font-weight: bold;
-  color: #0c04fa;
-  margin-top: 40px;
+.subtitle{
+  color: #000000;
 }
-
-.subtitle {
-  text-align: center;
-  font-size: 14px;
-  color: #6c757d;
-}
-
 .cost-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  color:#093f7d;
 }
-
-/* Estilos para las pestañas */
+.section-title{
+  color: #093f7d;
+}
 .config-tabs {
   display: flex;
-  gap: 15px;
+  justify-content: center;
+  gap: 10px;
   margin-top: 10px;
   border-bottom: 2px solid #dee2e6;
+  flex-wrap: wrap;
+  background: white;
+  padding: 10px;
+  border-radius: 12px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.15);
 }
 
+/* Botones del navbar */
 .config-tabs button {
   background: none;
   border: none;
-  padding: 10px 15px;
+  padding: 8px 12px;
   font-size: 16px;
   color: #6c757d;
   cursor: pointer;
@@ -52,124 +48,171 @@
   border-bottom: 3px solid #007bff;
 }
 
-/* Sección de costos */
+/* ✅ Biselado en "Costo General de Inscripción" */
 .cost-section {
   background: white;
   border-radius: 8px;
-  padding: 20px;
-  margin-top: 20px;
-  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 15px;
+  margin-top: 15px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease-in-out;
 }
-
-.section-title {
-  font-size: 18px;
-  font-weight: bold;
-  color: #0436e9f5;
-  margin-bottom: 10px;
-}
-
-/* Caja de costo general */
-.cost-box {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.cost-box input {
-  width: 100px;
-  padding: 8px;
-  border: 1px solid #ced4da;
-  border-radius: 5px;
-}
-
-.save {
-  background-color: #007bff;
-  color: white;
-  border: none;
-  padding: 8px 12px;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.info-text {
-  font-size: 12px;
-  color: #6c757d;
-  background: #e9f5ff;
+.info-text{
+  color: #093f7d;
+  background-color: #e3f2fd; /* Azul claro */
   padding: 10px;
   border-radius: 5px;
   margin-top: 10px;
 }
+/* ✅ Biselado en "Costos Específicos" */
+.costos-especificos {
+  background: white;
+  border-radius: 8px;
+  padding: 15px;
+  margin-top: 15px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.15);
+}
 
-/* Tabla de costos */
+/* Título */
+.title {
+  font-size: 24px;
+  text-align: center;
+  font-weight: bold;
+  color:#093f7d;
+  margin-top: 20px;
+}
+
+/* ✅ Botón "Nuevo Costo" alineado a la derecha */
+.costos-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.costos-header .title {
+  margin: 0;
+}
+
+.new-cost-button {
+  background-color: #093f7d;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background 0.3s ease-in-out;
+  margin-left: 20px;
+}
+
+.new-cost-button:hover {
+  background-color: #333;
+}
+.error-message {
+  color: red;
+  font-size: 14px;
+  margin-top: 5px;
+  font-weight: bold;
+}
+
+/* ✅ Biselado en el formulario 2x2 del botón "Nuevo Costo" */
+.new-cost-form {
+  background: white;
+  border-radius: 10px;
+  padding: 20px;
+  margin-top: 10px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.15);
+  color:#000000
+}
+
+/* ✅ Grid en 2x2 */
+.cost-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+  
+}
 .cost-table {
   width: 100%;
   border-collapse: collapse;
   margin-top: 15px;
-}
-
-.cost-table th, .cost-table td {
-  border-bottom: 1px solid #000000;
-  padding: 10px;
-  text-align: left;
   color: #000000;
 }
-
-.cost-table th {
-  background-color: #f8f9fa;
-  font-weight: bold;
-}
-
-.cost-table tr:last-child td {
-  border-bottom: none;
-}
-
-/* Acciones */
-.edit, .delete {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 16px;
-  margin-right: 5px;
-}
-
-.edit {
-  color: #007bff;
-}
-
-.delete {
-  color: #dc3545;
-}
-
-/* Botón de nuevo costo */
-.new-cost-form {
-  background: white;
-  padding: 15px;
-  border-radius: 8px;
-  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
-  margin-top: 15px;
-}
-
-.form-title {
-  font-size: 16px;
-  font-weight: bold;
-  margin-bottom: 10px;
-}
-
-.cost-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
-}
-
-.cost-grid input, .cost-grid select {
+.cost-grid input,
+.cost-grid select {
   padding: 8px;
   border: 1px solid #ced4da;
   border-radius: 5px;
+  background-color: #f8f9fa;
+  color:#000000;
 }
 
+/* ✅ Biselado en la tabla de costos específicos */
+.costos-table {
+  background: white;
+  border-radius: 8px;
+  padding: 15px;
+  margin-top: 10px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* ✅ Botón "Guardar" con mayor separación */
 .buttons {
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
-  margin-top: 10px;
+  gap: 15px;
+  margin-top: 20px;
+}
+.saveGeneral{
+  background-color: #093f7d;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  margin-left: flex;
+}
+.save {
+  background-color: #093f7d;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.save:hover {
+  background-color: #0c56a5;
+}
+
+/* ✅ Mejor margen en pantallas pequeñas */
+@media (max-width: 600px) {
+  .cost-box {
+    flex-direction: column;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #ffffff;
+  }
+  .cost-box-input{
+    
+    border-radius: 10px;
+    padding: 100px;
+    margin-top: 200px;
+    color-scheme:#ffffff;
+    background-color: #ffffff;
+  }
+  .cost-box .save {
+    margin-left: 20px;
+    background-color: #ffffff;
+  }
+  .configuracion-container {
+    padding: 10px;
+  }
+
+  .cost-grid {
+    grid-template-columns: 1fr; /* Cambia a 1 columna en pantallas pequeñas */
+  }
 }
