@@ -3,10 +3,10 @@
 use App\Http\Controllers\CostController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-
 use App\Http\Controllers\API\AreaController;
 use App\Http\Controllers\API\CategoryLevelController;
 
+//Rutas para Costos
 Route::get('/costs', [CostController::class, 'index']);
 Route::post('/costs', [CostController::class, 'store']);
 Route::put('/costs/{cost}', [CostController::class, 'update']);
