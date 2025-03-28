@@ -1,0 +1,47 @@
+/* Estilos para Tabs */
+.tabs-container {
+    background-color: var(--bg-card);
+    margin-bottom: 15px;
+    border-radius: 0;
+    box-shadow: var(--card-shadow);
+    width: 100%;
+  }
+  
+  .tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border-color);
+    width: 100%;
+  }
+  
+  .tab {
+    padding: 12px 18px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: var(--font-size-md);
+    color: var(--text-medium);
+    transition: all var(--transition-fast);
+    border-bottom: 2px solid transparent;
+  }
+  
+  .tab:hover {
+    color: var(--primary-color);
+  }
+  
+  .tab.active {
+    color: var(--secondary-color);
+    border-bottom: 2px solid var(--secondary-color);
+    font-weight: 500;
+  }
+  
+  /* Media queries */
+  @media (max-width: 768px) {
+    .tabs {
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+    
+    .tab {
+      padding: 12px 15px;
+    }
+  }
