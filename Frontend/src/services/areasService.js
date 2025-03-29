@@ -1,113 +1,171 @@
-// Este servicio sería reemplazado por llamadas reales a la API
-// Por ahora usamos datos de ejemplo y operaciones simuladas
+// src/services/areasService.js
+import api from './apiConfig';
 
-// Datos iniciales (mock)
-const initialAreas = [
-    {
-      id: 1,
-      name: "Matemáticas",
-      description: "Competencias en resolución de problemas matemáticos",
-      levels: 3,
-      participants: 85,
-    },
-    {
-      id: 2,
-      name: "Física",
-      description: "Competencias en resolución de problemas físicos",
-      levels: 2,
-      participants: 62,
-    },
-    {
-      id: 3,
-      name: "Química",
-      description: "Competencias en resolución de problemas químicos",
-      levels: 3,
-      participants: 45,
-    },
-  ];
-  
-  // Simulación de almacenamiento local
-  let areas = [...initialAreas];
-  
-  // Obtener todas las áreas
-  export const getAllAreas = async () => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve([...areas]);
-      }, 300); // Simula un tiempo de respuesta
+// Obtener todas las áreas
+export const getAllAreas = async (activeOnly = null) => {
+  try {
+    let url = '/area';
+    
+    // Si solo queremos las áreas activas o inactivas
+    if (activeOnly !== null) {
+      url += `?activo=${activeOnly}`;
+    }
+    
+    const response = await api.get(url);
+    
+    // Tu controlador devuelve { success: true, data: [...] }
+    if (response.data.success) {
+      // Convertir formato backend a frontend
+      return response.data.data.map(area => ({
+        id: area.id,
+        name: area.nombre,
+        description: area.descripcion,
+        levels: 0, // Puedes ajustar según los datos reales
+        participants: 0, // Puedes ajustar según los datos reales
+        active: area.activo === 1 || area.activo === true
+      }));
+    } else {
+      throw new Error(response.data.message || 'Error al obtener áreas');
+    }
+  } catch (error) {
+    console.error('Error al obtener las áreas:', error);
+    throw error;
+  }
+};
+
+// Obtener áreas activas
+export const getActiveAreas = async () => {
+  return getAllAreas(true);
+};
+
+// Obtener un área por ID
+export const getAreaById = async (id) => {
+  try {
+    const response = await api.get(`/area/${id}`);
+    
+    if (response.data.success) {
+      const area = response.data.data;
+      // Convertir formato backend a frontend
+      return {
+        id: area.id,
+        name: area.nombre,
+        description: area.descripcion,
+        levels: 0, // Puedes ajustar según los datos reales
+        participants: 0, // Puedes ajustar según los datos reales
+        active: area.activo === 1 || area.activo === true
+      };
+    } else {
+      throw new Error(response.data.message || `Error al obtener el área ${id}`);
+    }
+  } catch (error) {
+    console.error(`Error al obtener el área con ID ${id}:`, error);
+    throw error;
+  }
+};
+
+// Crear un área nueva
+export const createArea = async (areaData) => {
+  try {
+    // Convertir nombres de campos del frontend al formato del backend
+    const backendData = {
+      nombre: areaData.name,
+      descripcion: areaData.description
+    };
+    
+    const response = await api.post('/area', backendData);
+    
+    if (response.data.success) {
+      const area = response.data.data;
+      // Convertir respuesta a formato frontend
+      return {
+        id: area.id,
+        name: area.nombre,
+        description: area.descripcion,
+        levels: 0, // Valores por defecto para nuevas áreas
+        participants: 0,
+        active: area.activo === 1 || area.activo === true
+      };
+    } else {
+      throw new Error(response.data.message || 'Error al crear el área');
+    }
+  } catch (error) {
+    console.error('Error al crear el área:', error);
+    throw error;
+  }
+};
+
+// Actualizar un área existente
+export const updateArea = async (id, areaData) => {
+  try {
+    // Convertir nombres de campos del frontend al formato del backend
+    const backendData = {
+      nombre: areaData.name,
+      descripcion: areaData.description
+    };
+    
+    const response = await api.put(`/area/${id}`, backendData);
+    
+    if (response.data.success) {
+      const area = response.data.data;
+      // Convertir respuesta a formato frontend
+      return {
+        id: area.id,
+        name: area.nombre,
+        description: area.descripcion,
+        levels: areaData.levels || 0, // Mantener valores existentes
+        participants: areaData.participants || 0,
+        active: area.activo === 1 || area.activo === true
+      };
+    } else {
+      throw new Error(response.data.message || `Error al actualizar el área ${id}`);
+    }
+  } catch (error) {
+    console.error(`Error al actualizar el área con ID ${id}:`, error);
+    throw error;
+  }
+};
+
+// Cambiar estado de un área (activar/desactivar)
+export const changeAreaStatus = async (id, isActive) => {
+  try {
+    const response = await api.patch(`/area/${id}/status`, {
+      activo: isActive
     });
-  };
-  
-  // Crear un área nueva
-  export const createArea = async (areaData) => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const newId = areas.length > 0 ? Math.max(...areas.map((a) => a.id)) + 1 : 1;
-        const newArea = {
-          id: newId,
-          ...areaData,
-          levels: 0,
-          participants: 0,
-        };
-        
-        areas.push(newArea);
-        resolve(newArea);
-      }, 300);
-    });
-  };
-  
-  // Actualizar un área existente
-  export const updateArea = async (id, areaData) => {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const index = areas.findIndex((area) => area.id === id);
-        
-        if (index === -1) {
-          reject(new Error('Área no encontrada'));
-          return;
-        }
-        
-        // Mantener los campos que no se actualizan
-        const updatedArea = {
-          ...areas[index],
-          ...areaData
-        };
-        
-        areas[index] = updatedArea;
-        resolve(updatedArea);
-      }, 300);
-    });
-  };
-  
-  // Eliminar un área
-  export const deleteArea = async (id) => {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const initialLength = areas.length;
-        areas = areas.filter((area) => area.id !== id);
-        
-        if (areas.length === initialLength) {
-          reject(new Error('Área no encontrada'));
-          return;
-        }
-        
-        resolve({ success: true, id });
-      }, 300);
-    });
-  };
-  
-  // Obtener un área por ID
-  export const getAreaById = async (id) => {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const area = areas.find((area) => area.id === id);
-        
-        if (!area) {
-          reject(new Error('Área no encontrada'));
-          return;
-        }
-        
-        resolve(area);
-      }, 300);
-    });
-  };
+    
+    if (response.data.success) {
+      const area = response.data.data;
+      // Convertir respuesta a formato frontend
+      return {
+        id: area.id,
+        name: area.nombre,
+        description: area.descripcion,
+        active: area.activo === 1 || area.activo === true
+      };
+    } else {
+      throw new Error(response.data.message || `Error al cambiar el estado del área ${id}`);
+    }
+  } catch (error) {
+    console.error(`Error al cambiar el estado del área con ID ${id}:`, error);
+    throw error;
+  }
+};
+
+// Eliminar un área
+export const deleteArea = async (id) => {
+  try {
+    const response = await api.delete(`/area/${id}`);
+    
+    if (response.data.success) {
+      return { 
+        success: true, 
+        id,
+        message: response.data.message 
+      };
+    } else {
+      throw new Error(response.data.message || `Error al eliminar el área ${id}`);
+    }
+  } catch (error) {
+    console.error(`Error al eliminar el área con ID ${id}:`, error);
+    throw error;
+  }
+};
