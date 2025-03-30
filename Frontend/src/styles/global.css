@@ -20,21 +20,39 @@ body {
   background-color: var(--bg-color);
 }
 
+
+
 .app-container {
   display: flex;
   width: 100vw;
   max-width: 100vw;
-  overflow-x: hidden;
+  /* overflow-x: hidden; */
+}
+
+.content-config{
+  display: block;
+  width: 100vw;
+  max-width: 100vw;
+}
+.area-config {
+    display: flex;
+    width: 100vw;
+    max-width: 100vw;
 }
 
 /* Contenedor principal */
 .main-content {
   width: calc(100vw - var(--sidebar-width));
-  margin-left: var(--sidebar-width);
+  margin-left: var(--sidebar-width); 
   min-height: 100vh;
   background-color: var(--bg-color);
   padding: var(--spacing-lg);
   display: block;
+}
+
+.content-config {
+  width: 100%;
+  height: auto;
 }
 
 /* Header */

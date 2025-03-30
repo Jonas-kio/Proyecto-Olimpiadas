@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { Link } from "react-router-dom";
 import { LayoutGrid, Settings, FileText, Users, LogOut } from 'lucide-react';
 import "../styles/Sidebar.css"
@@ -22,7 +22,7 @@ const Sidebar = () => {
       <nav className="nav-menu">
         <ul>
           <li>
-            <Link to="/dashboard" className="nav-item">
+            <Link to="/dashboardAdmin" className="nav-item">
               <LayoutGrid size={20} />
               <span>Dashboard</span>
             </Link>

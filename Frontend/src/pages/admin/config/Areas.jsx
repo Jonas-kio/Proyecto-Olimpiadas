@@ -1,23 +1,20 @@
 // src/pages/config/AreasConfig.jsx
-import React, { useState, useEffect } from 'react';
-import Sidebar from '../../components/layout/Sidebar';
-import MainContent from '../../components/layout/MainContent';
-import Tabs from '../../components/ui/Tabs';
-import Card from '../../components/ui/Card';
-import Table from '../../components/common/Table';
-import Form from '../../components/common/Form';
-import Button from '../../components/common/Button';
+import { useState, useEffect } from 'react';
+
+import Card from '../../../components/ui/Card';
+import Table from '../../../components/common/Table';
+import Form from '../../../components/common/Form';
+import Button from '../../../components/common/Button';
 import { 
   getAllAreas, 
   createArea, 
   updateArea, 
   deleteArea, 
   changeAreaStatus 
-} from '../../services/areasService';
+} from '../../../services/areasService';
 
-const AreasConfig = () => {
+const Areas = () => {
   // Estados
-  const [activeTab, setActiveTab] = useState('areas');
   const [areas, setAreas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -25,15 +22,6 @@ const AreasConfig = () => {
   const [formData, setFormData] = useState({ name: '', description: '' });
   const [editingId, setEditingId] = useState(null);
   const [formErrors, setFormErrors] = useState({});
-
-  // Definición de tabs
-  const tabs = [
-    { id: 'areas', label: 'Áreas' },
-    { id: 'levels', label: 'Niveles' },
-    { id: 'categories', label: 'Categorías' },
-    { id: 'costs', label: 'Costos' },
-    { id: 'forms', label: 'Formularios' },
-  ];
 
   // Definición de columnas para la tabla
   const columns = [
@@ -260,20 +248,9 @@ const AreasConfig = () => {
   );
 
   return (
-    <div className="app-container">
-      <Sidebar />
+    <div className="area-container">
       
-      <MainContent 
-        title="Panel de Administración" 
-        subtitle="Gestión de olimpiadas"
-      >
-        <Tabs 
-          tabs={tabs} 
-          activeTab={activeTab} 
-          onTabChange={setActiveTab} 
-        />
-        
-        {/* Mostrar mensajes de error si los hay */}
+       {/* Mostrar mensajes de error si los hay */}
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4" role="alert">
             <p>{error}</p>
@@ -306,9 +283,8 @@ const AreasConfig = () => {
             renderRowActions={renderActions}
           />
         </Card>
-      </MainContent>
     </div>
   );
 };
 
-export default AreasConfig;
+export default Areas;
