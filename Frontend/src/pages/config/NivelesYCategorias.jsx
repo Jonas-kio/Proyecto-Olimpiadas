@@ -1,23 +1,83 @@
+
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Sidebar from "../../components/layout/Sidebar";
 import MainContent from "../../components/layout/MainContent";
 import Card from "../../components/ui/Card";
 import Table from "../../components/common/Table";
 import Button from "../../components/common/Button";
-import Input from "../../components/common/Input";
-import Select from "../../components/common/Select";
-import TextArea from "../../components/common/TextArea";
+import Tabs from "../../components/ui/Tabs";
+import FormularioNivelCategoria from "../../components/forms/FormularioNivelCategoria";
+import "../../index.css";
 
 const NivelesYCategorias = () => {
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState("levels_categories");
   const [showForm, setShowForm] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [showModal, setShowModal] = useState(false);
+
   const [formValues, setFormValues] = useState({
     name: "",
     area: "",
     level: "",
     minGrade: "",
     maxGrade: "",
-    description: ""
+    description: "",
   });
+
+  const tabs = [
+    { id: "areas", label: "Áreas" },
+    { id: "levels_categories", label: "Niveles y Categorías" },
+    { id: "costs", label: "Costos" },
+    { id: "forms", label: "Formularios" },
+  ];
+
+  const handleTabChange = (tabId) => {
+    setActiveTab(tabId);
+    if (tabId === "areas") navigate("/config/areas");
+    if (tabId === "levels_categories") navigate("/config/niveles-categorias");
+    if (tabId === "costs") navigate("/config/costos");
+    if (tabId === "forms") navigate("/config/formularios");
+  };
+
+  const handleChange = (field, value) => {
+    setFormValues({ ...formValues, [field]: value });
+  };
+
+  const handleSubmit = () => {
+    if (
+      !formValues.name.trim() ||
+      !formValues.area.trim() ||
+      !formValues.level.trim() ||
+      !formValues.minGrade.trim() ||
+      !formValues.maxGrade.trim()
+    ) {
+      setErrorMessage("* Completa los campos obligatorios");
+      return;
+    }
+
+    setErrorMessage("");
+    setShowModal(true);
+  };
+
+  const handleCancel = () => {
+    setShowForm(false);
+    setErrorMessage("");
+  };
+
+  const handleModalClose = () => {
+    setShowModal(false);
+    setShowForm(false);
+    setFormValues({
+      name: "",
+      area: "",
+      level: "",
+      minGrade: "",
+      maxGrade: "",
+      description: "",
+    });
+  };
 
   const columns = [
     { key: "name", title: "Nombre" },
@@ -35,86 +95,58 @@ const NivelesYCategorias = () => {
     { name: "Universitaria", area: "Todas", description: "Para estudiantes de 18-25 años", participants: 111 },
   ];
 
-  const handleChange = (field, value) => {
-    setFormValues({ ...formValues, [field]: value });
-  };
-
-  const handleSubmit = () => {
-    setShowForm(false);
-    setFormValues({ name: "", area: "", level: "", minGrade: "", maxGrade: "", description: "" });
-  };
-
-  const handleCancel = () => {
-    setShowForm(false);
-    setFormValues({ name: "", area: "", level: "", minGrade: "", maxGrade: "", description: "" });
-  };
-
   return (
-    <div className="app-container">
-      <Sidebar />
-      <MainContent title="Panel de Administración" subtitle="Gestión de olimpiadas">
-        <Card title="Niveles o Categorías">
-          {/* Botón debajo del título */}
-          <div className="flex justify-end mb-4">
-            <Button onClick={() => setShowForm(!showForm)}>
-              {showForm ? "Cancelar" : "Nuevo Nivel/Categoría"}
-            </Button>
-          </div>
+    <div className="app-container relative">
 
-          {/* Descripción azul */}
-          <div className="bg-blue-50 text-blue-800 p-2 rounded text-sm mb-6">
+{showModal && (
+  <div className="modal-overlay">
+    <div className="modal-content"> 
+            <h2 className="text-xl font-semibold text-blue-800 mb-2">✔ Registro exitoso</h2>
+            <p className="text-gray-700 mb-6">El registro se realizó con éxito.</p>
+            <div className="flex justify-end">
+              <button
+                onClick={handleModalClose}
+                className="bg-blue-800 hover:bg-blue-900 text-white px-4 py-2 rounded"
+              >
+                Aceptar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <Sidebar />
+      <MainContent
+        title="Panel de Administración"
+        subtitle="Gestiona las olimpiadas, configura áreas y revisa inscripciones"
+      >
+        <Tabs tabs={tabs} activeTab={activeTab} onTabChange={handleTabChange} />
+
+        <Card
+          title="Niveles o Categorías"
+          action={
+            <Button onClick={() => setShowForm(!showForm)}>
+              {showForm ? "Cancelar" : "+ Nuevo Nivel/Categoría"}
+            </Button>
+          }
+        >
+          <div className="bg-blue-50 text-blue-800 p-3 rounded text-sm mb-6">
             Configure los niveles o categorías para las diferentes áreas de competencia. Los niveles pueden ser por grado de dificultad (Básico, Intermedio, Avanzado) y por categoría educativa (Primaria, Secundaria, Universitaria).
           </div>
 
-          {/* Formulario dinámico */}
-          {showForm && (
-            <div className="bg-gray-100 p-4 rounded shadow mb-6">
-              <h3 className="text-md font-semibold mb-4">Nuevo Nivel/Categoría</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Input
-                  label="Nombre del Nivel/Categoría"
-                  placeholder="Ej: Básico, Primaria, etc."
-                  value={formValues.name}
-                  onChange={(e) => handleChange("name", e.target.value)}
-                />
-                <Select
-                  label="Área"
-                  options={["Seleccionar Área", "Matemáticas", "Física", "Química"]}
-                  value={formValues.area}
-                  onChange={(e) => handleChange("area", e.target.value)}
-                />
-                <Select
-                  label="Nivel de Grado"
-                  options={["Seleccionar Grado", "Básico", "Intermedio", "Avanzado"]}
-                  value={formValues.level}
-                  onChange={(e) => handleChange("level", e.target.value)}
-                />
-                <div className="flex gap-4">
-                  <Input
-                    label="Grado Mínimo"
-                    value={formValues.minGrade}
-                    onChange={(e) => handleChange("minGrade", e.target.value)}
-                  />
-                  <Input
-                    label="Grado Máximo (opcional)"
-                    value={formValues.maxGrade}
-                    onChange={(e) => handleChange("maxGrade", e.target.value)}
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <TextArea
-                    label="Descripción"
-                    placeholder="Ej: Para estudiantes de 6-12 años, Nivel para principiantes, etc."
-                    value={formValues.description}
-                    onChange={(e) => handleChange("description", e.target.value)}
-                  />
-                </div>
-              </div>
-              <div className="flex justify-end gap-2 mt-4">
-                <Button variant="outline" onClick={handleCancel}>Cancelar</Button>
-                <Button onClick={handleSubmit}>Guardar</Button>
-              </div>
+          {errorMessage && (
+            <div className="text-red-600 font-medium mb-4">
+              {errorMessage}
             </div>
+          )}
+
+          {showForm && (
+            <FormularioNivelCategoria
+              values={formValues}
+              onChange={handleChange}
+              onSubmit={handleSubmit}
+              onCancel={handleCancel}
+            />
           )}
 
           <Table columns={columns} data={data} onEdit={() => {}} onDelete={() => {}} />
