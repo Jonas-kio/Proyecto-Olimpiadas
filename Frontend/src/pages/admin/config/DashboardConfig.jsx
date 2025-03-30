@@ -6,7 +6,7 @@ import Tabs from '../../../components/ui/Tabs';
 import ContentConfig from '../../../components/layout/ContentConfig';
 import Areas from './Areas';
 import Configuracion from './Configuracion';
-
+import NivelesYCategorias from './NivelesYCategorias';
 
 const DashboardConfig = () => {
     const [activeTab, setActiveTab] = useState('areas');
@@ -23,7 +23,7 @@ const DashboardConfig = () => {
       case "areas":
         return <Areas />;
       case "levels":
-        return <></>;
+        return <NivelesYCategorias/>;
       case "costs":
         return <Configuracion/>;
       default:

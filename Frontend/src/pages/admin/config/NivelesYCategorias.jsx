@@ -1,14 +1,13 @@
 
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Sidebar from "../../components/layout/Sidebar";
-import MainContent from "../../components/layout/MainContent";
-import Card from "../../components/ui/Card";
-import Table from "../../components/common/Table";
-import Button from "../../components/common/Button";
-import Tabs from "../../components/ui/Tabs";
-import FormularioNivelCategoria from "../../components/forms/FormularioNivelCategoria";
-import "../../index.css";
+
+import Card from "../../../components/ui/Card";
+import Table from "../../../components/common/Table";
+import Button from "../../../components/common/Button";
+import Tabs from "../../../components/ui/Tabs";
+import FormularioNivelCategoria from "../../../components/forms/FormularioNivelCategoria";
+import "../../../index.css";
 
 const NivelesYCategorias = () => {
   const navigate = useNavigate();
