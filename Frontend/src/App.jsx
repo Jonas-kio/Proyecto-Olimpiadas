@@ -1,4 +1,5 @@
 
+
 import './App.css'
 import DashboardAdmin from './pages/admin/DasboardAdmin';
 
@@ -9,11 +10,13 @@ import DashboardAdmin from './pages/admin/DasboardAdmin';
 
 const App = () => {
   return (
+
     <div className="app-container">
       <div className="content">
         <DashboardAdmin />
       </div>
     </div>
+
   );
 
 //Lo de abajo es lo creado por default
