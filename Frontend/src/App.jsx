@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import AreasConfig from './pages/config/AreasConfig';
 import './styles/global.css';
 import NivelesYCategorias from './pages//config/NivelesYCategorias';
+import Costos from './pages//config/Costos';
 
 function App() {
   return (
@@ -12,6 +13,7 @@ function App() {
         {/* Otras rutas de configuración podrían agregarse aquí */}
         <Route path="/" element={<Navigate to="/config/areas" replace />} />
         <Route path="/config/niveles-categorias" element={<NivelesYCategorias />} />
+        <Route path="/config/Costos" element={<Costos />} />
       </Routes>
     </Router>
   );
