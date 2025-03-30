@@ -1,6 +1,6 @@
 .app-container {
   display: flex;
-  height: 100vh; /* Ocupar toda la altura de la pantalla */
+ /* height: 100vh; /* Ocupar toda la altura de la pantalla */
 }
 
 .sidebar {
