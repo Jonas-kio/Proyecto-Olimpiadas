@@ -1,12 +1,13 @@
-import React from "react";
+
 import { Routes, Route } from "react-router-dom";
-import Configuracion from "../pages/Configuracion";
+//import Configuracion from "../pages/Configuracion";
+//import AreasConfig from "../pages/config/AreasConfig";
+import Dashboard from "../pages/participants/Dashboard";
 
 const AppRouter = () => {
   return (
     <Routes>
-      <Route path="/configuracion" element={<Configuracion />} />
-      {/* Aqui pondremos el resto de accesos o rutas al dashboard ,etc */}
+      <Route path="/user" element={<Dashboard/>} />
     </Routes>
   );
 };

@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import "../styles/Configuracion.css";
+import { useState } from "react";
+import "../../../styles/Configuracion.css";
 
 const Configuracion = () => {
   const [generalCost, setGeneralCost] = useState(50);
