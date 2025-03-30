@@ -21,7 +21,7 @@ class CategoryLevelStoreRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'area_id' => 'required|exists:areas,id',
+            'area_id' => 'required|exists:area,id',
             'grade_name' => [
                 'required',
                 'string',
