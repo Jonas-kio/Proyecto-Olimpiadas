@@ -1,12 +1,8 @@
-import React from "react";
-import { Routes, Route } from "react-router-dom";
-//import { useState } from 'react'//default
-//import reactLogo from './assets/react.svg'//default
-//import viteLogo from '/vite.svg'//default
+
 import './App.css'
-import AppRouter from "./routes/AppRouter";//Para las rutas
-import Sidebar from "./components/Sidebar";//Esto debe ser modificado
-//import Configuracion from "./pages/Configuracion";//Esto igual
+import DashboardAdmin from './pages/admin/DasboardAdmin';
+
+
 
 
 
@@ -14,9 +10,8 @@ import Sidebar from "./components/Sidebar";//Esto debe ser modificado
 const App = () => {
   return (
     <div className="app-container">
-      <Sidebar />
       <div className="content">
-        <AppRouter />
+        <DashboardAdmin />
       </div>
     </div>
   );

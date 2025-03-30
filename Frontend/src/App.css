@@ -16,7 +16,7 @@
 
 .content {
   flex-grow: 1; /* Ocupar todo el espacio disponible */
-  margin-left: 250px; /* Mismo ancho que el Sidebar */
+  
   padding: 20px;
   display: flex;
   justify-content: center; /* Centrar el contenido */

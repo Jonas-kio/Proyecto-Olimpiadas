@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { LayoutGrid, Settings, FileText, Users, LogOut } from 'lucide-react';
 import '../../styles/components/Sidebar.css';
 
