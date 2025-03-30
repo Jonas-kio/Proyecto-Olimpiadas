@@ -2,30 +2,27 @@
 
 namespace App\Http\Controllers\API;
 
-use Illuminate\Support\Facades\Hash;
-use Tymon\JWTAuth\Facades\JWTAuth;
-use Tymon\JWTAuth\Exceptions\JWTException;
-use Illuminate\Support\Facades\Auth;
+use App\services\AuthService;
+use Illuminate\Http\JsonResponse;
 
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\AuthStoreRequest;
-use App\Http\Requests\AuthLoginRequest;
-
-use App\Models\User;
+use App\Http\Requests\AuthRequest\AuthStoreRequest;
+use App\Http\Requests\AuthRequest\AuthLoginRequest;
 
 class AuthController extends Controller
 {
+    protected $authService;
+
+    public function __construct(AuthService $authService)
+    {
+        $this->authService = $authService;
+    }
+
+
     public function register(AuthStoreRequest $request)
     {
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'role' => $request->role,
-        ]);
-
-        $token = JWTAuth::fromUser($user);
+        [$user, $token] = $this->authService->registerUser($request->validated());
 
         return response()->json([
             'success' => true,
@@ -39,43 +36,39 @@ class AuthController extends Controller
     {
         $credentials = $request->only('email', 'password');
 
-        try {
-            if (!$token = JWTAuth::attempt($credentials)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Credenciales incorrectas',
-                ], 401);
-            }
-        } catch (JWTException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No se pudo crear el token',
-            ], 500);
-        }
-
-        $user = Auth::user();
-
-        $expiresIn = config('jwt.ttl', 60) * 60;
+        $response = $this->authService->login($credentials);
 
         return response()->json([
-            'success' => true,
-            'message' => 'Inicio de sesión exitoso',
-            'user' => $user,
-            'token' => $token,
-            'token_type' => 'bearer',
-            'expires_in' => $expiresIn
-        ]);
+            'success' => $response['success'],
+            'message' => $response['message'],
+            'user' => $response['user'] ?? null,
+            'token' => $response['token'] ?? null,
+            'token_type' => $response['token_type'] ?? null,
+            'expires_in' => $response['expires_in'] ?? null,
+        ], $response['status']);
     }
 
-    public function getUser()
+    public function getUser(): JsonResponse
     {
-        $user = Auth::user();
-        return response()->json($user, 200);
+        $user = $this->authService->getUser();
+
+        if ($user) {
+            return response()->json($user, 200);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'User not authenticated',
+        ], 401);
     }
 
-    public function logout()
+    public function logout(): JsonResponse
     {
-        JWTAuth::invalidate(JWTAuth::getToken());
-        return response()->json(['message' => 'logged out successfully'], 200);
+        $response = $this->authService->logout();
+
+        return response()->json([
+            'success' => $response['success'],
+            'message' => $response['message'],
+        ], 200);
     }
 }
