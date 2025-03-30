@@ -1,4 +1,5 @@
-import React from 'react';
+/* eslint-disable react/prop-types */
+
 import '../../styles/components/Card.css';
 
 const Card = ({ title, children, action }) => {

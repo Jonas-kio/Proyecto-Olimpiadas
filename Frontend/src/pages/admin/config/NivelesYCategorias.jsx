@@ -115,14 +115,7 @@ const NivelesYCategorias = () => {
         </div>
       )}
 
-      <Sidebar />
-      <MainContent
-        title="Panel de Administración"
-        subtitle="Gestiona las olimpiadas, configura áreas y revisa inscripciones"
-      >
-        <Tabs tabs={tabs} activeTab={activeTab} onTabChange={handleTabChange} />
-
-        <Card
+<Card
           title="Niveles o Categorías"
           action={
             <Button onClick={() => setShowForm(!showForm)}>
@@ -151,7 +144,6 @@ const NivelesYCategorias = () => {
 
           <Table columns={columns} data={data} onEdit={() => {}} onDelete={() => {}} />
         </Card>
-      </MainContent>
     </div>
   );
 };

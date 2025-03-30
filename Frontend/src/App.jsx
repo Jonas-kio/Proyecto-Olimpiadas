@@ -1,22 +1,51 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import AreasConfig from './pages/config/AreasConfig';
-import './styles/global.css';
-import NivelesYCategorias from './pages//config/NivelesYCategorias';
-import Costos from './pages//config/Costos';
 
-function App() {
+
+import './App.css'
+import DashboardAdmin from './pages/admin/DasboardAdmin';
+
+
+
+
+
+
+const App = () => {
   return (
-    <Router>
-      <Routes>
-        <Route path="/config/areas" element={<AreasConfig />} />
-        {/* Otras rutas de configuración podrían agregarse aquí */}
-        <Route path="/" element={<Navigate to="/config/areas" replace />} />
-        <Route path="/config/niveles-categorias" element={<NivelesYCategorias />} />
-        <Route path="/config/Costos" element={<Costos />} />
-      </Routes>
-    </Router>
+
+    <div className="app-container">
+      <div className="content">
+        <DashboardAdmin />
+      </div>
+    </div>
+
   );
+
+//Lo de abajo es lo creado por default
+ /* const [count, setCount] = useState(0)
+
+  return (
+    <>
+      <div>
+        <a href="https://vitejs.dev" target="_blank">
+          <img src={viteLogo} className="logo" alt="Vite logo" />
+        </a>
+        <a href="https://react.dev" target="_blank">
+          <img src={reactLogo} className="logo react" alt="React logo" />
+        </a>
+      </div>
+      <h1>Vite + React</h1>
+      <div className="card">
+        <button onClick={() => setCount((count) => count + 1)}>
+          count is {count}
+        </button>
+        <p>
+          Edit <code>src/App.jsx</code> and save to test HMR
+        </p>
+      </div>
+      <p className="read-the-docs">
+        Click on the Vite and React logos to learn more
+      </p>
+    </>
+  )*/
 }
 
 export default App;
