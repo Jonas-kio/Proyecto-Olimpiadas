@@ -1,4 +1,5 @@
-import React from 'react';
+/* eslint-disable react/prop-types */
+
 import '../../styles/components/Table.css';
 
 const Table = ({ columns, data, onEdit, onDelete }) => {
