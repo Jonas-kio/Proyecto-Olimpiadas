@@ -98,7 +98,9 @@
   grid-template-columns: repeat(2, 1fr);
   gap: 15px;
 }
-
+.table-container {
+  overflow-x: auto;
+}
 .cost-table-container {
   width: 100%;
   overflow-x: auto;
@@ -114,6 +116,7 @@
   margin-top: 20px;
   color: #000000;
   background: white;
+  min-width: 600px;
 }
 
 /* Encabezados alineados a la izquierda */
