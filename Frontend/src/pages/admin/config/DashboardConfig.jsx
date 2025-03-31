@@ -5,7 +5,7 @@ import MainContent from '../../../components/layout/MainContent';
 import Tabs from '../../../components/ui/Tabs';
 import ContentConfig from '../../../components/layout/ContentConfig';
 import Areas from './Areas';
-import Configuracion from './Configuracion';
+import CostosConfiguracion from './CostosConfiguracion';
 import NivelesYCategorias from './NivelesYCategorias';
 
 const DashboardConfig = () => {
@@ -25,7 +25,7 @@ const DashboardConfig = () => {
       case "levels":
         return <NivelesYCategorias/>;
       case "costs":
-        return <Configuracion/>;
+        return <CostosConfiguracion/>;
       default:
         return <Areas />;
     }
