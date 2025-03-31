@@ -27,13 +27,28 @@
   .tab:hover {
     color: var(--primary-color);
   }
-  
+  /*
   .tab.active {
     color: var(--secondary-color);
     border-bottom: 2px solid var(--secondary-color);
     font-weight: 500;
   }
+  */
+/*000*/
+  .tab.active {
+    color: #1d4ed8; /* azul */
+    border-bottom: 2px solid #1d4ed8;
+    font-weight: 600;
+  }
   
+  .tab:hover {
+    color: #1d4ed8;
+  }
+  .tab:focus {
+    outline: none;
+    box-shadow: none;
+  }
+/*000*/  
   /* Media queries */
   @media (max-width: 768px) {
     .tabs {

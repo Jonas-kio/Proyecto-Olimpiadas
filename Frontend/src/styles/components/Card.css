@@ -5,6 +5,7 @@
     box-shadow: var(--card-shadow);
     width: 100%;
     margin-bottom: var(--spacing-lg);
+    padding: 1.5rem 2rem;
   }
   
   .card-header {

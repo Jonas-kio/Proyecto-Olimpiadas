@@ -122,9 +122,23 @@ const NivelesYCategorias = () => {
             </Button>
           }
         >
-          <div className="bg-blue-50 text-blue-800 p-3 rounded text-sm mb-6">
-            Configure los niveles o categorías para las diferentes áreas de competencia. Los niveles pueden ser por grado de dificultad (Básico, Intermedio, Avanzado) y por categoría educativa (Primaria, Secundaria, Universitaria).
-          </div>
+          
+
+          <div
+  style={{
+    backgroundColor: '#DBEAFE', // fondo azul claro
+    color: '#1D4ED8',           // texto azul medio
+    padding: '1rem 1.5rem',     // padding vertical y horizontal
+    borderRadius: '0.75rem',    // bordes redondeados grandes
+    fontSize: '0.875rem',       // texto tamaño sm
+    marginBottom: '1.5rem',     // espacio inferior
+    boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)', // sombra suave
+  }}
+>
+  Configure los niveles o categorías para las diferentes áreas de competencia. Los niveles pueden ser por grado de dificultad (Básico, Intermedio, Avanzado) y por categoría educativa (Primaria, Secundaria, Universitaria).
+</div>
+
+
 
           {errorMessage && (
             <div className="text-red-600 font-medium mb-4">

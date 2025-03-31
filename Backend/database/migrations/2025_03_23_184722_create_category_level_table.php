@@ -21,7 +21,7 @@ return new class extends Migration
                 'High_School'
             ]);
             $table->string('grade_min', 3);
-            $table->string('grade_max', 3)->nullable(false);
+            $table->string('grade_max', 3)->nullable(true);
             $table->timestamps();
         });
     }
