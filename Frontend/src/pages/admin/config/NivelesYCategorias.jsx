@@ -1,17 +1,16 @@
 
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+
 
 import Card from "../../../components/ui/Card";
 import Table from "../../../components/common/Table";
 import Button from "../../../components/common/Button";
-import Tabs from "../../../components/ui/Tabs";
+
 import FormularioNivelCategoria from "../../../components/forms/FormularioNivelCategoria";
 import "../../../index.css";
 
 const NivelesYCategorias = () => {
-  const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("levels_categories");
+
   const [showForm, setShowForm] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [showModal, setShowModal] = useState(false);
@@ -25,20 +24,6 @@ const NivelesYCategorias = () => {
     description: "",
   });
 
-  const tabs = [
-    { id: "areas", label: "Áreas" },
-    { id: "levels_categories", label: "Niveles y Categorías" },
-    { id: "costs", label: "Costos" },
-    { id: "forms", label: "Formularios" },
-  ];
-
-  const handleTabChange = (tabId) => {
-    setActiveTab(tabId);
-    if (tabId === "areas") navigate("/config/areas");
-    if (tabId === "levels_categories") navigate("/config/niveles-categorias");
-    if (tabId === "costs") navigate("/config/costos");
-    if (tabId === "forms") navigate("/config/formularios");
-  };
 
   const handleChange = (field, value) => {
     setFormValues({ ...formValues, [field]: value });
