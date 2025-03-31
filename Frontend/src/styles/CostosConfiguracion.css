@@ -1,0 +1,207 @@
+/* Contenedor principal  */
+.configuracion-container {
+  width: 99%;
+  max-width: 1200px;
+  background: white;
+  padding: 20px;
+  margin: 20px auto;
+  border-radius: 0;
+}
+
+.subtitle {
+  color: #000000;
+}
+
+.cost-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #093f7d;
+}
+
+.section-title {
+  color: #093f7d;
+}
+
+/* Sección de costos específicos */
+.cost-section {
+  background: white;
+  border-radius: 8px;
+  padding: 15px;
+  margin-top: 15px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease-in-out;
+}
+
+/* Estilo de la información */
+.info-text {
+  color: #093f7d;
+  background-color: #e3f2fd;
+  padding: 10px;
+  border-radius: 5px;
+  margin-top: 10px;
+}
+
+/* Título */
+.title {
+  font-size: 24px;
+  text-align: center;
+  font-weight: bold;
+  color: #093f7d;
+  margin-top: 20px;
+}
+
+/* Botón "Nuevo Costo" */
+.costos-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.new-cost-button {
+  background-color: #093f7d;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background 0.3s ease-in-out;
+  margin-left: 20px;
+}
+
+.new-cost-button:hover {
+  background-color: #333;
+}
+
+.error-message {
+  color: red;
+  font-size: 14px;
+  margin-top: 5px;
+  font-weight: bold;
+}
+
+/* Formulario de nuevo costo */
+.new-cost-form {
+  background: white;
+  border-radius: 10px;
+  padding: 20px;
+  margin-top: 10px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.15);
+  color: #000000;
+}
+
+/* Grid 2x2 */
+.cost-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+}
+
+.cost-table-container {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: 400px; /* Ajustable según necesidad */
+  border-radius: 8px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.cost-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  color: #000000;
+  background: white;
+}
+
+/* Encabezados alineados a la izquierda */
+.cost-table thead th {
+  text-align: left;
+  padding: 12px;
+  background-color: #f9f9f9;
+  color: rgb(0, 0, 0);
+  
+}
+
+/* Contenido alineado a la izquierda */
+.cost-table tbody td {
+  text-align: left;
+  padding: 12px;
+  border-bottom: 1px solid #ddd;
+}
+
+/* Alternar colores de filas */
+.cost-table tbody tr:nth-child(even) {
+  background-color: #f8f9fa;
+}
+
+/* Asegurar que los botones en la columna "Acciones" se mantengan alineados */
+.cost-table tbody td:last-child {
+  display: flex;
+  gap: 10px;
+}
+
+.cost-grid input,
+.cost-grid select {
+  padding: 8px;
+  border: 1px solid #ced4da;
+  border-radius: 5px;
+  background-color: #f8f9fa;
+  color: #000000;
+}
+
+/* Botones */
+.buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.save {
+  background-color: #093f7d;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.save:hover {
+  background-color: #0c56a5;
+}
+
+/* Alinear botones de acciones en la tabla */
+.cost-table td {
+  text-align: left;
+}
+
+.cost-table .icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  margin: 0 5px;
+}
+
+.cost-table .icon-button svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Mejor margen en pantallas pequeñas */
+@media (max-width: 600px) {
+  .cost-grid {
+    grid-template-columns: 1fr; /* Cambia a 1 columna en pantallas pequeñas */
+  }
+  
+  .cost-table-container {
+    overflow-x: auto;
+    overflow-y: auto;
+    max-height: 300px;
+  }
+}
