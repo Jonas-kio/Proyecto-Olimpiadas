@@ -43,9 +43,9 @@ const FormularioNivelCategoria = ({ values, onChange, onSubmit, onCancel }) => {
               onChange={(e) => onChange("level", e.target.value)}
             >
               <option>Seleccionar Grado</option>
-              <option>Básico</option>
-              <option>Intermedio</option>
-              <option>Avanzado</option>
+              <option>Primaria</option>
+              <option>Secundaria</option>
+              
             </select>
           </div>
 
