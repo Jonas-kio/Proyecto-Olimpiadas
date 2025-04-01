@@ -4,13 +4,14 @@ import { Routes, Route } from "react-router-dom";
 //import AreasConfig from "../pages/config/AreasConfig";
 import DashboardConfig from "../pages/admin/config/DashboardConfig";
 import Reportes from "../pages/admin/config/Reportes";
+import HomeAdmin from "../pages/admin/homeAdmin";
 
 const AppRouterAdmin = () => {
   return (
     <Routes>
-      {/* <Route path="/admin" element={<homeAdmin/>} /> */}
+      <Route path="/homeAdmin" element={<HomeAdmin/>} />
       <Route path="/configuracion" element={<DashboardConfig />} />
-      <Route path="/reports" element={<Reportes/>} /> */
+      <Route path="/reports" element={<Reportes/>} />
     </Routes>
   );
 };

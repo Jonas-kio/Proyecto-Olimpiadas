@@ -8,7 +8,6 @@ const DashboardAdmin = () => {
         <div className="app-container">
 
             <Sidebar />
-            
             <div className="content">
                 <MainContent 
                     title="Panel de Administración" 
