@@ -5,7 +5,7 @@ import Table from "../../../components/common/Table";
 import Button from "../../../components/common/Button";
 
 import FormularioNivelCategoria from "../../../components/forms/FormularioNivelCategoria";
-import { getLevels, createLevel, deleteLevel } from "../../../services/nivelesService";
+import { getLevels, createLevel, deleteLevel, updateLevel } from "../../../services/nivelesService";
 import {getActiveAreas} from "../../../services/areasService"
 import ErrorModal from '../../../components/common/ErrorModal';
 import SuccessModal from '../../../components/common/SuccessModal';
@@ -19,6 +19,9 @@ const NivelesYCategorias = () => {
   const [levels, setLevels] = useState([]);
   const [areas, setAreas] = useState([]);
   const [areasMap, setAreasMap] = useState({});
+  const [isEditing, setIsEditing] = useState(false);
+  const [currentLevelId, setCurrentLevelId] = useState(null);
+
 
   // Error modal state
   const [showErrorModal, setShowErrorModal] = useState(false);
@@ -45,7 +48,7 @@ const NivelesYCategorias = () => {
     description: "",
   });
 
-   useEffect(() => {
+  useEffect(() => {
     const fetchAreas = async () => {
       try {
         const areasData = await getActiveAreas();
@@ -68,51 +71,52 @@ const NivelesYCategorias = () => {
   }, []);
 
   useEffect(() => {
-  const fetchLevels = async () => {
-    try {
-      setIsLoading(true);
-      const fetchedLevels = await getLevels();
-      
-      if (!fetchedLevels || !Array.isArray(fetchedLevels)) {
-        setErrorMessage("Formato de respuesta inválido al cargar niveles.");
-        return;
-      }
-
-      const formattedLevels = fetchedLevels.map(level => {
-        if (!level) return null;
+    const fetchLevels = async () => {
+      try {
+        setIsLoading(true);
+        const fetchedLevels = await getLevels();
         
-        if (level.id === undefined || level.id === null) {
-          console.error("Nivel sin ID:", level);
-          return null; 
+        if (!fetchedLevels || !Array.isArray(fetchedLevels)) {
+          setErrorMessage("Formato de respuesta inválido al cargar niveles.");
+          return;
         }
-        
-        const areaName = level.area ? 
-                        (typeof level.area === 'object' ? level.area.name : level.area) : 
-                        'Área no disponible';
-        
-        return {
-          id: level.id,
-          name: level.name || "Sin nombre",
-          areaId: level.areaId,
-          area: areaName,
-          description: level.description || '',
-          gradeName: level.gradeName,
-          gradeMin: level.gradeMin,
-          gradeMax: level.gradeMax,
-        };
-      }).filter(Boolean);
-      
-      setLevels(formattedLevels);
-    } catch (error) {
-      console.error("Error fetching levels:", error);
-      setErrorMessage("Error al cargar los niveles. Por favor, recargue la página.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
-  fetchLevels();
-}, []);
+        const formattedLevels = fetchedLevels.map(level => {
+          if (!level) return null;
+          
+          if (level.id === undefined || level.id === null) {
+            console.error("Nivel sin ID:", level);
+            return null; 
+          }
+          
+          const areaName = level.area ? 
+                          (typeof level.area === 'object' ? level.area.name : level.area) : 
+                          'Área no disponible';
+          
+          return {
+            id: level.id,
+            name: level.name || "Sin nombre",
+            areaId: level.areaId,
+            area: areaName,
+            description: level.description || '',
+            gradeName: level.gradeName,
+            gradeMin: level.gradeMin,
+            gradeMax: level.gradeMax,
+          };
+        }).filter(Boolean);
+        
+        setLevels(formattedLevels);
+      } catch (error) {
+        console.error("Error fetching levels:", error);
+        setErrorMessage("Error al cargar los niveles. Por favor, recargue la página.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchLevels();
+  }, []);
+  
   const handleChange = (field, value) => {
     setFormValues({ ...formValues, [field]: value });
   };
@@ -129,12 +133,15 @@ const NivelesYCategorias = () => {
       errorFieldsList.push("Nombre del Nivel/Categoría: Campo obligatorio");
     }
     
-    if (!formValues.area.trim()) {
-      errorFieldsList.push("Área: Debe seleccionar un área");
-    }
-    
-    if (!formValues.level.trim()) {
-      errorFieldsList.push("Nivel de Grado: Debe seleccionar un nivel");
+
+    if (!isEditing) {
+      if (!formValues.area.trim()) {
+        errorFieldsList.push("Área: Debe seleccionar un área");
+      }
+      
+      if (!formValues.level.trim()) {
+        errorFieldsList.push("Nivel de Grado: Debe seleccionar un nivel");
+      }
     }
     
     if (!formValues.minGrade.trim()) {
@@ -148,7 +155,6 @@ const NivelesYCategorias = () => {
       return false;
     }
     
-
     const minGradePattern = /^[1-6](ro|do|to)$/;
     if (formValues.minGrade.trim() && !minGradePattern.test(formValues.minGrade.trim())) {
       errorFieldsList.push("Grado Mínimo: Formato incorrecto. Debe ser como '1ro', '2do', etc.");
@@ -164,7 +170,6 @@ const NivelesYCategorias = () => {
         errorFieldsList.push("Grado Máximo: Formato incorrecto. Debe ser como '1ro', '2do', etc.");
       }
       
-
       if (formValues.maxGrade.trim().length > 3) {
         errorFieldsList.push("Grado Máximo: No debe exceder los 3 caracteres");
       }
@@ -215,43 +220,93 @@ const NivelesYCategorias = () => {
       setIsLoading(true);
       setErrorMessage("");
       
-      const areaId = parseInt(formValues.area, 10);
+      let result;
       
-      const levelData = {
-        areaId: areaId,
-        name: formValues.name,
-        description: formValues.description,
-        gradeName: formValues.level,
-        gradeMin: formValues.minGrade,
-        ...(formValues.maxGrade.trim() ? { gradeMax: formValues.maxGrade } : { gradeMax: null })
-      };
-      
-      const newLevel = await createLevel(levelData);
-      
-      if (!newLevel) {
-        throw new Error("No se recibió respuesta al crear el nivel");
+      if (isEditing && currentLevelId) {
+
+        const currentLevel = levels.find(level => level.id === currentLevelId);
+        
+        if (!currentLevel) {
+          throw new Error("No se pudo encontrar el nivel a editar");
+        }
+        
+
+        const updateData = {
+
+          areaId: currentLevel.areaId,
+          gradeName: currentLevel.gradeName,
+
+          name: formValues.name,
+          description: formValues.description,
+          gradeMin: formValues.minGrade,
+          gradeMax: formValues.maxGrade.trim() ? formValues.maxGrade : null
+        };
+        
+        result = await updateLevel(currentLevelId, updateData);
+        
+        setLevels(levels.map(level => {
+          if (level.id === currentLevelId) {
+            return {
+              ...level,
+              name: result.name,
+              description: result.description,
+              gradeMin: result.gradeMin,
+              gradeMax: result.gradeMax
+            };
+          }
+          return level;
+        }));
+        
+        setSuccessTittle("Actualización Exitosa!");
+        setSuccessMessage("La actualización se realizó con éxito");
+        setSuccessDetails(`Se ha actualizado el nivel/categoría "${result.name}" correctamente.`);
+      } else {
+
+        const areaId = parseInt(formValues.area, 10);
+        
+        const levelData = {
+          areaId: areaId,
+          name: formValues.name,
+          description: formValues.description,
+          gradeName: formValues.level,
+          gradeMin: formValues.minGrade,
+          gradeMax: formValues.maxGrade.trim() ? formValues.maxGrade : null
+        };
+
+        result = await createLevel(levelData);
+        
+        const areaName = areasMap[areaId]?.name || 'Área no disponible';
+        
+        setLevels([...levels, {
+          ...result,
+          area: areaName
+        }]);
+        
+        setSuccessTittle("Registro Exitoso!");
+        setSuccessMessage("El registro se realizó con éxito");
+        setSuccessDetails(`Se ha creado el nivel/categoría "${result.name}" para el área "${areaName}" correctamente.`);
       }
       
-      
-      const selectedArea = areasMap[areaId] || areas.find(a => a.id === areaId);
-      const areaName = selectedArea ? selectedArea.name : 'Área no disponible';
-      
-      setLevels([...levels, newLevel]);
-      
-      setSuccessTittle("Registro Exitoso!");
-      setSuccessMessage("El registro se realizó con éxito");
-      setSuccessDetails(`Se ha creado el nivel/categoría "${newLevel.name}" para el área "${areaName}" correctamente.`);
       setShowSuccessModal(true);
+      
     } catch (error) {
+      console.error("Error en la operación:", error);
+      
       if (error.response?.status === 409) {
         setValidationError("Error de duplicidad");
         setErrorFields([`El nivel/categoría "${formValues.name}" ya existe para el área seleccionada.`]);
       } else if (error.response?.status === 400) {
         setValidationError("Error de validación");
         setErrorFields([error.response?.data?.message || "Datos inválidos"]);
+      } else if (error.response?.status === 422) {
+        setValidationError("Error de validación");
+        const errorMessages = error.response?.data?.errors 
+          ? Object.values(error.response.data.errors).flat() 
+          : ["Datos inválidos"];
+        setErrorFields(errorMessages);
       } else {
         setValidationError("Error en el servidor");
-        setErrorFields(["Error al crear el nivel. Intenta nuevamente."]);
+        setErrorFields([`Error al ${isEditing ? 'actualizar' : 'crear'} el nivel. Intenta nuevamente.`]);
       }
       
       setShowErrorModal(true);
@@ -262,12 +317,13 @@ const NivelesYCategorias = () => {
 
   const handleCancel = () => {
     setShowForm(false);
+    setIsEditing(false);
+    setCurrentLevelId(null);
     setErrorMessage("");
+    resetForm();
   };
 
-  const handleSuccessModalClose = () => {
-    setShowSuccessModal(false);
-    setShowForm(false);
+  const resetForm = () => {
     setFormValues({
       name: "",
       area: "",
@@ -276,6 +332,40 @@ const NivelesYCategorias = () => {
       maxGrade: "",
       description: "",
     });
+  };
+
+  const handleEditClick = (level) => {
+    console.log("Editando nivel:", level);
+    
+    if (!level || !level.id) {
+      console.error("Nivel inválido para editar:", level);
+      return;
+    }
+    
+    setIsEditing(true);
+    setCurrentLevelId(level.id);
+    
+    setFormValues({
+      name: level.name || "",
+      area: level.areaId?.toString() || "",
+      level: level.gradeName || "",
+      minGrade: level.gradeMin || "",
+      maxGrade: level.gradeMax || "",
+      description: level.description || "",
+    });
+    
+
+    setShowForm(true);
+    
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleSuccessModalClose = () => {
+    setShowSuccessModal(false);
+    setShowForm(false);
+    resetForm();
+    setIsEditing(false);
+    setCurrentLevelId(null);
   };
 
   const handleErrorModalClose = () => {
@@ -401,8 +491,24 @@ const NivelesYCategorias = () => {
       <Card
         title="Niveles o Categorías"
         action={
-          <Button onClick={() => setShowForm(!showForm) } disabled={isLoading}>
-            {showForm ? "Cancelar" : "+ Nuevo Nivel/Categoría"}
+          <Button onClick={() => {
+            if (showForm && isEditing) {
+              setIsEditing(false);
+              setCurrentLevelId(null);
+              resetForm();
+            } else {
+              setShowForm(!showForm);
+              
+              if (showForm) {
+                setIsEditing(false);
+                setCurrentLevelId(null);
+                resetForm();
+              }
+            }
+          }} disabled={isLoading}>
+            {showForm 
+              ? (isEditing ? "Cancelar Edición" : "Cancelar") 
+              : "+ Nuevo Nivel/Categoría"}
           </Button>
         }
       >
@@ -432,13 +538,15 @@ const NivelesYCategorias = () => {
             onChange={handleChange}
             onSubmit={handleSubmit}
             onCancel={handleCancel}
+            isEditing={isEditing}
+            areas={areas} 
           />
         )}
 
         <Table
           columns={columns}
           data={levels}
-          onEdit={() => { }}
+          onEdit={handleEditClick}
           onDelete={handleDeleteClick}
           emptyMessage="No hay niveles o categorías registrados"
         />

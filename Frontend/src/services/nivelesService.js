@@ -51,16 +51,14 @@ export const getLevels = async () => {
     console.log('Respuesta API getLevels:', response.data);
     
     if (response.data.success) {
-      // Procesar los datos asegurando que cada nivel tenga un ID válido
+
       const processedData = response.data.data
         .filter(level => level && (level.id !== undefined && level.id !== null))
         .map(level => {
-          // Mostrar advertencia si hay propiedades esperadas que faltan
           if (!level.id) {
             console.warn('⚠️ Nivel sin ID:', level);
           }
-          
-          // Asegurar que la información del área esté completa
+
           const areaInfo = level.area ? {
             id: level.area.id,
             name: level.area.nombre || level.area.name || 'N/A',
@@ -93,6 +91,20 @@ export const getLevels = async () => {
 
 export const updateLevel = async (id, levelData) => {
   try {
+
+    if (id === undefined || id === null) {
+      throw new Error('Se requiere un ID para actualizar el nivel/categoría');
+    }
+    
+    const levelId = typeof id === 'string' ? parseInt(id, 10) : id;
+    
+    if (isNaN(levelId)) {
+      throw new Error(`ID inválido: "${id}"`);
+    }
+    
+    console.log(`Enviando solicitud de actualización para nivel ID: ${levelId}`, levelData);
+    
+
     const backendData = {
       area_id: levelData.areaId,
       name: levelData.name,
@@ -102,16 +114,56 @@ export const updateLevel = async (id, levelData) => {
       grade_max: levelData.gradeMax
     };
     
-    const response = await api.put(`/categoryLevel/${id}`, backendData);
+
+    const response = await api.put(`/categoryLevel/${levelId}`, backendData);
+    
+    console.log('Respuesta de actualización:', response.data);
     
     if (response.data.success) {
-      return response.data.data;
+
+      const updatedLevel = response.data.data;
+      
+      return {
+        id: updatedLevel.id,
+        areaId: updatedLevel.area_id,
+        name: updatedLevel.name,
+        description: updatedLevel.description,
+        gradeName: updatedLevel.grade_name,
+        gradeMin: updatedLevel.grade_min,
+        gradeMax: updatedLevel.grade_max,
+        participants: updatedLevel.participants || 0,
+        area: updatedLevel.area ? {
+          id: updatedLevel.area.id,
+          name: updatedLevel.area.nombre || updatedLevel.area.name || 'N/A',
+          description: updatedLevel.area.descripcion || updatedLevel.area.description || ''
+        } : null
+      };
     } else {
-      throw new Error(response.data.message || 'Error al actualizar el nivel/categoría');
+      throw new Error(response.data.message || `Error al actualizar el nivel/categoría con ID ${levelId}`);
     }
   } catch (error) {
-    console.error(`Error al actualizar nivel/categoría ID ${id}:`, error);
-    throw error;
+
+    if (error.response) {
+
+      const statusCode = error.response.status;
+      const message = error.response.data?.message || 'Error desconocido';
+      
+      if (statusCode === 404) {
+        throw new Error(`No se encontró el nivel/categoría con ID ${id}`);
+      } else if (statusCode === 403) {
+        throw new Error('No tiene permisos para actualizar este nivel/categoría');
+      } else if (statusCode === 422) {
+        throw new Error(`Error de validación: ${message}`);
+      } else {
+        throw new Error(`Error del servidor (${statusCode}): ${message}`);
+      }
+    } else if (error.request) {
+      // Error de conexión
+      throw new Error('No se recibió respuesta del servidor');
+    } else {
+      // Otros errores
+      throw error;
+    }
   }
 };
 

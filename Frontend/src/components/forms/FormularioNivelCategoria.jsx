@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { getActiveAreas } from '../../services/areasService';
 
-const FormularioNivelCategoria = ({ values, onChange, onSubmit, onCancel }) => {
+const FormularioNivelCategoria = ({ values, onChange, onSubmit, onCancel, isEditing = false }) => {
   const [areas, setAreas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -61,7 +61,7 @@ const FormularioNivelCategoria = ({ values, onChange, onSubmit, onCancel }) => {
 
   return (
     <div className="formulario-nivel">
-      <h3 className="formulario-titulo">Nuevo Nivel/Categoría</h3>
+      <h3 className="formulario-titulo">{isEditing ? 'Editar Nivel/Categoría' : 'Nuevo Nivel/Categoría'}</h3>
       {error && <div className="error-message">{error}</div>}
       <div className="form-grid">
 
@@ -84,6 +84,7 @@ const FormularioNivelCategoria = ({ values, onChange, onSubmit, onCancel }) => {
               value={values.area}
               onChange={(e) => onChange("area", e.target.value)}
               className={!values.area ? "border-red-300" : ""}
+              disabled={isEditing}
             >
               <option>Seleccionar Área</option>
               {areas.map(area => (
@@ -93,6 +94,11 @@ const FormularioNivelCategoria = ({ values, onChange, onSubmit, onCancel }) => {
               ))}
             </select>
             {loading && <span className="loading-text">Cargando áreas...</span>}
+            {isEditing && (
+              <span className="text-blue-500 text-xs mt-1 block">
+                El área no puede ser modificada en modo edición
+              </span>
+            )}
           </div>
         </div>
 
@@ -104,12 +110,17 @@ const FormularioNivelCategoria = ({ values, onChange, onSubmit, onCancel }) => {
               value={values.level}
               onChange={(e) => onChange("level", e.target.value)}
               className={!values.level ? "border-red-300" : ""}
+              disabled={isEditing}
             >
               <option>Seleccionar Grado</option>
               <option>Primaria</option>
               <option>Secundaria</option>
-              
             </select>
+            {isEditing && (
+              <span className="text-blue-500 text-xs mt-1 block">
+                El nivel de grado no puede ser modificado en modo edición
+              </span>
+            )}
           </div>
 
           <div className="form-group">
@@ -170,7 +181,9 @@ const FormularioNivelCategoria = ({ values, onChange, onSubmit, onCancel }) => {
 
       <div className="form-actions">
         <button className="btn-outline" onClick={onCancel}>Cancelar</button>
-        <button className="btn-primary" onClick={onSubmit}>Guardar</button>
+        <button className="btn-primary" onClick={onSubmit}>
+          {isEditing ? 'Actualizar' : 'Guardar'}
+        </button>
       </div>
     </div>
   );
