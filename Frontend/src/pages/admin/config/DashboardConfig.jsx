@@ -28,9 +28,7 @@ const DashboardConfig = () => {
       default:
         return <Areas />;
     }
-  };
-
-    
+  }; 
     return (
         
         <div className="Config-Panel">
