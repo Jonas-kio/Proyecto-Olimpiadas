@@ -1,20 +1,43 @@
-
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from 'react';
 
 import Card from "../../../components/ui/Card";
 import Table from "../../../components/common/Table";
 import Button from "../../../components/common/Button";
-import Tabs from "../../../components/ui/Tabs";
+
 import FormularioNivelCategoria from "../../../components/forms/FormularioNivelCategoria";
+import { getLevels, createLevel, deleteLevel, updateLevel } from "../../../services/nivelesService";
+import {getActiveAreas} from "../../../services/areasService"
+import ErrorModal from '../../../components/common/ErrorModal';
+import SuccessModal from '../../../components/common/SuccessModal';
+import DeleteConfirmationModal from '../../../components/common/DeleteConfirmationModal';
 import "../../../index.css";
 
 const NivelesYCategorias = () => {
-  const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("levels_categories");
   const [showForm, setShowForm] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const [showModal, setShowModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [levels, setLevels] = useState([]);
+  const [areas, setAreas] = useState([]);
+  const [areasMap, setAreasMap] = useState({});
+  const [isEditing, setIsEditing] = useState(false);
+  const [currentLevelId, setCurrentLevelId] = useState(null);
+
+
+  // Error modal state
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [validationError, setValidationError] = useState("");
+  const [errorFields, setErrorFields] = useState([]);
+
+  // Success modal state
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [successDetails, setSuccessDetails] = useState("");
+  const [successTittle, setSuccessTittle] = useState("");
+  
+
+  // Delete confirmation modal state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [levelToDelete, setLevelToDelete] = useState(null);
 
   const [formValues, setFormValues] = useState({
     name: "",
@@ -25,49 +48,282 @@ const NivelesYCategorias = () => {
     description: "",
   });
 
-  const tabs = [
-    { id: "areas", label: "Áreas" },
-    { id: "levels_categories", label: "Niveles y Categorías" },
-    { id: "costs", label: "Costos" },
-    { id: "forms", label: "Formularios" },
-  ];
+  useEffect(() => {
+    const fetchAreas = async () => {
+      try {
+        const areasData = await getActiveAreas();
+        setAreas(areasData);
+        
+        const areaMapping = {};
+        areasData.forEach(area => {
+          areaMapping[area.id] = area;
+        });
+        setAreasMap(areaMapping);
+        
+        console.log('Áreas cargadas:', areasData); 
+      } catch (error) {
+        console.error("Error fetching areas:", error);
+        setErrorMessage("Error al cargar las áreas. Por favor, recargue la página.");
+      }
+    };
 
-  const handleTabChange = (tabId) => {
-    setActiveTab(tabId);
-    if (tabId === "areas") navigate("/config/areas");
-    if (tabId === "levels_categories") navigate("/config/niveles-categorias");
-    if (tabId === "costs") navigate("/config/costos");
-    if (tabId === "forms") navigate("/config/formularios");
-  };
+    fetchAreas();
+  }, []);
 
+  useEffect(() => {
+    const fetchLevels = async () => {
+      try {
+        setIsLoading(true);
+        const fetchedLevels = await getLevels();
+        
+        if (!fetchedLevels || !Array.isArray(fetchedLevels)) {
+          setErrorMessage("Formato de respuesta inválido al cargar niveles.");
+          return;
+        }
+
+        const formattedLevels = fetchedLevels.map(level => {
+          if (!level) return null;
+          
+          if (level.id === undefined || level.id === null) {
+            console.error("Nivel sin ID:", level);
+            return null; 
+          }
+          
+          const areaName = level.area ? 
+                          (typeof level.area === 'object' ? level.area.name : level.area) : 
+                          'Área no disponible';
+          
+          return {
+            id: level.id,
+            name: level.name || "Sin nombre",
+            areaId: level.areaId,
+            area: areaName,
+            description: level.description || '',
+            gradeName: level.gradeName,
+            gradeMin: level.gradeMin,
+            gradeMax: level.gradeMax,
+          };
+        }).filter(Boolean);
+        
+        setLevels(formattedLevels);
+      } catch (error) {
+        console.error("Error fetching levels:", error);
+        setErrorMessage("Error al cargar los niveles. Por favor, recargue la página.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchLevels();
+  }, []);
+  
   const handleChange = (field, value) => {
     setFormValues({ ...formValues, [field]: value });
   };
 
-  const handleSubmit = () => {
-    if (
-      !formValues.name.trim() ||
-      !formValues.area.trim() ||
-      !formValues.level.trim() ||
-      !formValues.minGrade.trim() ||
-      !formValues.maxGrade.trim()
-    ) {
-      setErrorMessage("* Completa los campos obligatorios");
+  const extractGradeNumber = (grade) => {
+    const match = grade.match(/^([1-6])/);
+    return match ? parseInt(match[1], 10) : 0;
+  };
+
+  const validateFormFields = () => {
+    const errorFieldsList = [];
+    
+    if (!formValues.name.trim()) {
+      errorFieldsList.push("Nombre del Nivel/Categoría: Campo obligatorio");
+    }
+    
+
+    if (!isEditing) {
+      if (!formValues.area.trim()) {
+        errorFieldsList.push("Área: Debe seleccionar un área");
+      }
+      
+      if (!formValues.level.trim()) {
+        errorFieldsList.push("Nivel de Grado: Debe seleccionar un nivel");
+      }
+    }
+    
+    if (!formValues.minGrade.trim()) {
+      errorFieldsList.push("Grado Mínimo: Campo obligatorio");
+    }
+
+    if (errorFieldsList.length > 0) {
+      setValidationError("Por favor complete todos los campos obligatorios");
+      setErrorFields(errorFieldsList);
+      setShowErrorModal(true);
+      return false;
+    }
+    
+    const minGradePattern = /^[1-6](ro|do|to)$/;
+    if (formValues.minGrade.trim() && !minGradePattern.test(formValues.minGrade.trim())) {
+      errorFieldsList.push("Grado Mínimo: Formato incorrecto. Debe ser como '1ro', '2do', etc.");
+    }
+
+    if (formValues.minGrade.trim() && formValues.minGrade.trim().length > 3) {
+      errorFieldsList.push("Grado Mínimo: No debe exceder los 3 caracteres");
+    }
+
+    if (formValues.maxGrade.trim()) {
+      const maxGradePattern = /^[1-6](ro|do|to)$/;
+      if (!maxGradePattern.test(formValues.maxGrade.trim())) {
+        errorFieldsList.push("Grado Máximo: Formato incorrecto. Debe ser como '1ro', '2do', etc.");
+      }
+      
+      if (formValues.maxGrade.trim().length > 3) {
+        errorFieldsList.push("Grado Máximo: No debe exceder los 3 caracteres");
+      }
+
+      const minGradeNum = extractGradeNumber(formValues.minGrade.trim());
+      const maxGradeNum = extractGradeNumber(formValues.maxGrade.trim());
+      
+      if (maxGradeNum <= minGradeNum) {
+        errorFieldsList.push("Grado Máximo: Debe ser mayor al grado mínimo");
+      }
+    }
+
+    const description = formValues.description.trim();
+    if (description) {
+      if (description.length < 10) {
+        errorFieldsList.push(`Descripción: Debe tener al menos 10 caracteres (actual: ${description.length})`);
+      }
+      
+      if (description.length > 150) {
+        errorFieldsList.push(`Descripción: No debe exceder los 150 caracteres (actual: ${description.length})`);
+      }
+      
+      if (/^[0-9]/.test(description)) {
+        errorFieldsList.push("Descripción: No debe iniciar con caracteres numéricos");
+      }
+      
+      if (/[0-9]{3,}/.test(description)) {
+        errorFieldsList.push("Descripción: No debe contener más de 2 números consecutivos");
+      }
+    }
+
+    if (errorFieldsList.length > 0) {
+      setValidationError("Hay errores en el formulario que deben corregirse");
+      setErrorFields(errorFieldsList);
+      setShowErrorModal(true);
+      return false;
+    }
+    
+    return true;
+  };
+
+  const handleSubmit = async () => {
+    if (!validateFormFields()) {
       return;
     }
 
-    setErrorMessage("");
-    setShowModal(true);
+    try {
+      setIsLoading(true);
+      setErrorMessage("");
+      
+      let result;
+      
+      if (isEditing && currentLevelId) {
+
+        const currentLevel = levels.find(level => level.id === currentLevelId);
+        
+        if (!currentLevel) {
+          throw new Error("No se pudo encontrar el nivel a editar");
+        }
+        
+
+        const updateData = {
+
+          areaId: currentLevel.areaId,
+          gradeName: currentLevel.gradeName,
+
+          name: formValues.name,
+          description: formValues.description,
+          gradeMin: formValues.minGrade,
+          gradeMax: formValues.maxGrade.trim() ? formValues.maxGrade : null
+        };
+        
+        result = await updateLevel(currentLevelId, updateData);
+        
+        setLevels(levels.map(level => {
+          if (level.id === currentLevelId) {
+            return {
+              ...level,
+              name: result.name,
+              description: result.description,
+              gradeMin: result.gradeMin,
+              gradeMax: result.gradeMax
+            };
+          }
+          return level;
+        }));
+        
+        setSuccessTittle("Actualización Exitosa!");
+        setSuccessMessage("La actualización se realizó con éxito");
+        setSuccessDetails(`Se ha actualizado el nivel/categoría "${result.name}" correctamente.`);
+      } else {
+
+        const areaId = parseInt(formValues.area, 10);
+        
+        const levelData = {
+          areaId: areaId,
+          name: formValues.name,
+          description: formValues.description,
+          gradeName: formValues.level,
+          gradeMin: formValues.minGrade,
+          gradeMax: formValues.maxGrade.trim() ? formValues.maxGrade : null
+        };
+
+        result = await createLevel(levelData);
+        
+        const areaName = areasMap[areaId]?.name || 'Área no disponible';
+        
+        setLevels([...levels, {
+          ...result,
+          area: areaName
+        }]);
+        
+        setSuccessTittle("Registro Exitoso!");
+        setSuccessMessage("El registro se realizó con éxito");
+        setSuccessDetails(`Se ha creado el nivel/categoría "${result.name}" para el área "${areaName}" correctamente.`);
+      }
+      
+      setShowSuccessModal(true);
+      
+    } catch (error) {
+      console.error("Error en la operación:", error);
+      
+      if (error.response?.status === 409) {
+        setValidationError("Error de duplicidad");
+        setErrorFields([`El nivel/categoría "${formValues.name}" ya existe para el área seleccionada.`]);
+      } else if (error.response?.status === 400) {
+        setValidationError("Error de validación");
+        setErrorFields([error.response?.data?.message || "Datos inválidos"]);
+      } else if (error.response?.status === 422) {
+        setValidationError("Error de validación");
+        const errorMessages = error.response?.data?.errors 
+          ? Object.values(error.response.data.errors).flat() 
+          : ["Datos inválidos"];
+        setErrorFields(errorMessages);
+      } else {
+        setValidationError("Error en el servidor");
+        setErrorFields([`Error al ${isEditing ? 'actualizar' : 'crear'} el nivel. Intenta nuevamente.`]);
+      }
+      
+      setShowErrorModal(true);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleCancel = () => {
     setShowForm(false);
+    setIsEditing(false);
+    setCurrentLevelId(null);
     setErrorMessage("");
+    resetForm();
   };
 
-  const handleModalClose = () => {
-    setShowModal(false);
-    setShowForm(false);
+  const resetForm = () => {
     setFormValues({
       name: "",
       area: "",
@@ -78,85 +334,223 @@ const NivelesYCategorias = () => {
     });
   };
 
+  const handleEditClick = (level) => {
+    console.log("Editando nivel:", level);
+    
+    if (!level || !level.id) {
+      console.error("Nivel inválido para editar:", level);
+      return;
+    }
+    
+    setIsEditing(true);
+    setCurrentLevelId(level.id);
+    
+    setFormValues({
+      name: level.name || "",
+      area: level.areaId?.toString() || "",
+      level: level.gradeName || "",
+      minGrade: level.gradeMin || "",
+      maxGrade: level.gradeMax || "",
+      description: level.description || "",
+    });
+    
+
+    setShowForm(true);
+    
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleSuccessModalClose = () => {
+    setShowSuccessModal(false);
+    setShowForm(false);
+    resetForm();
+    setIsEditing(false);
+    setCurrentLevelId(null);
+  };
+
+  const handleErrorModalClose = () => {
+    setShowErrorModal(false);
+  };
+
+  const handleDeleteClick = (levelId) => {
+    console.log("ID recibido para eliminar:", levelId);
+
+    if (levelId === undefined || levelId === null) {
+      console.error("El ID a eliminar no es válido:", levelId);
+      setValidationError("Error al intentar eliminar");
+      setErrorFields(["No se recibió un ID válido para eliminar."]);
+      setShowErrorModal(true);
+      return;
+    }
+
+    const levelToRemove = levels.find(level => level.id === levelId);
+    
+    if (!levelToRemove) {
+      console.error(`No se encontró nivel con ID ${levelId}`);
+      setValidationError("Error al intentar eliminar");
+      setErrorFields([`No se encontró el nivel con ID ${levelId} en la lista actual.`]);
+      setShowErrorModal(true);
+      return;
+    }
+    
+    setLevelToDelete({
+      id: levelId,
+      name: levelToRemove.name || 'Sin nombre'
+    });
+    
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteCancel = () => {
+    setShowDeleteModal(false);
+    setLevelToDelete(null);
+  };
+
+  const handleDeleteConfirm = async () => {
+    console.log("Confirmando eliminación:", levelToDelete);
+    
+    if (!levelToDelete || !levelToDelete.id) {
+      console.error("No hay ID para eliminar");
+      setValidationError("Error al eliminar");
+      setErrorFields([
+        "No se pudo identificar correctamente el nivel/categoría a eliminar.",
+        "Por favor, intente nuevamente."
+      ]);
+      setShowErrorModal(true);
+      setShowDeleteModal(false);
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      
+      const levelId = levelToDelete.id;
+      console.log("Intentando eliminar nivel con ID:", levelId);
+      
+      await deleteLevel(levelId);
+      
+      setLevels(levels.filter(level => level.id !== levelId));
+
+      setSuccessTittle("Eliminación exitosa!");
+      setSuccessMessage("La eliminacion del nivel fue exitosa. ");
+      setSuccessDetails(`Se ha eliminado el nivel/categoría "${levelToDelete.name}" correctamente.`);
+      setShowSuccessModal(true);
+    } catch (error) {
+      console.error("Error al eliminar nivel:", error);
+      
+      setValidationError("Error al eliminar");
+      setErrorFields([
+        `No se pudo eliminar el nivel/categoría "${levelToDelete.name || ''}".`,
+        error.message || "Inténtelo de nuevo más tarde."
+      ]);
+      setShowErrorModal(true);
+    } finally {
+      setIsLoading(false);
+      setShowDeleteModal(false);
+      setLevelToDelete(null);
+    }
+  };
+
   const columns = [
     { key: "name", title: "Nombre" },
     { key: "area", title: "Área" },
     { key: "description", title: "Descripción" },
-    { key: "participants", title: "Participantes" },
-  ];
-
-  const data = [
-    { name: "Básico", area: "Matemáticas", description: "Nivel para principiantes", participants: 30 },
-    { name: "Intermedio", area: "Matemáticas", description: "Nivel para estudiantes con conocimientos medios", participants: 25 },
-    { name: "Avanzado", area: "Matemáticas", description: "Nivel para estudiantes avanzados", participants: 20 },
-    { name: "Primaria", area: "Todas", description: "Para estudiantes de 6-12 años", participants: 45 },
-    { name: "Secundaria", area: "Todas", description: "Para estudiantes de 13-17 años", participants: 78 },
-    { name: "Universitaria", area: "Todas", description: "Para estudiantes de 18-25 años", participants: 111 },
+    { key: "gradeName", title: "Nivel de Grado" },
+    { key: "gradeMin", title: "Grado Minimo" },
+    { key: "gradeMax", title: "Grado Máximo" },
   ];
 
   return (
     <div className="app-container relative">
+      {/* Modal de éxito */}
+      <SuccessModal
+        isOpen={showSuccessModal}
+        onClose={handleSuccessModalClose}
+        tittleMessage={successTittle}
+        successMessage={successMessage}
+        detailMessage={successDetails}
+      />
+      
+      {/* Modal de error */}
+      <ErrorModal 
+        isOpen={showErrorModal}
+        onClose={handleErrorModalClose}
+        errorMessage={validationError}
+        errorFields={errorFields}
+      />
 
-{showModal && (
-  <div className="modal-overlay">
-    <div className="modal-content"> 
-            <h2 className="text-xl font-semibold text-blue-800 mb-2">✔ Registro exitoso</h2>
-            <p className="text-gray-700 mb-6">El registro se realizó con éxito.</p>
-            <div className="flex justify-end">
-              <button
-                onClick={handleModalClose}
-                className="bg-blue-800 hover:bg-blue-900 text-white px-4 py-2 rounded"
-              >
-                Aceptar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Modal de confirmación de eliminación */}
+      <DeleteConfirmationModal
+        isOpen={showDeleteModal}
+        onClose={handleDeleteCancel}
+        onConfirm={handleDeleteConfirm}
+        itemName={levelToDelete?.name || ''}
+        itemType="nivel/categoría"
+      />
 
-<Card
-          title="Niveles o Categorías"
-          action={
-            <Button onClick={() => setShowForm(!showForm)}>
-              {showForm ? "Cancelar" : "+ Nuevo Nivel/Categoría"}
-            </Button>
-          }
+      <Card
+        title="Niveles o Categorías"
+        action={
+          <Button onClick={() => {
+            if (showForm && isEditing) {
+              setIsEditing(false);
+              setCurrentLevelId(null);
+              resetForm();
+            } else {
+              setShowForm(!showForm);
+              
+              if (showForm) {
+                setIsEditing(false);
+                setCurrentLevelId(null);
+                resetForm();
+              }
+            }
+          }} disabled={isLoading}>
+            {showForm 
+              ? (isEditing ? "Cancelar Edición" : "Cancelar") 
+              : "+ Nuevo Nivel/Categoría"}
+          </Button>
+        }
+      >
+        <div
+          style={{
+            backgroundColor: '#DBEAFE', 
+            color: '#1D4ED8',          
+            padding: '1rem 1.5rem',     
+            borderRadius: '0.75rem',    
+            fontSize: '0.875rem',       
+            marginBottom: '1.5rem',     
+            boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)', 
+          }}
         >
-          
+          Configure los niveles o categorías para las diferentes áreas de competencia. Los niveles pueden ser por grado de dificultad (Básico, Intermedio, Avanzado) y por categoría educativa (Primaria, Secundaria, Universitaria).
+        </div>
 
-          <div
-  style={{
-    backgroundColor: '#DBEAFE', // fondo azul claro
-    color: '#1D4ED8',           // texto azul medio
-    padding: '1rem 1.5rem',     // padding vertical y horizontal
-    borderRadius: '0.75rem',    // bordes redondeados grandes
-    fontSize: '0.875rem',       // texto tamaño sm
-    marginBottom: '1.5rem',     // espacio inferior
-    boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)', // sombra suave
-  }}
->
-  Configure los niveles o categorías para las diferentes áreas de competencia. Los niveles pueden ser por grado de dificultad (Básico, Intermedio, Avanzado) y por categoría educativa (Primaria, Secundaria, Universitaria).
-</div>
+        {errorMessage && (
+          <div className="text-red-600 font-medium mb-4">
+            {errorMessage}
+          </div>
+        )}
 
+        {showForm && (
+          <FormularioNivelCategoria
+            values={formValues}
+            onChange={handleChange}
+            onSubmit={handleSubmit}
+            onCancel={handleCancel}
+            isEditing={isEditing}
+            areas={areas} 
+          />
+        )}
 
-
-          {errorMessage && (
-            <div className="text-red-600 font-medium mb-4">
-              {errorMessage}
-            </div>
-          )}
-
-          {showForm && (
-            <FormularioNivelCategoria
-              values={formValues}
-              onChange={handleChange}
-              onSubmit={handleSubmit}
-              onCancel={handleCancel}
-            />
-          )}
-
-          <Table columns={columns} data={data} onEdit={() => {}} onDelete={() => {}} />
-        </Card>
+        <Table
+          columns={columns}
+          data={levels}
+          onEdit={handleEditClick}
+          onDelete={handleDeleteClick}
+          emptyMessage="No hay niveles o categorías registrados"
+        />
+      </Card>
     </div>
   );
 };

@@ -17,8 +17,8 @@ return new class extends Migration
             $table->string('name', 20);
             $table->string('description', 150);
             $table->enum('grade_name', [
-                'Primary',
-                'High_School'
+                'Primaria',
+                'Secundaria'
             ]);
             $table->string('grade_min', 3);
             $table->string('grade_max', 3)->nullable(true);
