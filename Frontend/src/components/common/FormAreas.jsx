@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types */
 import  { useState } from 'react';
-import '../../styles/components/Form.css';
+import '../../styles/components/FormAreas.css';
 
 const Form = ({ 
   title, 

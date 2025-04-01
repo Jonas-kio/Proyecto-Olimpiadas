@@ -10,7 +10,7 @@ use App\Http\Middleware\IsAdmin;
 use App\Http\Middleware\IsUserAuth;
 
 //TODO: Rutas Publicas
-Route::post('register', [AuthController::class, 'register']);
+/* Route::post('register', [AuthController::class, 'register']);
 Route::post('login', [AuthController::class, 'login']);
 
 //TODO: Rutas Privadas
@@ -50,7 +50,7 @@ Route::middleware([IsUserAuth::class])->group(
         //TODO: Rutas Para Usuario que no es administrador
         //....... AQUI!!!
     }
-);
+); */
 
 
 //Rutas para Costos
@@ -64,13 +64,13 @@ Route::get('/user', function (Request $request) {
 })->middleware('auth:sanctum'); 
 */
 
-/* // Rutas para Áreas de Competencia
+ // Rutas para Áreas de Competencia
 Route::apiResource('area', AreaController::class);
 
 // Ruta para cambiar el estado de un área
 Route::patch('area/{id}/status', [AreaController::class, 'changeStatus']);
 Route::patch('areas/{id}/status', [AreaController::class, 'changeStatus']);
- */
+ 
 
 //Rutas para el controlador  de category_lavel
 /* 
