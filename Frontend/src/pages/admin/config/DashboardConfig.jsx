@@ -1,7 +1,6 @@
 import { useState } from 'react';
 
 
-import MainContent from '../../../components/layout/MainContent';
 import Tabs from '../../../components/ui/Tabs';
 import ContentConfig from '../../../components/layout/ContentConfig';
 import Areas from './Areas';
@@ -35,19 +34,14 @@ const DashboardConfig = () => {
     return (
         
         <div className="Config-Panel">
-            <MainContent 
-                title="Panel de Administración" 
-                subtitle="Gestión de olimpiadas"
-            >
-                <Tabs 
-                    tabs={tabs} 
-                    activeTab={activeTab} 
-                    onTabChange={setActiveTab} 
-                />
-                <ContentConfig>
-                    {renderContent()}
-                </ContentConfig>
-            </MainContent> 
+          <Tabs 
+            tabs={tabs} 
+            activeTab={activeTab} 
+            onTabChange={setActiveTab} 
+          />
+          <ContentConfig>
+            {renderContent()}
+          </ContentConfig>
         </div>
     );
 }
