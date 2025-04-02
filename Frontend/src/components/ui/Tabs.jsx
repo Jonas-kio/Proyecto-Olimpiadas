@@ -1,4 +1,5 @@
-import React from 'react';
+/* eslint-disable react/prop-types */
+
 import '../../styles/components/Tabs.css';
 
 const Tabs = ({ tabs, activeTab, onTabChange }) => {

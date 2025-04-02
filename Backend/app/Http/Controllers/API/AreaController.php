@@ -25,12 +25,10 @@ class AreaController extends Controller
     public function index(Request $request)
     {
         try {
-            // Si se especifica un estado como parámetro, filtrar por ese estado
             if ($request->has('activo')) {
                 $activo = filter_var($request->activo, FILTER_VALIDATE_BOOLEAN);
                 $areas = $this->areaService->getAreasByStatus($activo);
             } else {
-                // Si no se especifica, devolver todas
                 $areas = $this->areaService->getAllAreas();
             }
 
@@ -46,9 +44,6 @@ class AreaController extends Controller
         }
     }
 
-    /**
-     * Almacenar un área de competencia.
-     */
     public function store(AreaStoreRequest $request)
     {
         try {
