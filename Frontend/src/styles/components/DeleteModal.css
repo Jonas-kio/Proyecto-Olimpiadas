@@ -1,6 +1,6 @@
-
-
-.modal-overlay {
+/* DeleteModal.css */
+/* Clases específicas para el componente DeleteConfirmationModal */
+.delete-modal__overlay {
     position: fixed;
     top: 0;
     left: 0;
@@ -13,7 +13,7 @@
     z-index: 1000;
 }
 
-.modal-content {
+.delete-modal__content {
     background-color: white;
     border-radius: 6px;
     width: 100%;
@@ -23,41 +23,37 @@
     text-align: center;
 }
 
-.delete-icon {
+.delete-modal__icon {
     color: #e11d48;
-
     margin: 0 auto 16px;
     display: flex;
     justify-content: center;
 }
 
-.modal-title {
+.delete-modal__title {
     color: #1f2937;
-
     font-weight: 600;
     text-align: center;
     margin-bottom: 16px;
     font-size: 18px;
 }
 
-.modal-message {
+.delete-modal__message {
     color: #4b5563;
-
     text-align: center;
     margin-bottom: 20px;
     line-height: 1.5;
 }
 
-.modal-actions {
+.delete-modal__actions {
     display: flex;
     justify-content: center;
     gap: 10px;
     margin-top: 20px;
 }
 
-.modal-button-cancel {
+.delete-modal__button-cancel {
     background-color: #f3f4f6;
-
     color: #4b5563;
     font-weight: 500;
     padding: 8px 16px;
@@ -66,13 +62,12 @@
     cursor: pointer;
 }
 
-.modal-button-cancel:hover {
+.delete-modal__button-cancel:hover {
     background-color: #e5e7eb;
 }
 
-.modal-button-delete {
+.delete-modal__button-delete {
     background-color: #e11d48;
-
     color: white;
     font-weight: 500;
     padding: 8px 16px;
@@ -81,10 +76,6 @@
     cursor: pointer;
 }
 
-.modal-button-delete:hover {
+.delete-modal__button-delete:hover {
     background-color: #be123c;
-
 }
-
-
-/* Mis estilos  */
