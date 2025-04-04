@@ -4,10 +4,6 @@ import { useState } from 'react';
 import Tabs from '../../../components/ui/Tabs';
 import ContentConfig from '../../../components/layout/ContentConfig';
 import Areas from './Areas';
-<<<<<<< HEAD
-//import Configuracion from './Configuracion';
-=======
->>>>>>> 54c66004d81304e09e416cb6211ed1e589d2eeb1
 import CostosConfiguracion from './CostosConfiguracion';
 import NivelesYCategorias from './NivelesYCategorias';
 

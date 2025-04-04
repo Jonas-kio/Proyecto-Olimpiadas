@@ -60,16 +60,10 @@ const FormularioNivelCategoria = ({ values, onChange, onSubmit, onCancel, isEdit
   };
 
   return (
-<<<<<<< HEAD
-    
-    <div className="formulario-nivel max-w-0xl mx-auto p-1 bg-gray-50 border rounded-lg shadow-sm">
 
-      <h3 className="formulario-titulo">Nuevo Nivel/Categoría</h3>
-=======
     <div className="formulario-nivel">
       <h3 className="formulario-titulo">{isEditing ? 'Editar Nivel/Categoría' : 'Nuevo Nivel/Categoría'}</h3>
       {error && <div className="error-message">{error}</div>}
->>>>>>> 54c66004d81304e09e416cb6211ed1e589d2eeb1
       <div className="form-grid">
 
         {/* Fila 1: Nombre y Área */}
