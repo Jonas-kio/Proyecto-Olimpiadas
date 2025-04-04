@@ -1,8 +1,8 @@
-/* eslint-disable react/prop-types */
-import  { useState } from 'react';
-import '../../styles/components/FormAreas.css';
+import { useState } from 'react';
+import PropTypes from 'prop-types';
+import '../../styles/FormAreas.css';
 
-const Form = ({ 
+const FormAreas = ({ 
   title, 
   fields, 
   values, 
@@ -11,8 +11,10 @@ const Form = ({
   onCancel, 
   submitLabel = 'Guardar', 
   cancelLabel = 'Cancelar',
-  errors = {},  // Nuevo prop para recibir errores
-  loading = false  // Nuevo prop para estado de carga
+  errors = {},
+  loading = false,
+  submitDisabled = false,
+  hideFieldErrors = false
 }) => {
   // Estado para rastrear campos tocados por el usuario
   const [touchedFields, setTouchedFields] = useState({});
@@ -45,26 +47,31 @@ const Form = ({
 
   // Determinar si se debe mostrar un mensaje de error
   const shouldShowError = (fieldName) => {
+    // Si hideFieldErrors es true, no mostrar errores bajo los campos
+    if (hideFieldErrors) return false;
     return touchedFields[fieldName] && errors[fieldName];
   };
 
   return (
     <div className="form-container form-full-width">
       <form className="area-form" onSubmit={handleSubmit}>
-        <div className="form-header">
-          <h3>{title}</h3>
-        </div>
+        {title && (
+          <div className="form-header">
+            <h3>{title}</h3>
+          </div>
+        )}
         
         <div className="form-row">
           {fields.map((field) => (
             <div className="form-column" key={field.name}>
-              <label>
+              <label htmlFor={field.name}>
                 {field.label}
                 {field.required && <span className="required-mark">*</span>}
               </label>
               
               {field.type === 'textarea' ? (
                 <textarea
+                  id={field.name}
                   name={field.name}
                   value={values[field.name] || ''}
                   onChange={(e) => handleChange(field.name, e.target.value)}
@@ -76,6 +83,7 @@ const Form = ({
                 />
               ) : (
                 <input
+                  id={field.name}
                   type={field.type || 'text'}
                   name={field.name}
                   value={values[field.name] || ''}
@@ -96,7 +104,7 @@ const Form = ({
         </div>
         
         {/* Error general del formulario */}
-        {errors.general && (
+        {errors.general && !hideFieldErrors && (
           <div className="error-general">{errors.general}</div>
         )}
         
@@ -112,7 +120,7 @@ const Form = ({
           <button 
             type="submit" 
             className="btn-save"
-            disabled={loading}
+            disabled={loading || submitDisabled}
           >
             {loading ? 'Procesando...' : submitLabel}
           </button>
@@ -122,4 +130,27 @@ const Form = ({
   );
 };
 
-export default Form;
+FormAreas.propTypes = {
+  title: PropTypes.string,
+  fields: PropTypes.arrayOf(
+    PropTypes.shape({
+      name: PropTypes.string.isRequired,
+      label: PropTypes.string.isRequired,
+      type: PropTypes.string,
+      required: PropTypes.bool,
+      placeholder: PropTypes.string
+    })
+  ).isRequired,
+  values: PropTypes.object.isRequired,
+  onChange: PropTypes.func.isRequired,
+  onSubmit: PropTypes.func.isRequired,
+  onCancel: PropTypes.func.isRequired,
+  submitLabel: PropTypes.string,
+  cancelLabel: PropTypes.string,
+  errors: PropTypes.object,
+  loading: PropTypes.bool,
+  submitDisabled: PropTypes.bool,
+  hideFieldErrors: PropTypes.bool
+};
+
+export default FormAreas;

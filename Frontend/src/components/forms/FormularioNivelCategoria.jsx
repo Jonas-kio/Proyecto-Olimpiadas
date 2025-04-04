@@ -60,6 +60,7 @@ const FormularioNivelCategoria = ({ values, onChange, onSubmit, onCancel, isEdit
   };
 
   return (
+
     <div className="formulario-nivel">
       <h3 className="formulario-titulo">{isEditing ? 'Editar Nivel/Categoría' : 'Nuevo Nivel/Categoría'}</h3>
       {error && <div className="error-message">{error}</div>}
@@ -178,7 +179,6 @@ const FormularioNivelCategoria = ({ values, onChange, onSubmit, onCancel, isEdit
           </div>
         </div>
       </div>
-
       <div className="form-actions">
         <button className="btn-outline" onClick={onCancel}>Cancelar</button>
         <button className="btn-primary" onClick={onSubmit}>
