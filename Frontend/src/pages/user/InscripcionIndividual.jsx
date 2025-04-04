@@ -515,7 +515,7 @@ const InscripcionIndividual = () => {
 
         {paso === 4 && (
           <>
-            <h2>Confirmación de Inscripción</h2>
+            <h2>Confirmación de Inscripción PArteKEVIN</h2>
             <p>Revise sus datos antes de confirmar la inscripción.</p>
             <div className="campo checkbox">
               <label>
