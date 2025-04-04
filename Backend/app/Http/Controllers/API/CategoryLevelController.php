@@ -4,7 +4,6 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Services\CategoryLevelService;
-use Illuminate\Http\Request;
 use Exception;
 
 use App\Http\Requests\CategoryLevelRequest\CategoryLevelStoreRequest;
@@ -19,7 +18,7 @@ class CategoryLevelController extends Controller
         $this->categoryLevelService = $categoryLevelService;
     }
 
-    public function index(Request $request)
+    public function index()
     {
         try {
             $categoryLevels = $this->categoryLevelService->getAllCategoryLevels();

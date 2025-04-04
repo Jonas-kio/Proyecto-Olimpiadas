@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 
-use App\Http\Controllers\CostController;
+use App\Http\Controllers\API\CostController;
 use App\Http\Controllers\API\AreaController;
 use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\API\CategoryLevelController;
@@ -10,6 +10,7 @@ use App\Http\Middleware\IsAdmin;
 use App\Http\Middleware\IsUserAuth;
 
 use App\Http\Controllers\CompetitorController;
+use App\Http\Controllers\CostController as ControllersCostController;
 
 //Ruta del competidor
 Route::post('/inscripcion/competidor', [CompetitorController::class, 'store']);
@@ -59,11 +60,13 @@ Route::middleware([IsUserAuth::class])->group(
 );*/
 
 //Rutas para Costos
-
-Route::get('/costs', [CostController::class, 'index']);
-Route::post('/costs', [CostController::class, 'store']);
-Route::put('/costs/{cost}', [CostController::class, 'update']);
-Route::delete('/costs/{cost}', [CostController::class, 'destroy']);
+Route::group(['prefix' => 'costs'], function () {
+    Route::get('/', [CostController::class, 'index']);
+    Route::get('/{id}', [CostController::class, 'show']);
+    Route::post('/', [CostController::class, 'store']);
+    Route::patch('/{id}', [CostController::class, 'update']);
+    Route::delete('/{id}', [CostController::class, 'destroy']);
+});
 
 
 
