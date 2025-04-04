@@ -8,6 +8,12 @@ use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\API\CategoryLevelController;
 use App\Http\Middleware\IsAdmin;
 use App\Http\Middleware\IsUserAuth;
+
+use App\Http\Controllers\CompetitorController;
+
+//Ruta del competidor
+Route::post('/inscripcion/competidor', [CompetitorController::class, 'store']);
+
 /*
 //TODO: Rutas Publicas
 Route::post('register', [AuthController::class, 'register']);
