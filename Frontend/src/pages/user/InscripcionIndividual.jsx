@@ -29,23 +29,31 @@ const InscripcionIndividual = () => {
     try {
       const respuesta = await inscripcionCompetidor(formulario);
       console.log("Inscripción exitosa", respuesta.data);
-      // Aquí puedes mostrar un mensaje de éxito o avanzar al siguiente paso
+
+      // Mostrar mensaje solo si se guardó bien
+      alert("Inscripción exitosa");
+      navigate("/Inscripcion");
     } catch (error) {
+      const mensajeError =
+        error.response?.data?.message ||
+        "Error al guardar los datos. Por favor, verifique los campos.";
       console.error(
         "Error al inscribir:",
         error.response?.data || error.message
       );
-      // Aquí puedes mostrar mensajes de error del backend
+
+      alert(`No se pudo guardar: ${mensajeError}`);
+      // navigate("/InscripcionIndividual");
     }
   };
   //
   //
-  const confirmarInscripcion = (e) => {
-    // e.preventDefault();
-    // onSubmit = { handleSubmit };
-    alert("Inscripción exitosa");
-    navigate("/Inscripcion");
-  };
+  // const confirmarInscripcion = (e) => {
+  //   // e.preventDefault();
+  //   // onSubmit = { handleSubmit };
+  //   // alert("Inscripción exitosa");
+  //   navigate("/Inscripcion");
+  // };
 
   const [paso, setPaso] = useState(1);
   const [estudiante, setEstudiante] = useState({
@@ -194,11 +202,13 @@ const InscripcionIndividual = () => {
                   type="text"
                   name="documento_identidad"
                   placeholder={
-                    errores.ci ? "Ingrese su numero de carnet" : "Ej. 12345678"
+                    errores.documento_identidad
+                      ? "Ingrese su numero de carnet"
+                      : "Ej. 12345678"
                   }
-                  value={estudiante.ci}
+                  value={estudiante.documento_identidad}
                   onChange={handleEstudianteChange}
-                  className={errores.ci ? "error" : ""}
+                  className={errores.documento_identidad ? "error" : ""}
                 />
               </div>
               <div className="campo">
@@ -226,9 +236,9 @@ const InscripcionIndividual = () => {
                 <input
                   type="date"
                   name="fecha_nacimiento"
-                  value={estudiante.nacimiento}
+                  value={estudiante.fecha_nacimiento}
                   onChange={handleEstudianteChange}
-                  className={errores.nacimiento ? "error" : ""}
+                  className={errores.fecha_nacimiento ? "error" : ""}
                 />
               </div>
               <div className="campo">
@@ -242,18 +252,19 @@ const InscripcionIndividual = () => {
                   className={errores.curso ? "error" : ""}
                 >
                   <option value="">Seleccione un curso</option>
-                  <option value="1ro A">1ro A</option>
-                  <option value="1ro B">1ro B</option>
-                  <option value="1ro C">1ro C</option>
-                  <option value="2do A">2do A</option>
-                  <option value="2do B">2do B</option>
-                  <option value="2do C">2do C</option>
-                  <option value="3ro A">3ro A</option>
-                  <option value="3ro B">3ro B</option>
-                  <option value="3ro C">3ro C</option>
-                  <option value="4to A">4to A</option>
-                  <option value="4to B">4to B</option>
-                  <option value="4to C">4to C</option>
+                  <option value="1ro Primaria">1ro Primaria</option>
+                  <option value="2do Primaria">2do Primaria</option>
+                  <option value="3ro Primaria">3ro Primaria</option>
+                  <option value="4to Primaria">4to Primaria</option>
+                  <option value="5to Primaria">5to Primaria</option>
+                  <option value="6to Primaria">6to Primaria</option>
+                  {/* -   */}
+                  <option value="1ro Secundaria">1ro Secundaria</option>
+                  <option value="2do Secundaria">2do Secundaria</option>
+                  <option value="3ro Secundaria">3ro Secundaria</option>
+                  <option value="4to Secundaria">4to Secundaria</option>
+                  <option value="5to Secundaria">5to Secundaria</option>
+                  <option value="6to Secundaria">6to Secundaria</option>
                 </select>
               </div>
             </div>
@@ -266,13 +277,13 @@ const InscripcionIndividual = () => {
                 type="email"
                 name="correo_electronico"
                 placeholder={
-                  errores.correo
+                  errores.correo_electronico
                     ? "Ingrese su correo electronico"
                     : "ejemplo@correo.com"
                 }
-                value={estudiante.correo}
+                value={estudiante.correo_electronico}
                 onChange={handleEstudianteChange}
-                className={errores.correo ? "error" : ""}
+                className={errores.correo_electronico ? "error" : ""}
               />
             </div>
 
@@ -537,9 +548,7 @@ const InscripcionIndividual = () => {
               Siguiente
             </button>
           ) : (
-            <button type="submit" onClick={siguiente}>
-              Confirmar y Generar Boleta
-            </button>
+            <button type="submit">Confirmar y Generar Boleta</button>
           )}
         </div>
       </form>
