@@ -12,9 +12,10 @@ import {
   getAllAreas, 
   createArea, 
   updateArea, 
-  deleteArea, 
-  changeAreaStatus 
+  deleteArea
 } from '../../../services/areasService';
+
+import { getLevels } from '../../../services/nivelesService';
 
 import {
   validateAreaForm,
@@ -26,6 +27,7 @@ import {
 const Areas = () => {
   // Estados para datos y UI
   const [areas, setAreas] = useState([]);
+  const [niveles, setNiveles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showAreaForm, setShowAreaForm] = useState(false);
@@ -33,7 +35,7 @@ const Areas = () => {
   const [editingId, setEditingId] = useState(null);
   const [formErrors, setFormErrors] = useState({});
   const [isFormSubmitted, setIsFormSubmitted] = useState(false);
-  const [hideFieldErrors, setHideFieldErrors] = useState(false);
+  const [hideFieldErrors, setHideFieldErrors] = useState(true); // Iniciar con true para ocultar errores en campos
 
   // Estados para modales
   const [deleteModal, setDeleteModal] = useState({
@@ -53,11 +55,15 @@ const Areas = () => {
     fields: []
   });
 
-  // Definición de columnas para la tabla (sin la columna de Estado)
+  // Definición de columnas para la tabla
   const columns = [
     { key: 'name', title: 'Nombre' },
     { key: 'description', title: 'Descripción' },
-    { key: 'levels', title: 'Niveles' },
+    { 
+      key: 'niveles', 
+      title: 'Niveles',
+      render: (_, row) => renderNiveles(row)
+    },
     { key: 'participants', title: 'Participantes' },
     {
       key: 'actions',
@@ -65,6 +71,26 @@ const Areas = () => {
       render: (_, row) => renderActions(row)
     }
   ];
+
+  // Renderizar los niveles asociados a un área como un número
+  const renderNiveles = (row) => {
+    // Filtrar los niveles que pertenecen a esta área específica
+    // Importante comprobar tanto el areaId como área.id debido a las diferentes estructuras de datos
+    const nivelesDelArea = niveles.filter(nivel => {
+      // Normalizar el areaId del nivel considerando ambas estructuras posibles
+      const nivelAreaId = nivel.areaId || (nivel.area && nivel.area.id);
+      
+      // Comparar con el id del área actual
+      return nivelAreaId === row.id;
+    });
+    
+    // Mostrar el número de niveles asociados a esta área
+    return (
+      <div className="niveles-count">
+        {nivelesDelArea.length}
+      </div>
+    );
+  };
 
   // Definición de campos para el formulario
   const areaFields = [
@@ -83,34 +109,73 @@ const Areas = () => {
     }
   ];
 
-  // Cargar áreas al montar el componente
+  // Cargar áreas y niveles al montar el componente
   useEffect(() => {
-    fetchAreas();
+    fetchData();
   }, []);
 
-  // Obtener todas las áreas
-  const fetchAreas = async () => {
+  // Obtener todos los datos necesarios
+  const fetchData = async () => {
     try {
       setLoading(true);
-      const data = await getAllAreas();
-      setAreas(data);
+      
+      // Cargar áreas y niveles en paralelo para optimizar
+      const [areasData, nivelesData] = await Promise.all([
+        getAllAreas(),
+        getLevels()
+      ]);
+      
+      // Verificar que los datos sean arrays válidos
+      const validAreas = Array.isArray(areasData) ? areasData : [];
+      const validNiveles = Array.isArray(nivelesData) ? nivelesData : [];
+      
+      // Normalizamos los datos de niveles para asegurar que areaId sea consistente
+      const normalizedNiveles = validNiveles.map(nivel => {
+        // Utilizar areaId si existe, o extraer del objeto area si está disponible
+        const areaId = nivel.areaId || (nivel.area && nivel.area.id);
+        
+        return {
+          ...nivel,
+          // Aseguramos que areaId sea un número para comparaciones consistentes
+          areaId: typeof areaId === 'string' ? parseInt(areaId, 10) : areaId
+        };
+      });
+      
+      setAreas(validAreas);
+      setNiveles(normalizedNiveles);
       setError(null);
+      
+      // Para depuración
+      console.log('Áreas cargadas:', validAreas);
+      console.log('Niveles cargados:', normalizedNiveles);
+      
+      // Calcular cuántos niveles hay por cada área
+      const nivelesCountByArea = {};
+      normalizedNiveles.forEach(nivel => {
+        const areaId = nivel.areaId || (nivel.area && nivel.area.id);
+        if (areaId) {
+          nivelesCountByArea[areaId] = (nivelesCountByArea[areaId] || 0) + 1;
+        }
+      });
+      console.log('Conteo de niveles por área:', nivelesCountByArea);
+      
     } catch (err) {
       const errorMessage = handleApiError(err);
       setError(errorMessage);
-      console.error(err);
+      console.error('Error al cargar datos:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  // Función para manejar errores de API
+  // Función para manejar errores de API y mostrarlos en el formato deseado
   const handleApiError = (error) => {
     if (error.response) {
       // El servidor respondió con un código de error
       const { data, status } = error.response;
       
       if (status === 404) {
+        showErrorModal('El recurso solicitado no existe.', []);
         return 'El recurso solicitado no existe.';
       } else if (status === 422) {
         // Error de validación
@@ -118,49 +183,62 @@ const Areas = () => {
           // Mapear errores del backend al formato frontend
           const frontendErrors = mapBackendErrors(data.errors);
           
-          // Guardar los errores en el estado
-          setFormErrors(frontendErrors);
+          // No guardamos errores en formErrors para que no se muestren en los campos
           
-          // Si vamos a mostrar el modal, ocultamos los errores de campo
-          setHideFieldErrors(true);
-          
-          // Mostrar modal de error con los campos afectados
-          setErrorModal({
-            show: true,
-            message: data.message || 'Hay errores de validación en el formulario.',
-            fields: Object.entries(frontendErrors).map(([key, value]) => {
-              const fieldLabel = areaFields.find(f => f.name === key)?.label || key;
-              return `${fieldLabel}: ${value}`;
-            })
+          // Formateamos los errores para el modal
+          const errorFieldsList = Object.entries(frontendErrors).map(([key, value]) => {
+            const fieldLabel = areaFields.find(f => f.name === key)?.label || key;
+            return `${fieldLabel}: ${value}`;
           });
           
+          // Mostrar modal de error con los campos afectados
+          showErrorModal('Por favor corrija los errores en el formulario', errorFieldsList);
+          
           // Concatenar todos los errores de validación para el mensaje general
-          return Object.values(frontendErrors)
-            .join(', ');
+          return Object.values(frontendErrors).join(', ');
         }
+        
+        showErrorModal(data.message || 'Error de validación en los datos enviados.', []);
         return data.message || 'Error de validación en los datos enviados.';
       } else if (status >= 500) {
+        showErrorModal('Error en el servidor. Por favor, intente más tarde.', []);
         return 'Error en el servidor. Por favor, intente más tarde.';
       } else {
+        showErrorModal(data.message || 'Ha ocurrido un error en la petición.', []);
         return data.message || 'Ha ocurrido un error en la petición.';
       }
     } else if (error.request) {
       // La petición fue hecha pero no se recibió respuesta
+      showErrorModal('No se pudo conectar con el servidor. Verifique su conexión a internet.', []);
       return 'No se pudo conectar con el servidor. Verifique su conexión a internet.';
     } else {
       // Error en la configuración de la petición
+      showErrorModal(error.message || 'Error al procesar la solicitud.', []);
       return error.message || 'Error al procesar la solicitud.';
     }
+  };
+  
+  // Función auxiliar para mostrar el modal de error
+  const showErrorModal = (message, fields) => {
+    // Siempre ocultar los errores de campo cuando mostramos el modal
+    setHideFieldErrors(true);
+    
+    setErrorModal({
+      show: true,
+      message,
+      fields
+    });
   };
 
   // Handler para cerrar el modal de error
   const handleCloseErrorModal = () => {
     setErrorModal({ show: false, message: '', fields: [] });
-    // Ahora los errores se mostrarán en los campos
-    setHideFieldErrors(false);
+    // Mantenemos hideFieldErrors en true para que los errores no aparezcan en los campos
+    // después de cerrar el modal
+    setHideFieldErrors(true);
   };
 
-  // Manejar cambios en el formulario con validación en tiempo real
+  // Manejar cambios en el formulario con validación en tiempo real mínima
   const handleFormChange = (field, value) => {
     // Actualizar el valor del campo
     const updatedFormData = {
@@ -170,15 +248,17 @@ const Areas = () => {
     
     setFormData(updatedFormData);
     
-    // Si el formulario ya fue enviado, validar inmediatamente
+    // No realizamos validación en tiempo real para evitar mensajes mientras el usuario escribe
+    // Solo limpiamos errores para el campo que se está editando
     if (isFormSubmitted) {
-      // Validar todo el formulario para retroalimentación en tiempo real
-      const validationResult = validateAreaForm(updatedFormData, areas, editingId);
-      setFormErrors(validationResult.errors);
+      // Mantener otros errores, pero quitar el error del campo actual
+      const updatedErrors = { ...formErrors };
+      delete updatedErrors[field];
+      setFormErrors(updatedErrors);
     }
   };
 
-  // Validar todo el formulario antes de enviar
+  // Validar todo el formulario antes de enviar y mostrar errores en el modal
   const validateForm = () => {
     // Normalizar datos antes de validar
     const normalizedData = normalizeFormData(formData);
@@ -186,9 +266,28 @@ const Areas = () => {
 
     // Validar formulario completo
     const validationResult = validateAreaForm(normalizedData, areas, editingId);
-    setFormErrors(validationResult.errors);
     
-    return validationResult.isValid;
+    // Si hay errores, mostrarlos en el modal y no en los campos
+    if (!validationResult.isValid) {
+      // Crear lista de errores para el modal
+      const errorFieldsList = Object.entries(validationResult.errors).map(([key, value]) => {
+        const fieldLabel = areaFields.find(f => f.name === key)?.label || key;
+        return `${fieldLabel}: ${value}`;
+      });
+      
+      // Limpiar los errores de los campos
+      setFormErrors({});
+      
+      // Mostrar modal con todos los errores
+      setHideFieldErrors(true);
+      showErrorModal('Por favor corrija los siguientes errores', errorFieldsList);
+      
+      return false;
+    }
+    
+    // Si no hay errores, continuar
+    setFormErrors({});
+    return true;
   };
 
   // Enviar formulario para crear o actualizar
@@ -196,7 +295,7 @@ const Areas = () => {
     setIsFormSubmitted(true);
     
     // Limpiar estado de errores y modales
-    setHideFieldErrors(false);
+    setHideFieldErrors(true); // Siempre ocultar errores de campo al enviar
     setErrorModal({
       show: false,
       message: '',
@@ -204,21 +303,7 @@ const Areas = () => {
     });
     
     if (!validateForm()) {
-      // Mostrar modal de error si hay errores de validación
-      const errorFields = Object.entries(formErrors).map(([key, value]) => {
-        const fieldLabel = areaFields.find(f => f.name === key)?.label || key;
-        return `${fieldLabel}: ${value}`;
-      });
-      
-      // Ocultar errores de campo mientras se muestra el modal
-      setHideFieldErrors(true);
-      
-      setErrorModal({
-        show: true,
-        message: 'Por favor, corrija los errores antes de continuar.',
-        fields: errorFields
-      });
-      
+      // Si validateForm devuelve false, ya mostró los errores en el modal
       return;
     }
     
@@ -241,7 +326,7 @@ const Areas = () => {
       
       // Resetear formulario y recargar datos
       resetForm();
-      await fetchAreas();
+      await fetchData(); // Volvemos a cargar áreas y niveles
       
     } catch (err) {
       const errorMessage = handleApiError(err);
@@ -269,7 +354,7 @@ const Areas = () => {
     setShowAreaForm(false);
     setFormErrors({});
     setIsFormSubmitted(false);
-    setHideFieldErrors(false);
+    setHideFieldErrors(true); // Mantener true para seguir ocultando errores en campos
   };
 
   // Iniciar edición de un área
@@ -281,32 +366,7 @@ const Areas = () => {
     setEditingId(area.id);
     setShowAreaForm(true);
     setIsFormSubmitted(false);
-    setHideFieldErrors(false);
-  };
-
-  // Cambiar estado (activar/desactivar)
-  const handleToggleStatus = async (id, currentStatus) => {
-    try {
-      setLoading(true);
-      await changeAreaStatus(id, !currentStatus);
-      
-      // Encontrar el área para mostrar mensaje específico
-      const area = areas.find(a => a.id === id);
-      const newStatus = !currentStatus ? 'activada' : 'desactivada';
-      
-      showSuccess(
-        'Estado actualizado',
-        `El área "${area?.name}" ha sido ${newStatus} correctamente.`
-      );
-      
-      await fetchAreas();
-    } catch (err) {
-      const errorMessage = handleApiError(err);
-      setError(errorMessage);
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
+    setHideFieldErrors(true); // Mantener true para seguir ocultando errores en campos
   };
 
   // Mostrar confirmación de eliminación
@@ -315,12 +375,9 @@ const Areas = () => {
     const validationResult = validateAreaDeletion(area);
     
     if (!validationResult.isValid) {
-      // Si no se puede eliminar, mostrar modal de error
-      setErrorModal({
-        show: true,
-        message: 'No se puede eliminar el área',
-        fields: Object.values(validationResult.errors)
-      });
+      // Si no se puede eliminar, mostrar modal de error con el nuevo formato
+      const errorFieldsList = Object.values(validationResult.errors);
+      showErrorModal('No se puede eliminar el área', errorFieldsList);
       return;
     }
     
@@ -345,7 +402,7 @@ const Areas = () => {
         'El área ha sido eliminada correctamente.',
       );
       
-      await fetchAreas();
+      await fetchData(); // Volvemos a cargar áreas y niveles
     } catch (err) {
       const errorMessage = handleApiError(err);
       setError(errorMessage);
@@ -355,7 +412,7 @@ const Areas = () => {
     }
   };
 
-  // Renderizar acciones para cada fila (sin botón de toggle)
+  // Renderizar acciones para cada fila
   const renderActions = (row) => (
     <div className="action-buttons">
       <button className="icon-button edit" onClick={() => handleEdit(row)}>
@@ -382,6 +439,7 @@ const Areas = () => {
           resetForm();
         } else {
           setShowAreaForm(true);
+          setHideFieldErrors(true); // Asegurar que no se muestren errores al abrir el formulario
         }
       }}
       icon={<span className="plus-icon">{showAreaForm ? "-" : "+"}</span>}
