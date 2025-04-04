@@ -1,4 +1,3 @@
-
 import PropTypes from 'prop-types';
 import '../../styles/components/ErrorModal.css'; 
 
@@ -6,20 +5,20 @@ const ErrorModal = ({ isOpen, onClose, errorMessage, errorFields = [] }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content">
-        <h2 className="modal-title">Error de validación</h2>
+    <div className="error-modal__overlay">
+      <div className="error-modal__content">
+        <h2 className="error-modal__title">Error de validación</h2>
         
         {errorMessage && (
-          <p className="modal-message">{errorMessage}</p>
+          <p className="error-modal__message">{errorMessage}</p>
         )}
         
         {errorFields && errorFields.length > 0 && (
-          <div className="error-fields">
-            <p className="error-fields-title">Campos con error:</p>
-            <ul className="error-fields-list">
+          <div className="error-modal__fields">
+            <p className="error-modal__fields-title">Campos con error:</p>
+            <ul className="error-modal__fields-list">
               {errorFields.map((field, index) => (
-                <li key={index} className="error-field-item">
+                <li key={index} className="error-modal__field-item">
                   {field}
                 </li>
               ))}
@@ -27,10 +26,10 @@ const ErrorModal = ({ isOpen, onClose, errorMessage, errorFields = [] }) => {
           </div>
         )}
         
-        <div className="modal-actions">
+        <div className="error-modal__actions">
           <button
             onClick={onClose}
-            className="modal-button"
+            className="error-modal__button"
           >
             Aceptar
           </button>

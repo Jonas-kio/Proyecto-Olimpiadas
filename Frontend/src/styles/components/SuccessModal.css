@@ -1,6 +1,6 @@
 /* SuccessModal.css */
-
-.modal-overlay {
+/* Usando nomenclatura más específica */
+.success-modal__overlay {
     position: fixed;
     top: 0;
     left: 0;
@@ -13,7 +13,7 @@
     z-index: 1000;
 }
 
-.modal-content {
+.success-modal__content {
     background-color: white;
     border-radius: 6px;
     width: 100%;
@@ -23,14 +23,14 @@
     text-align: center;
 }
 
-.success-icon {
+.success-modal__icon {
     color: #16a34a;
     margin: 0 auto 16px;
     display: flex;
     justify-content: center;
 }
 
-.modal-title {
+.success-modal__title {
     color: #1e40af;
     font-weight: 600;
     text-align: center;
@@ -38,28 +38,27 @@
     font-size: 18px;
 }
 
-.modal-message {
+.success-modal__message {
     color: #4b5563;
     text-align: center;
     margin-bottom: 16px;
 }
 
-.success-details {
+.success-modal__details {
     background-color: #dbeafe;
     border-radius: 4px;
     padding: 12px 16px;
     margin-bottom: 20px;
     color: #1e40af;
-
 }
 
-.modal-actions {
+.success-modal__actions {
     display: flex;
     justify-content: center;
     margin-top: 8px;
 }
 
-.modal-button {
+.success-modal__button {
     background-color: #1e40af;
     color: white;
     font-weight: 500;
@@ -69,7 +68,6 @@
     cursor: pointer;
 }
 
-.modal-button:hover {
+.success-modal__button:hover {
     background-color: #1e3a8a;
-
 }

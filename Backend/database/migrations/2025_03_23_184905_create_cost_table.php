@@ -9,10 +9,10 @@ return new class extends Migration {
     {
         Schema::create('costs', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->decimal('value', 8, 2);
-            $table->string('area')->default('Todas');
-            $table->string('category')->default('Todas');
+            $table->string('name', 15);
+            $table->decimal('price', 8, 2);
+            $table->foreignId('area_id')->constrained('area')->cascadeOnDelete();
+            $table->foreignId('category_id')->constrained('category_level')->cascadeOnDelete();
             $table->timestamps();
         });
     }

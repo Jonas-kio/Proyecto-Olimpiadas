@@ -1,5 +1,6 @@
+/* eslint-disable react/prop-types */
 // src/components/common/Table.jsx
-import React from 'react';
+
 import '../../styles/components/Table.css';
 
 const Table = ({ 

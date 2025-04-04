@@ -9,10 +9,19 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up(): void
+
+    public function up()
     {
         Schema::create('competitor', function (Blueprint $table) {
             $table->id();
+            $table->string('nombres');
+            $table->string('apellidos');
+            $table->string('documento_identidad');
+            $table->string('provincia');
+            $table->date('fecha_nacimiento');
+            $table->string('curso');
+            $table->string('correo_electronico')->unique();
+            $table->string('colegio');
             $table->timestamps();
         });
     }
@@ -22,6 +31,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('competitor');
+        Schema::dropIfExists('competitors');
     }
 };

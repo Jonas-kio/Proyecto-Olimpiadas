@@ -1,0 +1,115 @@
+.inscripcion-container {
+  font-family: "Segoe UI", sans-serif;
+  padding: 60px 20px;
+  text-align: center;
+  background-color: #f8f9fc;
+  color: #0d3c7b;
+}
+
+.inscripcion-container h1 {
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.inscripcion-container p {
+  max-width: 700px;
+  margin: 0 auto 40px;
+  color: #333;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.opciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 30px;
+  justify-content: center;
+  margin-bottom: 40px;
+}
+
+.card-inscripcion {
+  background: white;
+  border-radius: 10px;
+  padding: 30px 20px;
+  width: 300px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.card-inscripcion .icono {
+  font-size: 36px;
+  background-color: #0d3c7b;
+  color: white;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  line-height: 60px;
+  text-align: center;
+  margin-bottom: 15px;
+}
+
+.card-inscripcion h2 {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.card-inscripcion p {
+  font-size: 14px;
+  color: #555;
+  margin-bottom: 15px;
+}
+
+.card-inscripcion ul {
+  text-align: left;
+  font-size: 14px;
+  color: #333;
+  margin-bottom: 20px;
+  padding-left: 0;
+  list-style: none;
+}
+
+.card-inscripcion ul li {
+  margin-bottom: 8px;
+}
+
+/* Botones */
+.btn-primario {
+  background-color: #0d3c7b;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: 0.3s ease;
+}
+
+.btn-primario:hover {
+  background-color: #174a9a;
+}
+
+.btn-secundario {
+  background-color: white;
+  border: 1px solid #0d3c7b;
+  color: #0d3c7b;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: 0.3s ease;
+}
+
+.btn-secundario:hover {
+  background-color: #f0f4fc;
+}
+
+.soporte {
+  text-align: center;
+}
+
+.soporte p {
+  margin-bottom: 15px;
+  color: #444;
+}
