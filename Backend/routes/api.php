@@ -10,9 +10,13 @@ use App\Http\Middleware\IsAdmin;
 use App\Http\Middleware\IsUserAuth;
 
 use App\Http\Controllers\CompetitorController;
+use App\Http\Controllers\TutorController;
 
 //Ruta del competidor
 Route::post('/inscripcion/competidor', [CompetitorController::class, 'store']);
+
+//Ruta del tutor
+Route::post('/inscripcion/tutor', [TutorController::class, 'store']);
 
 /*
 //TODO: Rutas Publicas

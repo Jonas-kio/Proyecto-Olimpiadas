@@ -28,7 +28,7 @@ class CompetitorController extends Controller
         $competitor = Competitor::create($request->all());
 
         return response()->json([
-            'message' => 'Estudiante registrado exitosamente',
+            'message' => 'Competidor registrado exitosamente',
             'data' => $competitor
         ], 201);
     }
