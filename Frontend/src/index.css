@@ -2,7 +2,6 @@
 @tailwind components;
 @tailwind utilities; */
 
-
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -79,7 +78,7 @@ button:focus-visible {
   border-radius: 12px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   border: 1px solid #e5e7eb;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   margin-bottom: 2rem;
 }
 
@@ -225,12 +224,11 @@ button:focus-visible {
   animation: fade-in 0.3s ease-out;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
-.cancel{
+.cancel {
   background-color: #fdfdfd;
   color: #093f7d;
   border: none;
   padding: 10px 15px;
   border-radius: 5px;
   cursor: pointer;
-  
 }
