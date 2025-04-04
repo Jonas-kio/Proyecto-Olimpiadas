@@ -22,25 +22,25 @@ const Sidebar = () => {
       <nav className="nav-menu">
         <ul>
           <li>
-            <Link to="/homeAdmin" className="nav-item">
+            <Link to="/app/homeAdmin" className="nav-item">
               <LayoutGrid size={20} />
               <span>Dashboard</span>
             </Link>
           </li>
           <li>
-            <Link to="/configuracion" className="nav-item active">
+            <Link to="/app/configuracion" className="nav-item active">
               <Settings size={20} />
               <span>Configuración</span>
             </Link>
           </li>
           <li>
-            <Link to="/reportes" className="nav-item">
+            <Link to="/app/reportes" className="nav-item">
               <FileText size={20} />
               <span>Reportes</span>
             </Link>
           </li>
           <li>
-            <Link to="/participantes" className="nav-item">
+            <Link to="/app/participantes" className="nav-item">
               <Users size={20} />
               <span>Participantes</span>
             </Link>
