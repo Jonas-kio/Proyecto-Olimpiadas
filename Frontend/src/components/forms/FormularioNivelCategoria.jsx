@@ -4,7 +4,9 @@ import React from "react";
 
 const FormularioNivelCategoria = ({ values, onChange, onSubmit, onCancel }) => {
   return (
-    <div className="formulario-nivel">
+    
+    <div className="formulario-nivel max-w-0xl mx-auto p-1 bg-gray-50 border rounded-lg shadow-sm">
+
       <h3 className="formulario-titulo">Nuevo Nivel/Categoría</h3>
       <div className="form-grid">
 
@@ -80,7 +82,6 @@ const FormularioNivelCategoria = ({ values, onChange, onSubmit, onCancel }) => {
           </div>
         </div>
       </div>
-
       <div className="form-actions">
         <button className="btn-outline" onClick={onCancel}>Cancelar</button>
         <button className="btn-primary" onClick={onSubmit}>Guardar</button>

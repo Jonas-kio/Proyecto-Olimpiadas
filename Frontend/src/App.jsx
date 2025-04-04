@@ -1,8 +1,21 @@
+/*
+import React from "react";
+import { Routes, Route } from "react-router-dom";
+import Inscripcion from "./pages/Inscripcion";
 
+function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<Inscripcion />} />
+    </Routes>
+  );
+}
+
+export default App;
+*/
 
 import './App.css'
 import DashboardAdmin from './pages/admin/DasboardAdmin';
-
 
 
 
@@ -49,3 +62,4 @@ const App = () => {
 }
 
 export default App;
+
