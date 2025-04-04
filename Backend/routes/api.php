@@ -16,7 +16,7 @@ Route::post('/inscripcion/competidor', [CompetitorController::class, 'store']);
 
 /*
 //TODO: Rutas Publicas
-/* Route::post('register', [AuthController::class, 'register']);
+Route::post('register', [AuthController::class, 'register']);
 Route::post('login', [AuthController::class, 'login']);
 
 //TODO: Rutas Privadas
@@ -56,8 +56,7 @@ Route::middleware([IsUserAuth::class])->group(
         //TODO: Rutas Para Usuario que no es administrador
         //....... AQUI!!!
     }
-);
-*/
+);*/
 
 //Rutas para Costos
 
@@ -65,9 +64,7 @@ Route::get('/costs', [CostController::class, 'index']);
 Route::post('/costs', [CostController::class, 'store']);
 Route::put('/costs/{cost}', [CostController::class, 'update']);
 Route::delete('/costs/{cost}', [CostController::class, 'destroy']);
-/* Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum'); */
+
 
 
 // Rutas para Áreas de Competencia
