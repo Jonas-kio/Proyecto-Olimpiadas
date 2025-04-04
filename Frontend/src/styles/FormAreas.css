@@ -1,0 +1,168 @@
+/* Estilos para Formulario de areas */
+.form-container {
+  padding: var(--spacing-xl);
+  width: 100%;
+}
+
+.form-full-width {
+  width: 100%;
+}
+
+.form-header {
+  margin-bottom: 15px;
+  text-align: left;
+  width: 100%;
+}
+
+.form-header h3 {
+  color: var(--primary-color);
+  font-size: var(--font-size-xl);
+  font-weight: 500;
+}
+
+.area-form {
+  width: 100%;
+  max-width: none;
+  position: relative;
+}
+
+/* Para el título "Nueva Área" */
+h2, h3 {
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+/* Contenedor para los campos del formulario */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* Dos columnas de igual ancho */
+  grid-template-rows: auto auto; /* Dos filas: etiquetas y campos */
+  gap: 20px;
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+/* Estilo para cada campo individual */
+.form-column {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Posicionar etiquetas y campos en la cuadrícula */
+.form-column:nth-child(1) {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+}
+
+.form-column:nth-child(2) {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+}
+
+.form-column label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: var(--font-size-md);
+  color: var(--text-dark);
+  font-weight: 500;
+  text-align: left;
+}
+
+.form-input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: var(--border-radius);
+  font-size: var(--font-size-md);
+  background-color: #fff;
+  color: var(--text-dark);
+  transition: border-color var(--transition-fast);
+  height: 38px;
+}
+
+.form-input:focus {
+  border-color: var(--primary-color);
+  outline: none;
+}
+
+/* Ajuste para textarea */
+textarea.form-input {
+  min-height: 38px !important;
+  height: 38px !important;
+  resize: none;
+}
+
+/* Asegurar que los botones estén debajo de los campos */
+.form-actions {
+  display: flex;
+  justify-content: flex-end; /* Alinear a la derecha como se muestra en la imagen */
+  gap: 15px;
+  margin-top: 25px;
+  width: 100%;
+}
+
+.btn-cancel {
+  padding: 8px 16px;
+  background-color: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-radius: var(--border-radius);
+  color: #374151;
+  cursor: pointer;
+  min-width: 100px;
+  font-size: var(--font-size-md);
+  transition: background-color var(--transition-fast);
+}
+
+.btn-save {
+  padding: 8px 16px;
+  background-color: var(--primary-color);
+  border: none;
+  border-radius: var(--border-radius);
+  color: white;
+  cursor: pointer;
+  min-width: 100px;
+  font-size: var(--font-size-md);
+  transition: background-color var(--transition-fast);
+}
+
+.btn-save:hover {
+  background-color: var(--primary-light);
+}
+
+/* Estilos para campos con error */
+.input-error {
+  border-color: #e11d48;
+}
+
+.error-message {
+  color: #e11d48;
+  font-size: var(--font-size-sm);
+  margin-top: 5px;
+}
+
+.error-general {
+  background-color: #fee2e2;
+  color: #b91c1c;
+  padding: 8px 12px;
+  border-radius: var(--border-radius);
+  margin-bottom: 15px;
+}
+
+/* Estilos para campo obligatorio */
+.required-mark {
+  color: #e11d48;
+  margin-left: 2px;
+}
+
+/* Media queries */
+@media (max-width: 992px) {
+  .form-row {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .form-column {
+    width: 100%;
+    margin-bottom: 15px;
+  }
+}

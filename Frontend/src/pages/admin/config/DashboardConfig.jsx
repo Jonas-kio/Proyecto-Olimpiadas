@@ -1,11 +1,13 @@
 import { useState } from 'react';
 
 
-import MainContent from '../../../components/layout/MainContent';
 import Tabs from '../../../components/ui/Tabs';
 import ContentConfig from '../../../components/layout/ContentConfig';
 import Areas from './Areas';
+<<<<<<< HEAD
 //import Configuracion from './Configuracion';
+=======
+>>>>>>> 54c66004d81304e09e416cb6211ed1e589d2eeb1
 import CostosConfiguracion from './CostosConfiguracion';
 import NivelesYCategorias from './NivelesYCategorias';
 
@@ -30,25 +32,18 @@ const DashboardConfig = () => {
       default:
         return <Areas />;
     }
-  };
-
-    
+  }; 
     return (
         
         <div className="Config-Panel">
-            <MainContent 
-                title="Panel de Administración" 
-                subtitle="Gestión de olimpiadas"
-            >
-                <Tabs 
-                    tabs={tabs} 
-                    activeTab={activeTab} 
-                    onTabChange={setActiveTab} 
-                />
-                <ContentConfig>
-                    {renderContent()}
-                </ContentConfig>
-            </MainContent> 
+          <Tabs 
+            tabs={tabs} 
+            activeTab={activeTab} 
+            onTabChange={setActiveTab} 
+          />
+          <ContentConfig>
+            {renderContent()}
+          </ContentConfig>
         </div>
     );
 }

@@ -22,7 +22,7 @@ const Sidebar = () => {
       <nav className="nav-menu">
         <ul>
           <li>
-            <Link to="/dashboardAdmin" className="nav-item">
+            <Link to="/homeAdmin" className="nav-item">
               <LayoutGrid size={20} />
               <span>Dashboard</span>
             </Link>

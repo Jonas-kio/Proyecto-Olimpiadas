@@ -1,6 +1,6 @@
-@tailwind base;
+/* @tailwind base;
 @tailwind components;
-@tailwind utilities;
+@tailwind utilities; */
 
 
 :root {
@@ -224,4 +224,13 @@ button:focus-visible {
   width: 90%;
   animation: fade-in 0.3s ease-out;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+.cancel{
+  background-color: #fdfdfd;
+  color: #093f7d;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  
 }

@@ -9,8 +9,14 @@ use App\Http\Controllers\API\CategoryLevelController;
 use App\Http\Middleware\IsAdmin;
 use App\Http\Middleware\IsUserAuth;
 
+use App\Http\Controllers\CompetitorController;
+
+//Ruta del competidor
+Route::post('/inscripcion/competidor', [CompetitorController::class, 'store']);
+
+/*
 //TODO: Rutas Publicas
-Route::post('register', [AuthController::class, 'register']);
+/* Route::post('register', [AuthController::class, 'register']);
 Route::post('login', [AuthController::class, 'login']);
 
 //TODO: Rutas Privadas
@@ -51,30 +57,30 @@ Route::middleware([IsUserAuth::class])->group(
         //....... AQUI!!!
     }
 );
-
+*/
 
 //Rutas para Costos
-/* 
+
 Route::get('/costs', [CostController::class, 'index']);
 Route::post('/costs', [CostController::class, 'store']);
 Route::put('/costs/{cost}', [CostController::class, 'update']);
 Route::delete('/costs/{cost}', [CostController::class, 'destroy']);
-Route::get('/user', function (Request $request) {
+/* Route::get('/user', function (Request $request) {
     return $request->user();
-})->middleware('auth:sanctum'); 
-*/
+})->middleware('auth:sanctum'); */
 
-/* // Rutas para Áreas de Competencia
+
+// Rutas para Áreas de Competencia
 Route::apiResource('area', AreaController::class);
 
 // Ruta para cambiar el estado de un área
 Route::patch('area/{id}/status', [AreaController::class, 'changeStatus']);
 Route::patch('areas/{id}/status', [AreaController::class, 'changeStatus']);
- */
+
 
 //Rutas para el controlador  de category_lavel
-/* 
-Route::apiResource('categoryLavel', CategoryLevelController::class);
 
-Route::patch('categoryLavel/{id}', [CategoryLevelController::class, 'update']);
-Route::delete('categoryLavel/{id}', [CategoryLevelController::class, 'destroy']); */
+Route::apiResource('categoryLevel', CategoryLevelController::class);
+
+Route::patch('categoryLevel/{id}', [CategoryLevelController::class, 'update']);
+Route::delete('categoryLevel/{id}', [CategoryLevelController::class, 'destroy']);

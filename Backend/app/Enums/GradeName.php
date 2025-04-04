@@ -4,8 +4,8 @@ namespace App\Enums;
 
 enum GradeName: string
 {
-    case PRIMARY = 'Primary';
-    case HIGH_SCHOOL = 'High_School';
+    case PRIMARY = 'Primaria';
+    case HIGH_SCHOOL = 'Secundaria';
 
 
     /**
