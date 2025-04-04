@@ -91,7 +91,6 @@ export const getLevels = async () => {
 
 export const updateLevel = async (id, levelData) => {
   try {
-
     if (id === undefined || id === null) {
       throw new Error('Se requiere un ID para actualizar el nivel/categoría');
     }
@@ -104,23 +103,22 @@ export const updateLevel = async (id, levelData) => {
     
     console.log(`Enviando solicitud de actualización para nivel ID: ${levelId}`, levelData);
     
-
     const backendData = {
-      area_id: levelData.areaId,
       name: levelData.name,
       description: levelData.description,
-      grade_name: levelData.gradeName,
       grade_min: levelData.gradeMin,
       grade_max: levelData.gradeMax
     };
     
+    Object.keys(backendData).forEach(key => 
+      (backendData[key] === undefined || backendData[key] === null) && delete backendData[key]
+    );
 
     const response = await api.put(`/categoryLevel/${levelId}`, backendData);
     
     console.log('Respuesta de actualización:', response.data);
     
     if (response.data.success) {
-
       const updatedLevel = response.data.data;
       
       return {
@@ -142,9 +140,8 @@ export const updateLevel = async (id, levelData) => {
       throw new Error(response.data.message || `Error al actualizar el nivel/categoría con ID ${levelId}`);
     }
   } catch (error) {
-
+    // El manejo de errores no cambia
     if (error.response) {
-
       const statusCode = error.response.status;
       const message = error.response.data?.message || 'Error desconocido';
       
@@ -158,22 +155,20 @@ export const updateLevel = async (id, levelData) => {
         throw new Error(`Error del servidor (${statusCode}): ${message}`);
       }
     } else if (error.request) {
-      // Error de conexión
       throw new Error('No se recibió respuesta del servidor');
     } else {
-      // Otros errores
       throw error;
     }
   }
 };
 
 export const deleteLevel = async (id) => {
-  // Validación básica
+
   if (id === undefined || id === null) {
     throw new Error('Se requiere un ID para eliminar el nivel');
   }
   
-  // Asegurarse de que el ID sea un número si es necesario
+
   const levelId = typeof id === 'string' ? parseInt(id, 10) : id;
   
   if (isNaN(levelId)) {

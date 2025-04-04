@@ -8,7 +8,7 @@ use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\API\CategoryLevelController;
 use App\Http\Middleware\IsAdmin;
 use App\Http\Middleware\IsUserAuth;
-
+/*
 //TODO: Rutas Publicas
 Route::post('register', [AuthController::class, 'register']);
 Route::post('login', [AuthController::class, 'login']);
@@ -50,18 +50,15 @@ Route::middleware([IsUserAuth::class])->group(
         //TODO: Rutas Para Usuario que no es administrador
         //....... AQUI!!!
     }
-);
+);*/
 
 //Rutas para Costos
-/*
+
 Route::get('/costs', [CostController::class, 'index']);
 Route::post('/costs', [CostController::class, 'store']);
 Route::put('/costs/{cost}', [CostController::class, 'update']);
 Route::delete('/costs/{cost}', [CostController::class, 'destroy']);
 
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum'); 
 
 
 // Rutas para Áreas de Competencia
@@ -78,4 +75,3 @@ Route::apiResource('categoryLevel', CategoryLevelController::class);
 
 Route::patch('categoryLevel/{id}', [CategoryLevelController::class, 'update']);
 Route::delete('categoryLevel/{id}', [CategoryLevelController::class, 'destroy']);
-*/
