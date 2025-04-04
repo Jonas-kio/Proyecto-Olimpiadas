@@ -6,7 +6,7 @@ import Card from "../../../components/ui/Card";
 import Table from "../../../components/common/Table";
 import Button from "../../../components/common/Button";
 import FormularioCosto from "../../../components/forms/FormularioCosto";
-import "../../../index.css";
+import "../../../styles/components/CostosConfiguracion.css";
 
 const Configuracion = () => {
 
