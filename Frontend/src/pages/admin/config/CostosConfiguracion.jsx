@@ -23,6 +23,7 @@ const CostConfiguracion = () => {
 
   const [showNewCostForm, setShowNewCostForm] = useState(false);
   const [specificCosts, setSpecificCosts] = useState([]);
+  const [rawCostsData, setRawCostsData] = useState([]); // Nuevo estado para los datos sin formatear
   const [newCost, setNewCost] = useState({ id: null, name: "", value: "", area: "0", category: "0" });
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -44,6 +45,7 @@ const CostConfiguracion = () => {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [costToDelete, setCostToDelete] = useState(null);
 
+  // Este useEffect se encarga de cargar los datos iniciales
   useEffect(() => {
     const loadInitialData = async () => {
       try {
@@ -57,6 +59,7 @@ const CostConfiguracion = () => {
         areasData.forEach(area => {
           areaMapData[area.id] = area.name;
         });
+        console.log("areaMapData creado:", areaMapData);
         setAreaMap(areaMapData);
 
         const categoriesData = await getLevels();
@@ -67,6 +70,7 @@ const CostConfiguracion = () => {
         categoriesData.forEach(category => {
           categoryMapData[category.id] = category.name;
         });
+        console.log("categoryMapData creado:", categoryMapData);
         setCategoryMap(categoryMapData);
 
         await refreshCostsList();
@@ -81,6 +85,22 @@ const CostConfiguracion = () => {
     
     loadInitialData();
   }, []);
+
+  // NUEVO: Este useEffect reformatea los costos cuando los mapas se actualizan
+  useEffect(() => {
+    // Solo ejecutar si tenemos datos crudos y al menos uno de los mapas tiene datos
+    if (rawCostsData.length > 0 && (Object.keys(areaMap).length > 0 || Object.keys(categoryMap).length > 0)) {
+      console.log("Reformateando costos debido a cambios en los mapas");
+      console.log("Usando mapas:", { areaMap, categoryMap });
+      
+      const formattedCosts = rawCostsData.map(cost => 
+        formatCostForDisplay(cost, areaMap, categoryMap)
+      );
+      
+      console.log("Costos reformateados:", formattedCosts);
+      setSpecificCosts(formattedCosts);
+    }
+  }, [areaMap, categoryMap, rawCostsData]); // Dependencias del efecto
 
   const handleNewCostChange = (e) => {
     const { name, value } = e.target;
@@ -153,6 +173,8 @@ const CostConfiguracion = () => {
         await costService.deleteCost(costToDelete.id);
         console.log(`Costo ID ${costToDelete.id} eliminado correctamente`);
         
+        // Actualizar tanto los datos crudos como los formateados
+        setRawCostsData(rawCostsData.filter(cost => cost.id !== costToDelete.id));
         setSpecificCosts(specificCosts.filter(cost => cost.id !== costToDelete.id));
         
         setSuccessMessage("Costo eliminado exitosamente");
@@ -167,7 +189,6 @@ const CostConfiguracion = () => {
         setModalErrorMessage(errorMsg);
         setErrorModalOpen(true);
         
-
         setDeleteModalOpen(false);
         setCostToDelete(null);
       }
@@ -175,7 +196,6 @@ const CostConfiguracion = () => {
   };
 
   const editarCosto = (cost) => {
-
     const costForEdit = prepareCostForEdit(cost);
     
     console.log("Editando costo:", costForEdit);
@@ -198,11 +218,13 @@ const CostConfiguracion = () => {
   const refreshCostsList = async () => {
     try {
       const updatedCosts = await costService.getAllCosts();
-      const formattedCosts = updatedCosts.map(cost => 
-        formatCostForDisplay(cost, areaMap, categoryMap)
-      );
+      console.log("Costos recibidos:", updatedCosts);
       
-      setSpecificCosts(formattedCosts);
+      // Guardar los datos crudos - esto activará el useEffect
+      setRawCostsData(updatedCosts);
+      
+      // Ya no necesitamos formatear aquí, lo hará el useEffect
+      // El useEffect reformateará los costos cuando se actualice rawCostsData
     } catch (error) {
       console.error("Error al actualizar la lista de costos:", error);
       throw error;

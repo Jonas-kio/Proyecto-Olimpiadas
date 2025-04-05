@@ -36,7 +36,7 @@ const FormularioCosto = ({
         ...areas
       ]);
     } 
-     
+    
     setFilteredCategories([{ id: 0, name: "Seleccionar Nivel" }]);
   }, [areas]);
 
