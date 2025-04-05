@@ -11,10 +11,9 @@ use App\Http\Middleware\IsUserAuth;
 
 use App\Http\Controllers\CompetitorController;
 
-//Ruta del competidor
-Route::post('/inscripcion/competidor', [CompetitorController::class, 'store']);
 
-/*
+
+
 //TODO: Rutas Publicas
  Route::post('register', [AuthController::class, 'register']);
 Route::post('login', [AuthController::class, 'login']);
@@ -55,6 +54,8 @@ Route::middleware([IsUserAuth::class])->group(
 
         //TODO: Rutas Para Usuario que no es administrador
         //....... AQUI!!!
+        //Ruta del competidor
+        Route::post('/inscripcion/competidor', [CompetitorController::class, 'store']);
     }
 );
 /*

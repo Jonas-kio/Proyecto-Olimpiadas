@@ -119,7 +119,7 @@ const Login = () => {
       <div 
         className="auth-image" 
         style={{ 
-          backgroundImage: "url('/public/login2.jpg')" 
+          backgroundImage: "url('/public/images/login2.jpg')" 
         }}
       />
       <div className="auth-form-container">
