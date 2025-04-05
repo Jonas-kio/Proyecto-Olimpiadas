@@ -74,11 +74,12 @@ const FormularioCosto = ({
     // Limpiar el error general al hacer cambios
     setFormError("");
 
+    onChange({ target: { name, value } });
+
     if (name === "name") {
       const validation = validateCostName(value);
       if (!validation.isValid) {
         setNameError(validation.errorMessage);
-        return;
       } else {
         setNameError("");
       }
@@ -88,7 +89,6 @@ const FormularioCosto = ({
       const validation = validateCostValue(value);
       if (!validation.isValid) {
         setValueError(validation.errorMessage);
-        return;
       } else {
         setValueError("");
       }
@@ -193,7 +193,6 @@ const FormularioCosto = ({
               maxLength={25}
               className={nameError ? "border-red-500" : ""}
             />
-            {nameError && <p className="text-red-500 text-sm">{nameError}</p>}
           </div>
 
           <div className="form-group">

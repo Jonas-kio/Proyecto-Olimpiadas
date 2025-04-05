@@ -1,17 +1,19 @@
 
 export const validateCostName = (name) => {
-  if (!name || name.trim() === "") {
-    return {
-      isValid: false,
-      errorMessage: "El nombre es obligatorio"
-    };
-  }
+
   
   if (name.length > 25) {
     return {
       isValid: false,
       errorMessage: "Solo se permiten 25 caracteres"
     };
+  }
+
+  if (!name || name.trim() === "") {
+    return {
+      isValid: false,
+      errorMessage: "El nombre es obligatorio"
+    }
   }
   
   return { isValid: true, errorMessage: "" };
