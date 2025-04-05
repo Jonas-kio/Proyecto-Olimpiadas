@@ -190,7 +190,7 @@ const FormularioCosto = ({
               placeholder="Ej: Inscripción General"
               value={values.name}
               onChange={handleChange}
-              maxLength={25}
+              maxLength={30}
               className={nameError ? "border-red-500" : ""}
             />
           </div>

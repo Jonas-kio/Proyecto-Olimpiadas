@@ -2,23 +2,23 @@
 import api from './apiConfig';
 
 
-// En costService.js, dentro de getAllCosts:
+
 export const getAllCosts = async () => {
   try {
     const response = await api.get('/costs');
     
     if (response.data.success) {
-      // Verificar qué está llegando realmente
+
       console.log("Datos de costos recibidos:", JSON.stringify(response.data.data, null, 2));
       
       const processedData = response.data.data
         .filter(cost => cost && (cost.id !== undefined && cost.id !== null))
         .map(cost => {
-          // Extraer la información de área y categoría si existe
+
           let areaInfo = null;
           let categoryInfo = null;
           
-          // Verificar si viene el objeto de área completo o solo el ID
+
           if (cost.area && typeof cost.area === 'object') {
             areaInfo = {
               id: cost.area.id,
@@ -26,7 +26,7 @@ export const getAllCosts = async () => {
             };
           }
           
-          // Verificar si viene el objeto de categoría completo o solo el ID
+
           if (cost.category && typeof cost.category === 'object') {
             categoryInfo = {
               id: cost.category.id,

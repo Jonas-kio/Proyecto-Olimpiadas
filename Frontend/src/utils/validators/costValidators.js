@@ -2,10 +2,10 @@
 export const validateCostName = (name) => {
 
   
-  if (name.length > 25) {
+  if (name.length > 30) {
     return {
       isValid: false,
-      errorMessage: "Solo se permiten 25 caracteres"
+      errorMessage: "Solo se permiten 30 caracteres"
     };
   }
 
@@ -14,6 +14,14 @@ export const validateCostName = (name) => {
       isValid: false,
       errorMessage: "El nombre es obligatorio"
     }
+  }
+
+  const nameRegex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ0-9\s\-/.]+$/;
+  if (!nameRegex.test(name)) {
+    return {
+      isValid: false,
+      errorMessage: "El nombre contiene caracteres no permitidos"
+    };
   }
   
   return { isValid: true, errorMessage: "" };

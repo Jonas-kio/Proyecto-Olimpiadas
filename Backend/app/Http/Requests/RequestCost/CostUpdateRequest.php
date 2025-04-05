@@ -19,7 +19,7 @@ class CostUpdateRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'sometimes|string|max:20',
+            'name' => 'sometimes|string|max:30',
             'price' => 'sometimes|numeric'
         ];
     }

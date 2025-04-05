@@ -24,7 +24,7 @@ class CostStoreRequest extends FormRequest
 
             'area_id' => 'required|exists:area,id',
             'category_id' => 'required|exists:category_level,id',
-            'name' => 'required|string|max:20',
+            'name' => 'required|string|max:30',
             'price' => 'required|numeric'
 
         ];
