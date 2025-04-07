@@ -515,13 +515,60 @@ const InscripcionIndividual = () => {
 
         {paso === 4 && (
           <>
-            <h2>Confirmación de Inscripción PArteKEVIN</h2>
-            <p>Revise sus datos antes de confirmar la inscripción.</p>
-            <div className="campo checkbox">
-              <label>
-                <input type="checkbox" required /> Acepto los términos y
-                condiciones de la Olimpiada Oh! SanSi
-              </label>
+            <div className="confirmacion">
+              <h2>Confirmación de Inscripción</h2>
+              <p>Por favor revise la información ingresada antes de confirmar su inscripción.</p>
+
+              <div className="seccion">
+                <h3>Datos Personales</h3>
+                <div className="campo"><strong>Nombre completo:</strong> {estudiante.nombres} {estudiante.apellidos}</div>
+                <div className="campo"><strong>Documento:</strong> {estudiante.documento_identidad}</div>
+                <div className="campo"><strong>Fecha de nacimiento:</strong> {estudiante.fecha_nacimiento}</div>
+                <div className="campo"><strong>Contacto:</strong> {estudiante.correo} / {estudiante.telefono}</div>
+              </div>
+
+              <div className="seccion">
+                <h3>Datos del Tutor</h3>
+                <div className="campo"><strong>Nombre completo:</strong> {tutores.nombre}</div>
+                <div className="campo"><strong>Documento:</strong> {tutores.documento}</div>
+                <div className="campo"><strong>Contacto:</strong> {tutores.correo} / {tutores.telefono}</div>
+                <div className="campo"><strong>Institución:</strong> {tutores.institucion}</div>
+                <div className="campo"><strong>Cargo:</strong> {tutores.cargo}</div>
+              </div>
+
+              <div className="seccion">
+                <h3>Áreas de Competencia</h3>
+                <ul>
+                  {areasSeleccionadas.map((area) => (
+                    <li key={area}>{area}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="seccion">
+                <h3>Información Institucional</h3>
+                <div className="campo"><strong>Institución:</strong> {estudiante.colegio}</div>
+                <div className="campo"><strong>Nivel:</strong> {estudiante.nivel}</div>
+                <div className="campo"><strong>Ciudad:</strong> {estudiante.ciudad}</div>
+              </div>
+
+              <div className="seccion">
+                <h3>Costo de Inscripción</h3>
+                {areasSeleccionadas.map((area) => (
+                  <div className="campo" key={area}><strong>{area}:</strong> Bs. 50</div>
+                ))}
+                <div className="campo total"><strong>Total:</strong> Bs. {areasSeleccionadas.length * 50}</div>
+              </div>
+
+              <div className="terminos">
+                <input type="checkbox" id="acepto" />
+                <label htmlFor="acepto"> Acepto los términos y condiciones de la Olimpiada Oh! SanSi</label>
+              </div>
+
+              <div className="botones-navegacion">
+                <button type="button" onClick={anterior}>Anterior</button>
+                <button type="submit">Confirmar y Generar Boleta</button>
+              </div>
             </div>
           </>
         )}
@@ -537,9 +584,7 @@ const InscripcionIndividual = () => {
               Siguiente
             </button>
           ) : (
-            <button type="submit" onClick={siguiente}>
-              Confirmar y Generar Boleta
-            </button>
+            <button type="submit">Confirmar y Generar Boleta</button>
           )}
         </div>
       </form>

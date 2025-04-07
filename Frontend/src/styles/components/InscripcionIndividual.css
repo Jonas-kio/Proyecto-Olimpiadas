@@ -161,3 +161,36 @@ select.error {
   font-size: 1rem;
   cursor: pointer;
 }
+
+.confirmacion {
+  background: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.seccion {
+  background: #f8f9fa;
+  padding: 15px;
+  margin-bottom: 15px;
+  border-radius: 5px;
+}
+
+.campo {
+  margin-bottom: 5px;
+}
+
+.total {
+  font-weight: bold;
+  font-size: 1.2em;
+}
+
+.terminos {
+  margin-top: 10px;
+}
+
+.botones-navegacion {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+}
