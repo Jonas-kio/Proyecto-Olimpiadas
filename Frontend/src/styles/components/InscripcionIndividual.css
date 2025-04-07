@@ -1,0 +1,163 @@
+.inscripcion-container {
+  max-width: 900px;
+  margin: auto;
+  padding: 2rem;
+  background-color: #f8f9fa;
+  border-radius: 12px;
+}
+
+.barra-pasos {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+}
+
+.paso {
+  text-align: center;
+  flex: 1;
+  color: gray;
+}
+
+.paso.activo .numero {
+  background-color: #004a9f;
+  color: white;
+}
+
+.numero {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  margin: auto;
+  margin-bottom: 0.3rem;
+  background: #e4e4e4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.formulario {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 10px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+.fila {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.campo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+input,
+select {
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  margin-top: 0.3rem;
+}
+
+input::placeholder {
+  color: #aaa;
+}
+.asterisco {
+  color: red;
+  margin-left: 4px;
+}
+
+.campo > label {
+  color: #364051;
+  display: flex;
+  justify-content: flex-start;
+  /* background-color: #003a85; */
+}
+.campo,
+#terminos {
+  display: flex;
+  justify-content: end;
+}
+input.error::placeholder,
+select.error {
+  color: rgb(248, 39, 39);
+}
+
+.botones {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+}
+
+.botones button {
+  padding: 0.5rem 1.2rem;
+  border: none;
+  border-radius: 5px;
+  background-color: #004a9f;
+  color: white;
+  cursor: pointer;
+}
+
+.botones button:hover {
+  background-color: #003a85;
+}
+
+.bloque-tutor {
+  border: 1px solid #ccc;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border-radius: 6px;
+}
+
+.checkbox-inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.checkbox-inline input[type="checkbox"] {
+  transform: scale(1.2);
+  cursor: pointer;
+}
+
+.alerta {
+  background-color: #eaf2fe;
+  border-left: 4px solid #4a90e2;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+  border-radius: 4px;
+  color: #2c3e50;
+}
+
+.etiquetas-contenedor {
+  margin-top: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.etiqueta-area {
+  background-color: #004a9f;
+  color: white;
+  padding: 0.3rem 0.8rem;
+  border-radius: 30px;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.etiqueta-area button {
+  background: none;
+  border: none;
+  color: white;
+  font-weight: bold;
+  font-size: 1rem;
+  cursor: pointer;
+}
