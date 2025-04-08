@@ -6,6 +6,8 @@ import {
   inscripcionCompetidor,
   inscripcionTutor,
 } from "../../services/apiInscripcion";
+import SuccessModal from "../../components/common/SuccessModal";
+import ErrorModal from "../../components/common/ErrorModal";
 
 const InscripcionIndividual = () => {
   const navigate = useNavigate();
@@ -14,7 +16,7 @@ const InscripcionIndividual = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Arma los datos del formulario (esto depende de tus states)
+    // Datos del estudiante
     const formulario = {
       nombres: estudiante.nombres,
       apellidos: estudiante.apellidos,
@@ -26,13 +28,30 @@ const InscripcionIndividual = () => {
       colegio: estudiante.colegio,
     };
 
-    try {
-      const respuesta = await inscripcionCompetidor(formulario);
-      console.log("Inscripción exitosa", respuesta.data);
+    // ✅ FILTRAR tutores que tengan al menos un campo lleno
+    const tutoresFormulario = tutores.filter(
+      (tutor) =>
+        tutor.nombres ||
+        tutor.apellidos ||
+        tutor.correo_electronico ||
+        tutor.telefono
+    );
 
-      // Mostrar mensaje solo si se guardó bien
-      alert("Inscripción exitosa");
-      navigate("/Inscripcion");
+    try {
+      // Enviar estudiante
+      const respuestaEstudiante = await inscripcionCompetidor(formulario);
+      console.log(
+        "Inscripción del estudiante exitosa",
+        respuestaEstudiante.data
+      );
+      console.log("Tutores que se van a registrar:", tutoresFormulario);
+      // Enviar tutores uno por uno
+      for (const tutor of tutoresFormulario) {
+        const respuesta = await inscripcionTutor(tutor);
+        console.log("Tutor registrado:", respuesta.data);
+      }
+
+      setModalAbierto(true);
     } catch (error) {
       const mensajeError =
         error.response?.data?.message ||
@@ -41,9 +60,17 @@ const InscripcionIndividual = () => {
         "Error al inscribir:",
         error.response?.data || error.message
       );
+      setMensajeDeError(mensajeError);
 
-      alert(`No se pudo guardar: ${mensajeError}`);
-      // navigate("/InscripcionIndividual");
+      // Si Laravel devuelve errores específicos de campos
+      if (error.response?.data?.errors) {
+        const campos = Object.keys(error.response.data.errors);
+        setCamposConError(campos);
+      } else {
+        setCamposConError([]);
+      }
+
+      setErrorModalAbierto(true);
     }
   };
   //
@@ -67,13 +94,18 @@ const InscripcionIndividual = () => {
     colegio: "",
   });
   const [tutores, setTutores] = useState([
-    { nombres: "", apellidos: "", correo: "", telefono: "" },
-    { nombres: "", apellidos: "", correo: "", telefono: "" },
-    { nombres: "", apellidos: "", correo: "", telefono: "" },
+    { nombres: "", apellidos: "", correo_electronico: "", telefono: "" },
+    { nombres: "", apellidos: "", correo_electronico: "", telefono: "" },
+    { nombres: "", apellidos: "", correo_electronico: "", telefono: "" },
   ]);
   const [areasSeleccionadas, setAreasSeleccionadas] = useState([]);
   const [errores, setErrores] = useState({});
-
+  //MODALS
+  const [modalAbierto, setModalAbierto] = useState(false);
+  const [errorModalAbierto, setErrorModalAbierto] = useState(false);
+  const [mensajeDeError, setMensajeDeError] = useState("");
+  const [camposConError, setCamposConError] = useState([]);
+  //<MODAL
   const siguiente = () => {
     if (paso === 1 && !validarEstudiante()) return;
     if (paso === 2 && !validarTutorPrincipal()) return;
@@ -345,11 +377,11 @@ const InscripcionIndividual = () => {
                   </label>
                   <input
                     type="email"
-                    name="correo"
+                    name="correo_electronico"
                     placeholder="Correo Electrónico"
-                    value={tutores[0].correo}
+                    value={tutores[0].correo_electronico}
                     onChange={(e) => handleTutorChange(e, 0)}
-                    className={errores[`t0-correo`] ? "error" : ""}
+                    className={errores[`t0-correo_electronico`] ? "error" : ""}
                   />
                 </div>
                 <div className="campo">
@@ -398,9 +430,9 @@ const InscripcionIndividual = () => {
                   <label>Correo Electrónico</label>
                   <input
                     type="email"
-                    name="correo"
+                    name="correo_electronico"
                     placeholder="Correo Electrónico"
-                    value={tutores[1].correo}
+                    value={tutores[1].correo_electronico}
                     onChange={(e) => handleTutorChange(e, 1)}
                   />
                 </div>
@@ -447,9 +479,9 @@ const InscripcionIndividual = () => {
                   <label>Correo Electrónico</label>
                   <input
                     type="email"
-                    name="correo"
+                    name="correo_electronico"
                     placeholder="Correo Electrónico"
-                    value={tutores[2].correo}
+                    value={tutores[2].correo_electronico}
                     onChange={(e) => handleTutorChange(e, 2)}
                   />
                 </div>
@@ -552,6 +584,22 @@ const InscripcionIndividual = () => {
           )}
         </div>
       </form>
+      <SuccessModal
+        isOpen={modalAbierto}
+        onClose={() => {
+          setModalAbierto(false);
+          navigate("/Inscripcion");
+        }}
+        tittleMessage="¡Inscripción Exitosa!"
+        successMessage="Tu inscripción se ha completado correctamente."
+        detailMessage="Gracias por participar en la Olimpiada Oh! SanSi."
+      />
+      <ErrorModal
+        isOpen={errorModalAbierto}
+        onClose={() => setErrorModalAbierto(false)}
+        errorMessage={mensajeDeError}
+        errorFields={camposConError}
+      />
     </div>
   );
 };
