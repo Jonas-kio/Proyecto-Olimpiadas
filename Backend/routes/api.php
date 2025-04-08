@@ -10,12 +10,10 @@ use App\Http\Middleware\IsAdmin;
 use App\Http\Middleware\IsUserAuth;
 
 use App\Http\Controllers\CompetitorController;
-use App\Http\Controllers\CostController as ControllersCostController;
 
-//Ruta del competidor
-Route::post('/inscripcion/competidor', [CompetitorController::class, 'store']);
 
-/*
+
+
 //TODO: Rutas Publicas
 Route::post('register', [AuthController::class, 'register']);
 Route::post('login', [AuthController::class, 'login']);
@@ -38,9 +36,9 @@ Route::middleware([IsUserAuth::class])->group(
                 Route::patch('areas/{id}/status', [AreaController::class, 'changeStatus']);
 
                 // Rutas para configuración de Niveles/Categoría
-                Route::apiResource('categoryLavel', CategoryLevelController::class);
-                Route::patch('categoryLavel/{id}', [CategoryLevelController::class, 'update']);
-                Route::delete('categoryLavel/{id}', [CategoryLevelController::class, 'destroy']);
+                Route::apiResource('categoryLevel', CategoryLevelController::class);
+                Route::patch('categoryLevel/{id}', [CategoryLevelController::class, 'update']);
+                Route::delete('categoryLevel/{id}', [CategoryLevelController::class, 'destroy']);
 
                 // Rutas para configuración de costos
                 Route::controller(CostController::class)->group(function () {
@@ -56,19 +54,22 @@ Route::middleware([IsUserAuth::class])->group(
 
         //TODO: Rutas Para Usuario que no es administrador
         //....... AQUI!!!
+        //Ruta del competidor
+        Route::post('/inscripcion/competidor', [CompetitorController::class, 'store']);
     }
-);*/
+);
+/*
 
 //Rutas para Costos
-Route::group(['prefix' => 'costs'], function () {
-    Route::get('/', [CostController::class, 'index']);
-    Route::get('/{id}', [CostController::class, 'show']);
-    Route::post('/', [CostController::class, 'store']);
-    Route::patch('/{id}', [CostController::class, 'update']);
-    Route::delete('/{id}', [CostController::class, 'destroy']);
-});
 
-
+Route::get('/costs', [CostController::class, 'index']);
+Route::post('/costs', [CostController::class, 'store']);
+Route::put('/costs/{cost}', [CostController::class, 'update']);
+Route::delete('/costs/{cost}', [CostController::class, 'destroy']);
+/* Route::get('/user', function (Request $request) {
+    return $request->user();
+})->middleware('auth:sanctum'); */
+/*
 
 // Rutas para Áreas de Competencia
 Route::apiResource('area', AreaController::class);
@@ -84,3 +85,4 @@ Route::apiResource('categoryLevel', CategoryLevelController::class);
 
 Route::patch('categoryLevel/{id}', [CategoryLevelController::class, 'update']);
 Route::delete('categoryLevel/{id}', [CategoryLevelController::class, 'destroy']);
+*/

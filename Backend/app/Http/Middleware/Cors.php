@@ -12,7 +12,7 @@ class Cors
         $response = $next($request);
 
         $allowedOrigins = [
-            'http://localhost:3000',
+            'http://localhost:5173',
             'https://tudominio.com'
         ];
 

@@ -53,7 +53,7 @@
 .action-buttons {
   display: flex;
   gap: 8px;
-  justify-content: center;
+  /*justify-content: center;*/
 }
 
 /* Icon buttons for edit and delete */
