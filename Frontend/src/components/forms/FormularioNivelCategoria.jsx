@@ -3,12 +3,31 @@
 // src/components/forms/FormularioNivelCategoria.jsx
 import { useState, useEffect } from 'react';
 import { getActiveAreas } from '../../services/areasService';
+import { 
+  validateLevelName, 
+  validateAreaSelection, 
+  validateGradeLevel, 
+  validateMinGrade, 
+  validateMaxGrade,
+  validateDescription,
+  validateLevelForm
+} from '../../utils/validators/nivelesValidators'; 
 
 const FormularioNivelCategoria = ({ values, onChange, onSubmit, onCancel, isEditing = false }) => {
   const [areas, setAreas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [descriptionCharCount, setDescriptionCharCount] = useState(0);
+  
+  // Estados para errores de validación
+  const [nameError, setNameError] = useState("");
+  const [areaError, setAreaError] = useState("");
+  const [levelError, setLevelError] = useState("");
+  const [minGradeError, setMinGradeError] = useState("");
+  const [maxGradeError, setMaxGradeError] = useState("");
+  const [descriptionError, setDescriptionError] = useState("");
+  
+  // Pistas visuales para la descripción
   const [descriptionHints, setDescriptionHints] = useState({
     minLength: false,
     maxLength: false,
@@ -33,19 +52,106 @@ const FormularioNivelCategoria = ({ values, onChange, onSubmit, onCancel, isEdit
   }, []);
   
   useEffect(() => {
-    const description = values.description.trim();
-    setDescriptionCharCount(description.length);
-
-    setDescriptionHints({
-      minLength: description.length > 0 && description.length < 10,
-      maxLength: description.length > 150,
-      startsWithNumber: /^[0-9]/.test(description),
-      consecutiveNumbers: /[0-9]{3,}/.test(description)
+    const descValidation = validateDescription(values.description);
+    setDescriptionCharCount(values.description.trim().length);
+    setDescriptionHints(descValidation.hints || {
+      minLength: false,
+      maxLength: false,
+      startsWithNumber: false,
+      consecutiveNumbers: false
     });
+    
+    if (!descValidation.isValid && values.description.trim().length > 0) {
+      setDescriptionError(descValidation.errorMessage);
+    } else {
+      setDescriptionError("");
+    }
   }, [values.description]);
 
-  const handleDescriptionChange = (e) => {
-    onChange("description", e.target.value);
+  const handleNameChange = (value) => {
+    const validation = validateLevelName(value);
+    if (!validation.isValid) {
+      setNameError(validation.errorMessage);
+    } else {
+      setNameError("");
+    }
+    onChange("name", value);
+  };
+
+  const handleAreaChange = (value) => {
+    const validation = validateAreaSelection(value);
+    if (!validation.isValid) {
+      setAreaError(validation.errorMessage);
+    } else {
+      setAreaError("");
+    }
+    onChange("area", value);
+  };
+
+  const handleLevelChange = (value) => {
+    const validation = validateGradeLevel(value);
+    if (!validation.isValid) {
+      setLevelError(validation.errorMessage);
+    } else {
+      setLevelError("");
+    }
+    onChange("level", value);
+  };
+
+  const handleMinGradeChange = (value) => {
+    const validation = validateMinGrade(value);
+    if (!validation.isValid && value.trim().length > 0) {
+      setMinGradeError(validation.errorMessage);
+    } else {
+      setMinGradeError("");
+    }
+    
+    if (values.maxGrade.trim().length > 0) {
+      const maxValidation = validateMaxGrade(values.maxGrade, value);
+      if (!maxValidation.isValid) {
+        setMaxGradeError(maxValidation.errorMessage);
+      } else {
+        setMaxGradeError("");
+      }
+    }
+    
+    onChange("minGrade", value);
+  };
+
+  const handleMaxGradeChange = (value) => {
+    const validation = validateMaxGrade(value, values.minGrade);
+    if (!validation.isValid && value.trim().length > 0) {
+      setMaxGradeError(validation.errorMessage);
+    } else {
+      setMaxGradeError("");
+    }
+    onChange("maxGrade", value);
+  };
+
+  const handleDescriptionChange = (value) => {
+    onChange("description", value);
+  };
+
+  const validateForm = () => {
+    const validationResult = validateLevelForm(values, isEditing);
+    
+    setNameError(validationResult.errors.name || "");
+    setAreaError(validationResult.errors.area || "");
+    setLevelError(validationResult.errors.level || "");
+    setMinGradeError(validationResult.errors.minGrade || "");
+    setMaxGradeError(validationResult.errors.maxGrade || "");
+    setDescriptionError(validationResult.errors.description || "");
+    
+    return validationResult;
+  };
+
+  const handleSubmit = () => {
+    const validationResult = validateForm();
+    if (validationResult.isValid) {
+      onSubmit();
+    } else {
+      onSubmit(validationResult.errorFields);
+    }
   };
 
   const requiredField = (
@@ -60,7 +166,6 @@ const FormularioNivelCategoria = ({ values, onChange, onSubmit, onCancel, isEdit
   };
 
   return (
-
     <div className="formulario-nivel">
       <h3 className="formulario-titulo">{isEditing ? 'Editar Nivel/Categoría' : 'Nuevo Nivel/Categoría'}</h3>
       {error && <div className="error-message">{error}</div>}
@@ -74,20 +179,21 @@ const FormularioNivelCategoria = ({ values, onChange, onSubmit, onCancel, isEdit
               type="text"
               placeholder="Ej: Básico, Primaria, etc."
               value={values.name}
-              onChange={(e) => onChange("name", e.target.value)}
-              className={!values.name.trim() ? "border-red-300" : ""}
+              onChange={(e) => handleNameChange(e.target.value)}
+              className={nameError ? "border-red-300" : ""}
             />
+            {nameError && <p className="text-red-500 text-sm">{nameError}</p>}
           </div>
 
           <div className="form-group">
             <label>Área {requiredField}</label>
             <select
               value={values.area}
-              onChange={(e) => onChange("area", e.target.value)}
-              className={!values.area ? "border-red-300" : ""}
+              onChange={(e) => handleAreaChange(e.target.value)}
+              className={areaError ? "border-red-300" : ""}
               disabled={isEditing}
             >
-              <option>Seleccionar Área</option>
+              <option value="">Seleccionar Área</option>
               {areas.map(area => (
                 <option key={area.id} value={area.id}>
                   {area.name}
@@ -100,6 +206,7 @@ const FormularioNivelCategoria = ({ values, onChange, onSubmit, onCancel, isEdit
                 El área no puede ser modificada en modo edición
               </span>
             )}
+            {areaError && <p className="text-red-500 text-sm">{areaError}</p>}
           </div>
         </div>
 
@@ -109,19 +216,20 @@ const FormularioNivelCategoria = ({ values, onChange, onSubmit, onCancel, isEdit
             <label>Nivel de Grado {requiredField}</label>
             <select
               value={values.level}
-              onChange={(e) => onChange("level", e.target.value)}
-              className={!values.level ? "border-red-300" : ""}
+              onChange={(e) => handleLevelChange(e.target.value)}
+              className={levelError ? "border-red-300" : ""}
               disabled={isEditing}
             >
-              <option>Seleccionar Grado</option>
-              <option>Primaria</option>
-              <option>Secundaria</option>
+              <option value="">Seleccionar Grado</option>
+              <option value="Primaria">Primaria</option>
+              <option value="Secundaria">Secundaria</option>
             </select>
             {isEditing && (
               <span className="text-blue-500 text-xs mt-1 block">
                 El nivel de grado no puede ser modificado en modo edición
               </span>
             )}
+            {levelError && <p className="text-red-500 text-sm">{levelError}</p>}
           </div>
 
           <div className="form-group">
@@ -129,9 +237,11 @@ const FormularioNivelCategoria = ({ values, onChange, onSubmit, onCancel, isEdit
             <input
               type="text"
               value={values.minGrade}
-              onChange={(e) => onChange("minGrade", e.target.value)}
-              className={!values.minGrade.trim() ? "border-red-300" : ""}
+              onChange={(e) => handleMinGradeChange(e.target.value)}
+              className={minGradeError ? "border-red-300" : ""}
+              placeholder="Ej: 1ro, 2do"
             />
+            {minGradeError && <p className="text-red-500 text-sm">{minGradeError}</p>}
           </div>
 
           <div className="form-group">
@@ -139,8 +249,11 @@ const FormularioNivelCategoria = ({ values, onChange, onSubmit, onCancel, isEdit
             <input
               type="text"
               value={values.maxGrade}
-              onChange={(e) => onChange("maxGrade", e.target.value)}
+              onChange={(e) => handleMaxGradeChange(e.target.value)}
+              className={maxGradeError ? "border-red-300" : ""}
+              placeholder="Ej: 3ro, 4to"
             />
+            {maxGradeError && <p className="text-red-500 text-sm">{maxGradeError}</p>}
           </div>
         </div>
 
@@ -154,12 +267,9 @@ const FormularioNivelCategoria = ({ values, onChange, onSubmit, onCancel, isEdit
             <textarea
               placeholder="Ej: Para estudiantes de 6-12 años, Nivel para principiantes, etc."
               value={values.description}
-              onChange={handleDescriptionChange}
-              className={descriptionHints.minLength || descriptionHints.maxLength || 
-                         descriptionHints.startsWithNumber || descriptionHints.consecutiveNumbers 
-                         ? "border-red-300" : ""}
+              onChange={(e) => handleDescriptionChange(e.target.value)}
+              className={descriptionError ? "border-red-300" : ""}
             >
-
             </textarea>
             {/* Validation hints */}
             <div className="text-sm mt-1">
@@ -181,7 +291,11 @@ const FormularioNivelCategoria = ({ values, onChange, onSubmit, onCancel, isEdit
       </div>
       <div className="form-actions">
         <button className="btn-outline" onClick={onCancel}>Cancelar</button>
-        <button className="btn-primary" onClick={onSubmit}>
+        <button 
+          className="btn-primary" 
+          onClick={handleSubmit}
+          disabled={!!nameError || !!areaError || !!levelError || !!minGradeError || !!maxGradeError || !!descriptionError}
+        >
           {isEditing ? 'Actualizar' : 'Guardar'}
         </button>
       </div>

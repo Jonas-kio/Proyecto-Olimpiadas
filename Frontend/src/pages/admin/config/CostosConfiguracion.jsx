@@ -1,52 +1,244 @@
-
-import { useState } from "react";
-
+import { useState, useEffect } from "react";
 
 import Card from "../../../components/ui/Card";
 import Table from "../../../components/common/Table";
 import Button from "../../../components/common/Button";
 import FormularioCosto from "../../../components/forms/FormularioCosto";
 import "../../../styles/components/CostosConfiguracion.css";
+import costService from "../../../services/costosService";
+import { getActiveAreas } from "../../../services/areasService";
+import { getLevels } from "../../../services/nivelesService";
+import SuccessModal from "../../../components/common/SuccessModal";
+import ErrorModal from "../../../components/common/ErrorModal";
+import DeleteConfirmationModal from "../../../components/common/DeleteConfirmationModal";
 
-const Configuracion = () => {
+import { 
+  validateCostForm, 
+  buildCostApiData, 
+  prepareCostForEdit, 
+  formatCostForDisplay 
+} from "../../../utils/validators/costValidators";
+
+const CostConfiguracion = () => {
 
   const [showNewCostForm, setShowNewCostForm] = useState(false);
-  const [specificCosts, setSpecificCosts] = useState([
-    { id: 1, name: "Inscripción General", value: 50, area: "Todas", category: "Todas" },
-    { id: 2, name: "Inscripción Temprana", value: 40, area: "Todas", category: "Todas" },
-    { id: 3, name: "Inscripción Matemáticas Avanzado", value: 60, area: "Matemáticas", category: "Universitaria" },
-  ]);
-  const [newCost, setNewCost] = useState({ id: null, name: "", value: "", area: "Todas", category: "Todas" });
-  const [errorMessage, setErrorMessage] = useState("");
+  const [specificCosts, setSpecificCosts] = useState([]);
+  const [rawCostsData, setRawCostsData] = useState([]); // Nuevo estado para los datos sin formatear
+  const [newCost, setNewCost] = useState({ id: null, name: "", value: "", area: "0", category: "0" });
+  const [loading, setLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+
+  const [areas, setAreas] = useState([]);
+  const [categories, setCategories] = useState([]);
+
+  const [areaMap, setAreaMap] = useState({});
+  const [categoryMap, setCategoryMap] = useState({});
+
+  const [errorModalOpen, setErrorModalOpen] = useState(false);
+  const [modalErrorMessage, setModalErrorMessage] = useState("");
+  const [errorFields, setErrorFields] = useState([]);
+  
+  const [successModalOpen, setSuccessModalOpen] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [successDetailMessage, setSuccessDetailMessage] = useState("");
+
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [costToDelete, setCostToDelete] = useState(null);
+
+  // Este useEffect se encarga de cargar los datos iniciales
+  useEffect(() => {
+    const loadInitialData = async () => {
+      try {
+        setLoading(true);
+        
+        const areasData = await getActiveAreas();
+        console.log("Áreas cargadas:", areasData);
+        setAreas(areasData);
+
+        const areaMapData = {};
+        areasData.forEach(area => {
+          areaMapData[area.id] = area.name;
+        });
+        console.log("areaMapData creado:", areaMapData);
+        setAreaMap(areaMapData);
+
+        const categoriesData = await getLevels();
+        console.log("Categorías/Niveles cargados:", categoriesData);
+        setCategories(categoriesData);
+
+        const categoryMapData = {};
+        categoriesData.forEach(category => {
+          categoryMapData[category.id] = category.name;
+        });
+        console.log("categoryMapData creado:", categoryMapData);
+        setCategoryMap(categoryMapData);
+
+        await refreshCostsList();
+      } catch (error) {
+        console.error("Error al cargar datos iniciales:", error);
+        setModalErrorMessage("Error al cargar los datos. Por favor, intente de nuevo más tarde.");
+        setErrorModalOpen(true);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadInitialData();
+  }, []);
+
+  // NUEVO: Este useEffect reformatea los costos cuando los mapas se actualizan
+  useEffect(() => {
+    // Solo ejecutar si tenemos datos crudos y al menos uno de los mapas tiene datos
+    if (rawCostsData.length > 0 && (Object.keys(areaMap).length > 0 || Object.keys(categoryMap).length > 0)) {
+      console.log("Reformateando costos debido a cambios en los mapas");
+      console.log("Usando mapas:", { areaMap, categoryMap });
+      
+      const formattedCosts = rawCostsData.map(cost => 
+        formatCostForDisplay(cost, areaMap, categoryMap)
+      );
+      
+      console.log("Costos reformateados:", formattedCosts);
+      setSpecificCosts(formattedCosts);
+    }
+  }, [areaMap, categoryMap, rawCostsData]); // Dependencias del efecto
 
   const handleNewCostChange = (e) => {
     const { name, value } = e.target;
     setNewCost((prev) => ({ ...prev, [name]: value }));
   };
 
-  const addOrUpdateCost = () => {
-    if (!newCost.name || !newCost.value) {
-      setErrorMessage("Todos los campos son obligatorios.");
+  const addOrUpdateCost = async (errorFieldsFromForm) => {
+    if (errorFieldsFromForm) {
+      setErrorFields(errorFieldsFromForm);
+      setModalErrorMessage("Por favor complete todos los campos requeridos");
+      setErrorModalOpen(true);
       return;
     }
-    if (newCost.id) {
-      setSpecificCosts(specificCosts.map((c) => (c.id === newCost.id ? newCost : c)));
-    } else {
-      const newEntry = { ...newCost, id: Date.now() };
-      setSpecificCosts([...specificCosts, newEntry]);
+
+    try {
+      const validationResult = validateCostForm(
+        newCost, 
+        categories, 
+        specificCosts, 
+        isEditing
+      );
+      
+      if (!validationResult.isValid) {
+        setErrorFields(validationResult.errorFields);
+        setModalErrorMessage(
+          validationResult.errors.unique || 
+          validationResult.errors.categoryArea || 
+          "Por favor complete todos los campos requeridos"
+        );
+        setErrorModalOpen(true);
+        return;
+      }
+      
+      const apiData = buildCostApiData(newCost, areas, categories);
+      
+      console.log("Datos a enviar a la API:", apiData);
+
+      if (newCost.id) {
+        await costService.updateCost(newCost.id, apiData);
+        console.log(`Costo ID ${newCost.id} actualizado correctamente`);
+        setSuccessMessage("Costo actualizado exitosamente");
+        setSuccessDetailMessage(`El costo "${newCost.name}" ha sido actualizado correctamente.`);
+      } else {
+        await costService.createCost(apiData);
+        console.log("Nuevo costo creado correctamente");
+        setSuccessMessage("Costo creado exitosamente");
+        setSuccessDetailMessage(`El costo "${newCost.name}" ha sido creado correctamente.`);
+      }
+
+      await refreshCostsList();
+      
+      setSuccessModalOpen(true);
+    } catch (error) {
+      console.error("Error al guardar el costo:", error);
+      const errorMsg = error.message || "Error al guardar el costo. Por favor, intente de nuevo.";
+      setModalErrorMessage(errorMsg);
+      setErrorModalOpen(true);
     }
-    setNewCost({ id: null, name: "", value: "", area: "Todas", category: "Todas" });
-    setShowNewCostForm(false);
-    setErrorMessage("");
+  };
+
+  const handleDeleteCost = (id) => {
+    const costToDelete = specificCosts.find(cost => cost.id === id);
+    setCostToDelete(costToDelete);
+    setDeleteModalOpen(true);
+  };
+
+  const confirmDeleteCost = async () => {
+    if (costToDelete) {
+      try {
+        await costService.deleteCost(costToDelete.id);
+        console.log(`Costo ID ${costToDelete.id} eliminado correctamente`);
+        
+        // Actualizar tanto los datos crudos como los formateados
+        setRawCostsData(rawCostsData.filter(cost => cost.id !== costToDelete.id));
+        setSpecificCosts(specificCosts.filter(cost => cost.id !== costToDelete.id));
+        
+        setSuccessMessage("Costo eliminado exitosamente");
+        setSuccessDetailMessage("El costo ha sido eliminado correctamente.");
+        setSuccessModalOpen(true);
+        
+        setDeleteModalOpen(false);
+        setCostToDelete(null);
+      } catch (error) {
+        console.error("Error al eliminar el costo:", error);
+        const errorMsg = error.message || "Error al eliminar el costo. Por favor, intente de nuevo.";
+        setModalErrorMessage(errorMsg);
+        setErrorModalOpen(true);
+        
+        setDeleteModalOpen(false);
+        setCostToDelete(null);
+      }
+    }
   };
 
   const editarCosto = (cost) => {
-    setNewCost(cost);
+    const costForEdit = prepareCostForEdit(cost);
+    
+    console.log("Editando costo:", costForEdit);
+    setNewCost(costForEdit);
     setShowNewCostForm(true);
+    setIsEditing(true);
   };
 
-  const eliminarCosto = (id) => {
-    setSpecificCosts(specificCosts.filter((cost) => cost.id !== id));
+  const handleCancel = () => {
+    setShowNewCostForm(false);
+    setIsEditing(false);
+    setNewCost({ id: null, name: "", value: "", area: "0", category: "0" });
+  };
+
+  const closeDeleteModal = () => {
+    setDeleteModalOpen(false);
+    setCostToDelete(null);
+  };
+
+  const refreshCostsList = async () => {
+    try {
+      const updatedCosts = await costService.getAllCosts();
+      console.log("Costos recibidos:", updatedCosts);
+      
+      // Guardar los datos crudos - esto activará el useEffect
+      setRawCostsData(updatedCosts);
+      
+      // Ya no necesitamos formatear aquí, lo hará el useEffect
+      // El useEffect reformateará los costos cuando se actualice rawCostsData
+    } catch (error) {
+      console.error("Error al actualizar la lista de costos:", error);
+      throw error;
+    }
+  };
+
+  const closeErrorModal = () => {
+    setErrorModalOpen(false);
+  };
+
+  const closeSuccessModal = () => {
+    setSuccessModalOpen(false);
+    setShowNewCostForm(false); 
+    setNewCost({ id: null, name: "", value: "", area: "0", category: "0" });
   };
 
   return (
@@ -54,8 +246,26 @@ const Configuracion = () => {
       <Card
         title="Costos Específicos"
         action={
-          <Button onClick={() => setShowNewCostForm(true)} className="bg-blue-700 text-white">
-            + Nuevo Costo
+          <Button 
+            onClick={() => {
+              if (showNewCostForm && isEditing) {
+                setIsEditing(false);
+                setNewCost({ id: null, name: "", value: "", area: "0", category: "0" });
+              } else {
+                setShowNewCostForm(!showNewCostForm);
+                
+                if (showNewCostForm) {
+                  setIsEditing(false);
+                  setNewCost({ id: null, name: "", value: "", area: "0", category: "0" });
+                }
+              }
+            }} 
+            disabled={loading}
+            className="bg-blue-700 text-white"
+          >
+            {showNewCostForm 
+              ? (isEditing ? "Cancelar Edición" : "Cancelar") 
+              : "+ Nuevo Costo"}
           </Button>
         }
       >
@@ -64,31 +274,57 @@ const Configuracion = () => {
             values={newCost}
             onChange={handleNewCostChange}
             onSubmit={addOrUpdateCost}
-            onCancel={() => setShowNewCostForm(false)}
-            errorMessage={errorMessage}
+            onCancel={handleCancel}
+            areas={[...areas]}
+            categories={[...categories]}
+            isEditing={!!newCost.id}
+            existingCosts={specificCosts} 
           />
         )}
 
-        <Table
-          columns={[
-            { key: "name", title: "Nombre" },
-            { key: "value", title: "Valor" },
-            { key: "area", title: "Área" },
-            { key: "category", title: "Categoría" },
-          ]}
-          data={specificCosts.map((cost) => ({
-            id: cost.id,
-            name: cost.name,
-            value: `Bs. ${cost.value}`,
-            area: cost.area,
-            category: cost.category,
-          }))}
-          onEdit={editarCosto}
-          onDelete={eliminarCosto}
-        />
+        {loading ? (
+          <p className="text-center py-4">Cargando costos...</p>
+        ) : specificCosts.length > 0 ? (
+          <Table
+            columns={[
+              { key: "name", title: "Nombre" },
+              { key: "value", title: "Valor" },
+              { key: "area", title: "Área" },
+              { key: "category", title: "Categoría" },
+            ]}
+            data={specificCosts}
+            onEdit={editarCosto}
+            onDelete={handleDeleteCost}
+          />
+        ) : (
+          <p className="text-center py-4">No hay costos registrados</p>
+        )}
       </Card>
+
+      <ErrorModal
+        isOpen={errorModalOpen}
+        onClose={closeErrorModal}
+        errorMessage={modalErrorMessage}
+        errorFields={errorFields}
+      />
+
+      <SuccessModal
+        isOpen={successModalOpen}
+        onClose={closeSuccessModal}
+        tittleMessage="Operación Exitosa"
+        successMessage={successMessage}
+        detailMessage={successDetailMessage}
+      />
+      
+      <DeleteConfirmationModal 
+        isOpen={deleteModalOpen}
+        onClose={closeDeleteModal}
+        onConfirm={confirmDeleteCost}
+        itemName={costToDelete?.name || ''}
+        itemType="costo"
+      />
     </div>
   );
 };
 
-export default Configuracion;
+export default CostConfiguracion;

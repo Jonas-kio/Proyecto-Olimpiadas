@@ -6,11 +6,14 @@ import Button from "../../../components/common/Button";
 
 import FormularioNivelCategoria from "../../../components/forms/FormularioNivelCategoria";
 import { getLevels, createLevel, deleteLevel, updateLevel } from "../../../services/nivelesService";
-import {getActiveAreas} from "../../../services/areasService"
+import { getActiveAreas } from "../../../services/areasService";
 import ErrorModal from '../../../components/common/ErrorModal';
 import SuccessModal from '../../../components/common/SuccessModal';
 import DeleteConfirmationModal from '../../../components/common/DeleteConfirmationModal';
 import "../../../index.css";
+
+
+import { validateLevelForm, buildLevelApiData } from '../../../utils/validators/nivelesValidators';
 
 const NivelesYCategorias = () => {
   const [showForm, setShowForm] = useState(false);
@@ -21,7 +24,6 @@ const NivelesYCategorias = () => {
   const [areasMap, setAreasMap] = useState({});
   const [isEditing, setIsEditing] = useState(false);
   const [currentLevelId, setCurrentLevelId] = useState(null);
-
 
   // Error modal state
   const [showErrorModal, setShowErrorModal] = useState(false);
@@ -34,7 +36,6 @@ const NivelesYCategorias = () => {
   const [successDetails, setSuccessDetails] = useState("");
   const [successTittle, setSuccessTittle] = useState("");
   
-
   // Delete confirmation modal state
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [levelToDelete, setLevelToDelete] = useState(null);
@@ -121,89 +122,14 @@ const NivelesYCategorias = () => {
     setFormValues({ ...formValues, [field]: value });
   };
 
-  const extractGradeNumber = (grade) => {
-    const match = grade.match(/^([1-6])/);
-    return match ? parseInt(match[1], 10) : 0;
-  };
-
   const validateFormFields = () => {
-    const errorFieldsList = [];
+    const validationResult = validateLevelForm(formValues, isEditing);
     
-    if (!formValues.name.trim()) {
-      errorFieldsList.push("Nombre del Nivel/Categoría: Campo obligatorio");
-    }
-    
-
-    if (!isEditing) {
-      if (!formValues.area.trim()) {
-        errorFieldsList.push("Área: Debe seleccionar un área");
-      }
-      
-      if (!formValues.level.trim()) {
-        errorFieldsList.push("Nivel de Grado: Debe seleccionar un nivel");
-      }
-    }
-    
-    if (!formValues.minGrade.trim()) {
-      errorFieldsList.push("Grado Mínimo: Campo obligatorio");
-    }
-
-    if (errorFieldsList.length > 0) {
-      setValidationError("Por favor complete todos los campos obligatorios");
-      setErrorFields(errorFieldsList);
-      setShowErrorModal(true);
-      return false;
-    }
-    
-    const minGradePattern = /^[1-6](ro|do|to)$/;
-    if (formValues.minGrade.trim() && !minGradePattern.test(formValues.minGrade.trim())) {
-      errorFieldsList.push("Grado Mínimo: Formato incorrecto. Debe ser como '1ro', '2do', etc.");
-    }
-
-    if (formValues.minGrade.trim() && formValues.minGrade.trim().length > 3) {
-      errorFieldsList.push("Grado Mínimo: No debe exceder los 3 caracteres");
-    }
-
-    if (formValues.maxGrade.trim()) {
-      const maxGradePattern = /^[1-6](ro|do|to)$/;
-      if (!maxGradePattern.test(formValues.maxGrade.trim())) {
-        errorFieldsList.push("Grado Máximo: Formato incorrecto. Debe ser como '1ro', '2do', etc.");
-      }
-      
-      if (formValues.maxGrade.trim().length > 3) {
-        errorFieldsList.push("Grado Máximo: No debe exceder los 3 caracteres");
-      }
-
-      const minGradeNum = extractGradeNumber(formValues.minGrade.trim());
-      const maxGradeNum = extractGradeNumber(formValues.maxGrade.trim());
-      
-      if (maxGradeNum <= minGradeNum) {
-        errorFieldsList.push("Grado Máximo: Debe ser mayor al grado mínimo");
-      }
-    }
-
-    const description = formValues.description.trim();
-    if (description) {
-      if (description.length < 10) {
-        errorFieldsList.push(`Descripción: Debe tener al menos 10 caracteres (actual: ${description.length})`);
-      }
-      
-      if (description.length > 150) {
-        errorFieldsList.push(`Descripción: No debe exceder los 150 caracteres (actual: ${description.length})`);
-      }
-      
-      if (/^[0-9]/.test(description)) {
-        errorFieldsList.push("Descripción: No debe iniciar con caracteres numéricos");
-      }
-      
-      if (/[0-9]{3,}/.test(description)) {
-        errorFieldsList.push("Descripción: No debe contener más de 2 números consecutivos");
-      }
-    }
-
-    if (errorFieldsList.length > 0) {
-      setValidationError("Hay errores en el formulario que deben corregirse");
-      setErrorFields(errorFieldsList);
+    if (!validationResult.isValid) {
+      setValidationError(validationResult.errorFields.length > 0 
+        ? "Por favor complete todos los campos obligatorios" 
+        : "Hay errores en el formulario que deben corregirse");
+      setErrorFields(validationResult.errorFields);
       setShowErrorModal(true);
       return false;
     }
@@ -223,24 +149,7 @@ const NivelesYCategorias = () => {
       let result;
       
       if (isEditing && currentLevelId) {
-
-        const currentLevel = levels.find(level => level.id === currentLevelId);
-        
-        if (!currentLevel) {
-          throw new Error("No se pudo encontrar el nivel a editar");
-        }
-        
-
-        const updateData = {
-
-          areaId: currentLevel.areaId,
-          gradeName: currentLevel.gradeName,
-
-          name: formValues.name,
-          description: formValues.description,
-          gradeMin: formValues.minGrade,
-          gradeMax: formValues.maxGrade.trim() ? formValues.maxGrade : null
-        };
+        const updateData = buildLevelApiData(formValues, isEditing, currentLevelId, levels);
         
         result = await updateLevel(currentLevelId, updateData);
         
@@ -261,21 +170,12 @@ const NivelesYCategorias = () => {
         setSuccessMessage("La actualización se realizó con éxito");
         setSuccessDetails(`Se ha actualizado el nivel/categoría "${result.name}" correctamente.`);
       } else {
-
-        const areaId = parseInt(formValues.area, 10);
-        
-        const levelData = {
-          areaId: areaId,
-          name: formValues.name,
-          description: formValues.description,
-          gradeName: formValues.level,
-          gradeMin: formValues.minGrade,
-          gradeMax: formValues.maxGrade.trim() ? formValues.maxGrade : null
-        };
+        // Usar función de utilidad para construir datos de API
+        const levelData = buildLevelApiData(formValues, isEditing);
 
         result = await createLevel(levelData);
         
-        const areaName = areasMap[areaId]?.name || 'Área no disponible';
+        const areaName = areasMap[levelData.areaId]?.name || 'Área no disponible';
         
         setLevels([...levels, {
           ...result,
@@ -354,7 +254,6 @@ const NivelesYCategorias = () => {
       description: level.description || "",
     });
     
-
     setShowForm(true);
     
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -462,7 +361,6 @@ const NivelesYCategorias = () => {
 
   return (
     <div className="app-container relative">
-      {/* Modal de éxito */}
       <SuccessModal
         isOpen={showSuccessModal}
         onClose={handleSuccessModalClose}
@@ -471,7 +369,6 @@ const NivelesYCategorias = () => {
         detailMessage={successDetails}
       />
       
-      {/* Modal de error */}
       <ErrorModal 
         isOpen={showErrorModal}
         onClose={handleErrorModalClose}
@@ -479,7 +376,6 @@ const NivelesYCategorias = () => {
         errorFields={errorFields}
       />
 
-      {/* Modal de confirmación de eliminación */}
       <DeleteConfirmationModal
         isOpen={showDeleteModal}
         onClose={handleDeleteCancel}
