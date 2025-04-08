@@ -45,6 +45,7 @@ const InscripcionIndividual = () => {
         respuestaEstudiante.data
       );
       console.log("Tutores que se van a registrar:", tutoresFormulario);
+
       // Enviar tutores uno por uno
       for (const tutor of tutoresFormulario) {
         const respuesta = await inscripcionTutor(tutor);
@@ -53,21 +54,34 @@ const InscripcionIndividual = () => {
 
       setModalAbierto(true);
     } catch (error) {
-      const mensajeError =
+      const mensajeErrorBase =
         error.response?.data?.message ||
         "Error al guardar los datos. Por favor, verifique los campos.";
+
       console.error(
         "Error al inscribir:",
         error.response?.data || error.message
       );
-      setMensajeDeError(mensajeError);
 
-      // Si Laravel devuelve errores específicos de campos
-      if (error.response?.data?.errors) {
-        const campos = Object.keys(error.response.data.errors);
+      const camposErrores = error.response?.data?.errors;
+      if (camposErrores) {
+        const campos = Object.keys(camposErrores);
         setCamposConError(campos);
+
+        // Detectar campos duplicados
+        if (
+          campos.includes("documento_identidad") ||
+          campos.includes("correo_electronico")
+        ) {
+          setMensajeDeError(
+            "Ya existe un competidor registrado con ese documento o correo."
+          );
+        } else {
+          setMensajeDeError(mensajeErrorBase);
+        }
       } else {
         setCamposConError([]);
+        setMensajeDeError(mensajeErrorBase);
       }
 
       setErrorModalAbierto(true);
