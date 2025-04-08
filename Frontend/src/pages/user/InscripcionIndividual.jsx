@@ -584,6 +584,7 @@ const InscripcionIndividual = () => {
           )}
         </div>
       </form>
+      {/* Mensajes de Exito y modal */}
       <SuccessModal
         isOpen={modalAbierto}
         onClose={() => {
