@@ -6,7 +6,7 @@ import {
   inscripcionCompetidor,
   inscripcionTutor,
   inscripcionArea,
-} from "../../services/apiInscripcion";
+} from "../../services/apiConfig";
 import SuccessModal from "../../components/common/SuccessModal";
 import ErrorModal from "../../components/common/ErrorModal";
 

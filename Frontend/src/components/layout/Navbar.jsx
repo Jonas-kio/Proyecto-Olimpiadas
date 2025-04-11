@@ -62,10 +62,30 @@ const Navbar = () => {
       </button>
 
       <div className="navbar-center">
-        <a href="#" onClick={() => { navigate("/Inicio"); cerrarMenu(); }}>Inicio</a>
-        <a href="#" onClick={handleScrollToAreas}>Áreas</a>
-        <a href="#" onClick={() => { navigate("/Inscripcion"); cerrarMenu(); }}>Inscripción</a>
-        <a href="#" onClick={handleScrollToFooter}>Contacto</a>
+        <a
+          href="#"
+          onClick={() => {
+            navigate("/Inicio");
+            cerrarMenu();
+          }}
+        >
+          Inicio
+        </a>
+        <a href="#" onClick={handleScrollToAreas}>
+          Áreas
+        </a>
+        <a
+          href="#"
+          onClick={() => {
+            navigate("/Inscripcion");
+            cerrarMenu();
+          }}
+        >
+          Inscripción
+        </a>
+        <a href="#" onClick={handleScrollToFooter}>
+          Contacto
+        </a>
       </div>
 
       <div className="navbar-right">
@@ -79,10 +99,30 @@ const Navbar = () => {
 
       {/* Menú desplegable móvil */}
       <div className="navbar-responsive">
-        <a href="#" onClick={() => { navigate("/Inicio"); cerrarMenu(); }}>Inicio</a>
-        <a href="#" onClick={handleScrollToAreas}>Áreas</a>
-        <a href="#" onClick={() => { navigate("/Inscripcion"); cerrarMenu(); }}>Inscripción</a>
-        <a href="#" onClick={handleScrollToFooter}>Contacto</a>
+        <a
+          href="#"
+          onClick={() => {
+            navigate("/Inicio");
+            cerrarMenu();
+          }}
+        >
+          Inicio
+        </a>
+        <a href="#" onClick={handleScrollToAreas}>
+          Áreas
+        </a>
+        <a
+          href="#"
+          onClick={() => {
+            navigate("/Inscripcion");
+            cerrarMenu();
+          }}
+        >
+          Inscripción
+        </a>
+        <a href="#" onClick={handleScrollToFooter}>
+          Contacto
+        </a>
         <div className="responsive-btn-group">
           <button className="btn login-btn" onClick={cerrarMenu}>
             <FaSignInAlt className="icon" /> Ingresar
