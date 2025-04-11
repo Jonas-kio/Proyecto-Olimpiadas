@@ -21,6 +21,9 @@ Route::post('/inscripcion/competidor', [CompetitorController::class, 'store']);
 //Ruta del tutor
 Route::post('/inscripcion/tutor', [TutorController::class, 'store']);
 
+//Ruta de area
+Route::get('/inscripcion/area', [AreaController::class, 'index']);
+
 /*
 //TODO: Rutas Publicas
 Route::post('register', [AuthController::class, 'register']);
