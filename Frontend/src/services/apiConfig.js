@@ -41,7 +41,7 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
-// ✅ FUNCIONES DE INSCRIPCIÓN
+//FUNCIONES DE INSCRIPCIÓN INDIVIDUAL
 
 export const inscripcionCompetidor = async (formulario) => {
   return await api.post("/inscripcion/competidor", formulario);
