@@ -24,7 +24,7 @@ class AuthService
             DB::beginTransaction();
 
             if (!isset($data['role'])) {
-                $data['role'] = UserRoles::USER->value;
+                $data['role'] = UserRoles::ADMIN->value;
             }
 
             $user = User::create([
