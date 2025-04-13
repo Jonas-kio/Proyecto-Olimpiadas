@@ -292,3 +292,53 @@
   border: 2px dashed #007bff;
   background-color: #f0f8ff;
 }
+
+/*BOTONES DE IMPRIMIR Y DESCARGAR*/
+.botones-comprobante {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.btn-descargar {
+  background-color: #1565ff;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  font-size: 13px;   
+  border-radius: 50px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.btn-descargar:hover {
+  background-color: #004de0;
+}
+
+.btn-imprimir {
+  background-color: #0d2c6b;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  font-size: 13px;
+  border-radius: 50px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.btn-imprimir:hover {
+  background-color: #061f4a;
+}
+
+.icono {
+  font-size: 13px;
+}
+

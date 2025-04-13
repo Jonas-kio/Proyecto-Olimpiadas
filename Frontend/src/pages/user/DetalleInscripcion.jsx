@@ -243,6 +243,7 @@ import { useParams } from "react-router-dom";
 import "../../styles/components/Inscripcion.css";
 import ProcesandoModal from "../../components/common/ProcesandoModal";
 import ValidacionExitosaModal from "../../components/common/ValidacionExitosaModal";
+import { FaDownload, FaPrint } from "react-icons/fa";
 
 const DetalleInscripcion = () => {
   const { id } = useParams();
@@ -478,10 +479,19 @@ const DetalleInscripcion = () => {
               </div>
             </div>
 
-            <div style={{ display: "flex", gap: "16px" }}>
-              <button className="btn validar">📥 DESCARGAR COMPROBANTE</button>
-              <button className="btn imprimir">🖨️ IMPRIMIR</button>
-            </div>
+            <div className="botones-comprobante">
+  <button className="btn-descargar">
+    <FaDownload className="icono" />
+    DESCARGAR COMPROBANTE
+  </button>
+
+  <button className="btn-imprimir">
+    <FaPrint className="icono" />
+    IMPRIMIR
+  </button>
+</div>
+
+
 
             <div style={{
               marginTop: "20px",
