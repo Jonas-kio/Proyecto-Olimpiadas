@@ -30,6 +30,7 @@ const InscripcionIndividual = () => {
       const respuesta = await inscripcionCompetidor(formulario);
       console.log("Inscripción exitosa", respuesta.data);
       // Aquí puedes mostrar un mensaje de éxito o avanzar al siguiente paso
+      
     } catch (error) {
       console.error(
         "Error al inscribir:",

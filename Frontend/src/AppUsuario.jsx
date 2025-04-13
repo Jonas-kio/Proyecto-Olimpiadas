@@ -7,6 +7,8 @@ import Inicio from "./pages/user/Inicio";
 import Login from "./pages/user/Login";
 import Inscripcion from "./pages/user/Inscripcion";
 import InscripcionIndividual from "./pages/user/InscripcionIndividual";
+import MisInscripciones from './pages/user/MisInscripciones';
+import DetalleInscripcion from './pages/user/DetalleInscripcion';
 
 const AppUsuario = () => {
   return (
@@ -21,6 +23,8 @@ const AppUsuario = () => {
           path="/InscripcionIndividual"
           element={<InscripcionIndividual />}
         />
+        <Route path="/mis-inscripciones" element={<MisInscripciones />} />
+        <Route path="/detalle-inscripcion/:id" element={<DetalleInscripcion />} />
       </Routes>
       <Footer />
     </>
