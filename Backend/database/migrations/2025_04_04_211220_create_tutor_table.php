@@ -9,13 +9,19 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up(): void
+
+    public function up()
     {
         Schema::create('tutor', function (Blueprint $table) {
             $table->id();
+            $table->string('nombres');
+            $table->string('apellidos');
+            $table->string('correo_electronico');
+            $table->string('telefono');
             $table->timestamps();
         });
     }
+
 
     /**
      * Reverse the migrations.

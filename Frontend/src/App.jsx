@@ -13,7 +13,7 @@ const App = () => {
   // Pantalla de selección
   return (
     <div className="selector-container">
-      <h1 className="titulo">Bienvenido(Login chafa)</h1>
+      <h1 className="titulo">Bienvenido</h1>
       <button
         className="selector-btn"
         onClick={() => setModoSeleccionado("usuario")}

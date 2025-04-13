@@ -13,7 +13,7 @@ class CompetitorController extends Controller
         $validator = Validator::make($request->all(), [
             'nombres' => 'required|string|max:255',
             'apellidos' => 'required|string|max:255',
-            'documento_identidad' => 'required|string|max:20',
+            'documento_identidad' => 'required|string|max:20|unique:competitor',
             'provincia' => 'required|string|max:100',
             'fecha_nacimiento' => 'required|date',
             'curso' => 'required|string|max:100',
@@ -28,7 +28,7 @@ class CompetitorController extends Controller
         $competitor = Competitor::create($request->all());
 
         return response()->json([
-            'message' => 'Estudiante registrado exitosamente',
+            'message' => 'Competidor registrado exitosamente',
             'data' => $competitor
         ], 201);
     }

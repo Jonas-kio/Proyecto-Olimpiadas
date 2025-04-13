@@ -1,15 +1,15 @@
-import axios from 'axios';
+import axios from "axios";
 
 // Configura la URL base de la API
-const API_URL = 'http://localhost:8000/api';
+const API_URL = "http://localhost:8000/api";
 
 // Crear una instancia de axios con configuración personalizada
 const api = axios.create({
   baseURL: API_URL,
   headers: {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json'
-  }
+    "Content-Type": "application/json",
+    Accept: "application/json",
+  },
 });
 
 // Interceptor para manejar tokens de autenticación
@@ -57,5 +57,18 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+// ✅ FUNCIONES DE INSCRIPCIÓN
+
+export const inscripcionCompetidor = async (formulario) => {
+  return await api.post("/inscripcion/competidor", formulario);
+};
+
+export const inscripcionTutor = async (formularioTutor) => {
+  return await api.post("/inscripcion/tutor", formularioTutor);
+};
+
+export const inscripcionArea = async () => {
+  return await api.get("/inscripcion/area");
+};
 
 export default api;

@@ -11,8 +11,20 @@ use App\Http\Middleware\IsUserAuth;
 
 use App\Http\Controllers\CompetitorController;
 
+use App\Http\Controllers\TutorController;
+use App\Http\Controllers\CostController as ControllersCostController;
 
 
+
+
+//Ruta del competidor
+Route::post('/inscripcion/competidor', [CompetitorController::class, 'store']);
+
+//Ruta del tutor
+Route::post('/inscripcion/tutor', [TutorController::class, 'store']);
+
+//Ruta de area
+Route::get('/inscripcion/area', [AreaController::class, 'index']);
 
 //TODO: Rutas Publicas
 Route::post('register', [AuthController::class, 'register']);
