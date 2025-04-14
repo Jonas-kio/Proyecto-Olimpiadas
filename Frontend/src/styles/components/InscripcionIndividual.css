@@ -181,3 +181,93 @@ select.error {
   font-size: 1rem;
   cursor: pointer;
 }
+
+.confirmacion {
+  background: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  margin: 15px 0;
+}
+
+.seccion {
+  background: #f8f9fa;
+  padding: 15px;
+  margin-bottom: 15px;
+  border-radius: 5px;
+}
+
+.seccion h3 {
+  color: #0b4884;
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 16px;
+  border-bottom: 1px solid #dee2e6;
+  padding-bottom: 8px;
+}
+
+.campo {
+  display: flex;
+  margin-bottom: 8px;
+}
+
+.campo-label {
+  width: 30%;
+  font-weight: 500;
+  color: #495057;
+}
+
+.campo-valor {
+  width: 70%;
+  color: #212529;
+}
+
+.areas-lista {
+  list-style-type: disc;
+  padding-left: 20px;
+  margin: 10px 0;
+}
+
+.areas-lista li {
+  margin-bottom: 5px;
+}
+
+.total {
+  font-weight: bold;
+  font-size: 1.1em;
+}
+
+.terminos {
+  margin: 20px 0;
+  display: flex;
+  align-items: flex-start;
+}
+
+.terminos input[type="checkbox"] {
+  margin-right: 10px;
+  margin-top: 3px;
+}
+
+.botones-navegacion {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+
+.btn-anterior {
+  padding: 8px 16px;
+  border: 1px solid #0b4884;
+  background: white;
+  color: #0b4884;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-confirmar {
+  padding: 8px 16px;
+  background: #0b4884;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
