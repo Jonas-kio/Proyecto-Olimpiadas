@@ -250,8 +250,8 @@ const DetalleInscripcion = () => {
 
             <a
     href={URL.createObjectURL(archivo)}
-    download={`Comprobante_${id}.pdf`}
-    className="btn-descargar"
+    download={`Comprobante_${id}.pdf`} // funcion descargar en archivo pdf
+    className="btn-descargar" 
     style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}
   >
     <FaDownload className="icono" /> DESCARGAR COMPROBANTE
