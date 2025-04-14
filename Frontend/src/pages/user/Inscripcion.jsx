@@ -1,5 +1,5 @@
 import "../../styles/components/Inscripcion.css";
-import React from "react";
+
 // import "./styles/Inscripcion.css";
 
 import { useNavigate } from "react-router-dom";
@@ -31,7 +31,7 @@ const Inscripcion = () => {
           </ul>
           <button
             className="btn-primario"
-            onClick={() => navigate("/InscripcionIndividual")}
+            onClick={() => navigate("/user/inscripcion/inscripcion-individual")}
           >
             Inscripción Individual
           </button>

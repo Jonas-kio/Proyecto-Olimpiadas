@@ -119,14 +119,14 @@ const Login = () => {
       <div 
         className="auth-image" 
         style={{ 
-          backgroundImage: "url('/public/images/login2.jpg')" 
+          backgroundImage: "url('/public/images/login3.png')" 
         }}
       />
       <div className="auth-form-container">
         <div className="auth-card">
           <div className="auth-logo">
             <div className="logo-circle">
-              <span className="logo-text">O!Sansi</span>
+              <span className="logo-text">O!</span>
             </div>
           </div>
           <h1 className="auth-title">Iniciar Sesión</h1>

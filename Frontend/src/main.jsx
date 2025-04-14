@@ -1,44 +1,90 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, Outlet  } from "react-router-dom";
 import App from "./App.jsx";
 import "./styles/global.css";
 import "./index.css";
 
-
-// Importar componentes de autenticación
-import Login from "./pages/auth/login";
+import Login from "./pages/auth/Login.jsx";
 import Register from "./pages/auth/Register";
 import NotFound from "./pages/NotFound";
 
-// Importar componentes de protección de rutas
-import { PrivateRoute, AdminRoute } from "./components/PrivateRoute";
+import Navbar from "./components/layout/Navbar.jsx";
+import Inicio from "./pages/user/Inicio.jsx";
 
-// Componente contenedor principal con todas las rutas
+import { PrivateRoute, AdminRoute } from "./components/PrivateRoute";
+import AppUsuario from "./AppUsuario.jsx";
+import Footer from "./components/layout/Footer.jsx";
+
+
+// eslint-disable-next-line react-refresh/only-export-components
 const MainRouter = () => {
+
   return (
     <Routes>
-      {/* Rutas de autenticación */}
-      <Route path="/login" element={<Login />} />
-      <Route path="/registrar" element={<Register />} />
+      {/* Wrap routes in Layout component */}
+      <Route element={<Layout />}>
+        {/* Página de inicio pública */}
+        <Route path="/" element={<LandingPage />} />
+
+        {/* Rutas de autenticación */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/registrar" element={<Register />} />
+      </Route>
+
+        {/* Ruta para el panel de administrador - requiere rol admin */}
+        <Route path="/app/*" element={
+          <AdminRoute>
+            <App />
+          </AdminRoute>
+        } />
+        
+        {/* Ruta para usuarios regulares */}
+        <Route path="/user/*" element={
+          <PrivateRoute>
+            <AppUsuario />
+          </PrivateRoute>
+        } />
+        
+        {/* Ruta 404 */}
+        <Route path="*" element={<NotFound />} />
       
-      {/* Rutas regulares de la aplicación - protegidas con AdminRoute */}
-      <Route path="/app/*" element={
-        <AdminRoute>
-          <App />
-        </AdminRoute>
-      } />
-      
-      {/* Ruta principal - redirige al login si no hay sesión, o a la app si hay sesión */}
-      <Route path="/" element={
-        localStorage.getItem('token') 
-          ? <Navigate to="/app" replace /> 
-          : <Navigate to="/login" replace />
-      } />
-      
-      {/* Ruta 404 */}
-      <Route path="*" element={<NotFound />} />
     </Routes>
+    
+
+  );
+};
+
+// eslint-disable-next-line react-refresh/only-export-components
+const LandingPage = () => {
+  const isAuthenticated = localStorage.getItem('token') !== null;
+  const userRole = localStorage.getItem('userRole');
+
+  if (isAuthenticated) {
+    if (userRole === 'admin') {
+      return <Navigate to="/app" replace />;
+    } else {
+      return <Navigate to="/user" replace />;
+    }
+  }
+
+  return (
+    <>
+      <Inicio />
+      <Footer />
+    </>
+  );
+};
+
+
+// eslint-disable-next-line react-refresh/only-export-components
+const Layout = () => {
+  const isAuthenticated = localStorage.getItem('token') !== null;
+  return (
+    <>
+      {!isAuthenticated && <Navbar />}
+      <Outlet />
+    </>
   );
 };
 

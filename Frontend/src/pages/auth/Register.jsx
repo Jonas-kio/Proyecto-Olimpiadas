@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { registerUser } from '../../services/authService';
 import '../../styles/components/Auth.css';
@@ -94,6 +94,12 @@ const Register = () => {
 
   return (
     <div className="auth-container">
+       <div 
+        className="auth-image" 
+        style={{ 
+          backgroundImage: "url('/public/images/login3.png')" 
+        }}
+      />
       <div className="auth-form-container">
         <div className="auth-card">
           <div className="auth-logo">
