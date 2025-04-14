@@ -12,12 +12,10 @@ const api = axios.create({
   },
 });
 
-// Interceptor para manejar tokens de autenticación si es necesario
-// Comentado ya que no se maneja autenticación todavía
-/*
+// Interceptor para manejar tokens de autenticación
 api.interceptors.request.use(
   (config) => {
-    // Aquí puedes añadir el token de autenticación si lo tienes
+    // Añadir el token de autenticación si existe
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -28,7 +26,6 @@ api.interceptors.request.use(
     return Promise.reject(error);
   }
 );
-*/
 
 // Interceptor para manejar respuestas y errores globales
 api.interceptors.response.use(
@@ -36,8 +33,27 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
-    // Versión simplificada que solo registra el error
-    console.error("Error en la petición API:", error.message);
+    // Manejo global de errores
+    console.error('Error en la petición API:', error.message);
+    
+    // Si el error es 401 (no autorizado), probablemente el token expiró
+    if (error.response && error.response.status === 401) {
+      // Verificar si estamos en una ruta de autenticación
+      const authPaths = ['/auth/login', '/auth/register', '/auth/recover-password', '/auth/reset-password'];
+      const isAuthRoute = authPaths.some(path => error.config.url.includes(path));
+      
+      if (!isAuthRoute) {
+        console.log('Sesión expirada. Redirigiendo al login...');
+        // Limpiar datos de autenticación
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('userRole');
+        
+        // Redirigir al login
+        window.location.href = '/login';
+      }
+    }
+    
     return Promise.reject(error);
   }
 );

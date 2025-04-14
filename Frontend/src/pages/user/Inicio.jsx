@@ -1,5 +1,5 @@
 import "../../styles/components/Inicio.css";
-import React, { useRef, useEffect } from "react";
+import { useRef, useEffect } from "react";
 
 import { useNavigate } from "react-router-dom";
 
@@ -66,7 +66,7 @@ const Inicio = () => {
           <div className="hero-botones">
             <button
               className="btn-primario"
-              onClick={() => navigate("/Inscripcion")}
+              onClick={() => navigate("/user/inscripcion")}
             >
               Inscríbete ahora
             </button>
@@ -90,7 +90,7 @@ const Inicio = () => {
           href="#"
           onClick={(e) => {
             e.preventDefault();
-            navigate("/inscripcion");
+            navigate("/user/inscripcion");
           }}
         >
           Inscríbete aquí
@@ -205,7 +205,7 @@ const Inicio = () => {
         <div className="participacion-botones">
           <button
             className="btn-primario"
-            onClick={() => navigate("/inscripcion")}
+            onClick={() => navigate("/user/inscripcion")}
           >
             Comenzar Inscripción
           </button>
