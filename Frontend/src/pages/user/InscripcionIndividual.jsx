@@ -564,11 +564,6 @@ const InscripcionIndividual = () => {
                 <input type="checkbox" id="acepto" />
                 <label htmlFor="acepto"> Acepto los términos y condiciones de la Olimpiada Oh! SanSi</label>
               </div>
-
-              <div className="botones-navegacion">
-                <button type="button" onClick={anterior}>Anterior</button>
-                <button type="submit">Confirmar y Generar Boleta</button>
-              </div>
             </div>
           </>
         )}
