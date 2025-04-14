@@ -210,7 +210,9 @@
   background-color: white;
   padding: 24px;
   border-radius: 12px;
-  max-width: 1000px;
+ /* max-width: 1000px;*/
+  max-width: 1130px; /* más ancho */
+  min-height: 500px;  /* más alto */
   margin: auto;
   box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
