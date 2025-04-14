@@ -96,33 +96,50 @@ const DetalleInscripcion = () => {
         />
       )}
 
-      <div style={{ display: "flex", alignItems: "center", marginBottom: "24px" }}>
-        <button
-          onClick={() => window.history.back()}
-          style={{
-            backgroundColor: "#2563eb",
-            border: "none",
-            width: "36px",
-            height: "36px",
-            borderRadius: "8px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            cursor: "pointer",
-            marginRight: "12px"
-          }}
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-            strokeWidth={2} stroke="white" style={{ width: "20px", height: "20px" }}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
-        <h1 style={{ fontSize: "20px", fontWeight: "600", color: "#1e3a8a", margin: 0 }}>
-          Detalle de Inscripción
-        </h1>
-      </div>
+     
 
-      <div className="detalle-contenedor">
+      <div className="detalle-contenedor"> 
+
+      <div style={{ display: "flex", alignItems: "center", marginBottom: "20px" }}>
+      <button
+  onClick={() => window.history.back()}
+  style={{
+    backgroundColor: "#1d4ed8",
+    border: "none",
+    width: "40px",
+    height: "40px",
+    borderRadius: "8px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+    marginRight: "12px"
+  }}
+>
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    width="24"
+    height="24"
+    fill="none"
+    stroke="#ffffff"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <line x1="19" y1="12" x2="5" y2="12" />
+    <polyline points="12 19 5 12 12 5" />
+  </svg>
+</button>
+
+
+  <h1 style={{ fontSize: "20px", fontWeight: "600", color: "#1e3a8a", margin: 0 }}>
+    Detalle de Inscripción
+  </h1>
+</div>
+
+
         <div className="detalle-info" style={{ backgroundColor: "#f1f5f9", padding: "16px", borderRadius: "8px", marginBottom: "24px" }}>
           <h3 style={{ fontSize: "16px", fontWeight: "bold", color: "#1e3a8a", marginBottom: "12px" }}>
             Información de Inscripción
