@@ -9,6 +9,7 @@ import HomeAdmin from "../pages/admin/homeAdmin";
 const AppRouterAdmin = () => {
   return (
     <Routes>
+      <Route path="/" element={<HomeAdmin/>} />
       <Route path="/homeAdmin" element={<HomeAdmin/>} />
       <Route path="/configuracion" element={<DashboardConfig />} />
       <Route path="/reports" element={<Reportes/>} />

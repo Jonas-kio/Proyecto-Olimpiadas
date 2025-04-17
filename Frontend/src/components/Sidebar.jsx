@@ -1,9 +1,42 @@
-
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { LayoutGrid, Settings, FileText, Users, LogOut } from 'lucide-react';
-import "../styles/Sidebar.css"
+import { useState, useEffect } from "react";
+import "../styles/Sidebar.css";
 
 const Sidebar = () => {
+  const location = useLocation();
+
+  const currentPath = location.pathname;
+
+  const [activeItem, setActiveItem] = useState("dashboard");
+  
+  useEffect(() => {
+
+    if (currentPath === "/" || currentPath === "/app") {
+
+      setActiveItem("dashboard");
+    }
+  }, []); 
+  
+  useEffect(() => {
+    console.log("Ruta actual:", currentPath);
+    
+    if (currentPath === "/" || currentPath === "/app" || currentPath === "/app/homeAdmin" || currentPath === "/app/dashboard") {
+      setActiveItem("dashboard");
+    } else if (currentPath.includes("/app/configuracion")) {
+      setActiveItem("configuracion");
+    } else if (currentPath.includes("/app/reportes")) {
+      setActiveItem("reportes");
+    } else if (currentPath.includes("/app/participantes")) {
+      setActiveItem("participantes");
+    }
+  }, [currentPath]);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('userRole');
+  };
+
   return (
     <div className="sidebar">
       <div className="logo-container">
@@ -22,25 +55,41 @@ const Sidebar = () => {
       <nav className="nav-menu">
         <ul>
           <li>
-            <Link to="/homeAdmin" className="nav-item">
+            <Link 
+              to="/app/homeAdmin" 
+              className={`nav-item ${activeItem === "dashboard" ? "active" : ""}`}
+              onClick={() => setActiveItem("dashboard")}
+            >
               <LayoutGrid size={20} />
               <span>Dashboard</span>
             </Link>
           </li>
           <li>
-            <Link to="/configuracion" className="nav-item active">
+            <Link 
+              to="/app/configuracion" 
+              className={`nav-item ${activeItem === "configuracion" ? "active" : ""}`}
+              onClick={() => setActiveItem("configuracion")}
+            >
               <Settings size={20} />
               <span>Configuración</span>
             </Link>
           </li>
           <li>
-            <Link to="/reportes" className="nav-item">
+            <Link 
+              to="/app/reportes" 
+              className={`nav-item ${activeItem === "reportes" ? "active" : ""}`}
+              onClick={() => setActiveItem("reportes")}
+            >
               <FileText size={20} />
               <span>Reportes</span>
             </Link>
           </li>
           <li>
-            <Link to="/participantes" className="nav-item">
+            <Link 
+              to="/app/participantes" 
+              className={`nav-item ${activeItem === "participantes" ? "active" : ""}`}
+              onClick={() => setActiveItem("participantes")}
+            >
               <Users size={20} />
               <span>Participantes</span>
             </Link>
@@ -49,7 +98,12 @@ const Sidebar = () => {
       </nav>
       
       <div className="logout-container">
-        <Link to="/logout" className="logout-button">
+        {/* Mantenemos el Link pero añadimos onClick para manejar el logout */}
+        <Link 
+          to="/" 
+          className="logout-button" 
+          onClick={handleLogout}
+        >
           <LogOut size={20} />
           <span>Cerrar Sesión</span>
         </Link>
