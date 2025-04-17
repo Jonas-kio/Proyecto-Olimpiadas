@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 // import "./styles/InscripcionIndividual.css";
 import "../../styles/components/InscripcionIndividual.css";
 import { useNavigate } from "react-router-dom";

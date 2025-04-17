@@ -33,6 +33,9 @@
     29 => 'Termwind\\Laravel\\TermwindServiceProvider',
     30 => 'Tymon\\JWTAuth\\Providers\\LaravelServiceProvider',
     31 => 'App\\Providers\\AppServiceProvider',
+    32 => 'App\\Providers\\EmailServiceProvider',
+    33 => 'App\\Providers\\OcrServiceProvider',
+    34 => 'App\\Providers\\PdfServiceProvider',
   ),
   'eager' => 
   array (
@@ -53,6 +56,9 @@
     14 => 'Termwind\\Laravel\\TermwindServiceProvider',
     15 => 'Tymon\\JWTAuth\\Providers\\LaravelServiceProvider',
     16 => 'App\\Providers\\AppServiceProvider',
+    17 => 'App\\Providers\\EmailServiceProvider',
+    18 => 'App\\Providers\\OcrServiceProvider',
+    19 => 'App\\Providers\\PdfServiceProvider',
   ),
   'deferred' => 
   array (

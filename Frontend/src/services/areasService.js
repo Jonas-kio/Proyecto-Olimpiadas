@@ -5,23 +5,20 @@ import api from './apiConfig';
 export const getAllAreas = async (activeOnly = null) => {
   try {
     let url = '/area';
-    
-    // Si solo queremos las áreas activas o inactivas
+
     if (activeOnly !== null) {
       url += `?activo=${activeOnly}`;
     }
     
     const response = await api.get(url);
     
-    // Tu controlador devuelve { success: true, data: [...] }
     if (response.data.success) {
-      // Convertir formato backend a frontend
       return response.data.data.map(area => ({
         id: area.id,
         name: area.nombre,
         description: area.descripcion,
-        levels: 0, // Puedes ajustar según los datos reales
-        participants: 0, // Puedes ajustar según los datos reales
+        levels: 0, 
+        participants: 0, 
         active: area.activo === 1 || area.activo === true
       }));
     } else {
@@ -33,12 +30,10 @@ export const getAllAreas = async (activeOnly = null) => {
   }
 };
 
-// Obtener áreas activas
 export const getActiveAreas = async () => {
   return getAllAreas(true);
 };
 
-// Obtener un área por ID
 export const getAreaById = async (id) => {
   try {
     const response = await api.get(`/area/${id}`);
