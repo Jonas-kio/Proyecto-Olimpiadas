@@ -74,7 +74,7 @@ Route::middleware([IsUserAuth::class])->group(
                     Route::get('/', [OlimpiadaController::class, 'index'])->name('olimpiadas.index');
                     Route::post('/', [OlimpiadaController::class, 'store'])->name('olimpiadas.store');
                     Route::get('/{olimpiada}', [OlimpiadaController::class, 'show'])->name('olimpiadas.show');
-                    Route::put('/{olimpiada}', [OlimpiadaController::class, 'update'])->name('olimpiadas.update');
+                    Route::match(['put', 'patch'], '/{olimpiada}', [OlimpiadaController::class, 'update'])->name('olimpiadas.update');
                     Route::delete('/{olimpiada}', [OlimpiadaController::class, 'destroy'])->name('olimpiadas.destroy');
                     Route::patch('/{olimpiada}/status', [OlimpiadaController::class, 'changeStatus']);
 

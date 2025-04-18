@@ -17,19 +17,15 @@ class StoreOlimpiadaRequest extends FormRequest
     {
         $inputs = [];
 
-        // Convertir areas de string a array
+
         if ($this->has('areas') && is_string($this->input('areas'))) {
             $areas = $this->input('areas');
 
-            // Intentar decodificar como JSON
             $decoded = json_decode($areas, true);
 
-            // Si no es JSON válido, intentar otro formato
             if ($decoded === null && strpos($areas, ',') !== false) {
                 $decoded = array_map('trim', explode(',', $areas));
-            }
-            // Si es "[1, 2]" como string y no se pudo decodificar
-            elseif ($decoded === null) {
+            } elseif ($decoded === null) {
                 $areas = trim($areas, '[]');
                 $decoded = array_map('trim', explode(',', $areas));
             }
@@ -37,18 +33,14 @@ class StoreOlimpiadaRequest extends FormRequest
             $inputs['areas'] = $decoded ?: [];
         }
 
-        // Convertir activo de string a boolean
         if ($this->has('activo') && is_string($this->input('activo'))) {
             $activo = $this->input('activo');
             $inputs['activo'] = in_array(strtolower($activo), ['true', '1', 'yes', 'si']) ? true : false;
         }
 
-        // Convertir cupo_minimo de string a integer
         if ($this->has('cupo_minimo') && is_string($this->input('cupo_minimo'))) {
             $inputs['cupo_minimo'] = (int) $this->input('cupo_minimo');
         }
-
-        // No es necesario convertir fechas aquí, Laravel lo hará automáticamente
 
         if (!empty($inputs)) {
             $this->merge($inputs);
