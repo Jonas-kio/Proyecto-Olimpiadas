@@ -213,5 +213,6 @@ class OlimpiadaService
     public function getOlimpiadaAreas(Olimpiada $olimpiada)
     {
         return $olimpiada->areas;
+        //ver olimpiadas
     }
 }
