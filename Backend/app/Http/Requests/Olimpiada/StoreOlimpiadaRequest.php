@@ -13,6 +13,48 @@ class StoreOlimpiadaRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation()
+    {
+        $inputs = [];
+
+        // Convertir areas de string a array
+        if ($this->has('areas') && is_string($this->input('areas'))) {
+            $areas = $this->input('areas');
+
+            // Intentar decodificar como JSON
+            $decoded = json_decode($areas, true);
+
+            // Si no es JSON válido, intentar otro formato
+            if ($decoded === null && strpos($areas, ',') !== false) {
+                $decoded = array_map('trim', explode(',', $areas));
+            }
+            // Si es "[1, 2]" como string y no se pudo decodificar
+            elseif ($decoded === null) {
+                $areas = trim($areas, '[]');
+                $decoded = array_map('trim', explode(',', $areas));
+            }
+
+            $inputs['areas'] = $decoded ?: [];
+        }
+
+        // Convertir activo de string a boolean
+        if ($this->has('activo') && is_string($this->input('activo'))) {
+            $activo = $this->input('activo');
+            $inputs['activo'] = in_array(strtolower($activo), ['true', '1', 'yes', 'si']) ? true : false;
+        }
+
+        // Convertir cupo_minimo de string a integer
+        if ($this->has('cupo_minimo') && is_string($this->input('cupo_minimo'))) {
+            $inputs['cupo_minimo'] = (int) $this->input('cupo_minimo');
+        }
+
+        // No es necesario convertir fechas aquí, Laravel lo hará automáticamente
+
+        if (!empty($inputs)) {
+            $this->merge($inputs);
+        }
+    }
+
     public function rules(): array
     {
         return [
@@ -25,40 +67,13 @@ class StoreOlimpiadaRequest extends FormRequest
                 'required',
                 function ($attribute, $value, $fail) {
                     if (!OlimpiadaModalidades::isValid($value)) {
-                        $fail("El nombre de grado no es válido. Valores permitidos: " . implode(', ', OlimpiadaModalidades::values()));
+                        $fail("La modalidad no es válida. Valores permitidos: " . implode(', ', OlimpiadaModalidades::values()));
                     }
                 }
             ],
-            'areas' => 'required|array|min:1',
-            'areas.*' => 'exists:area,id',
-            'pdf_detalles' => [
-                'nullable',
-                function ($attribute, $value, $fail) {
-                    if ($this->hasFile('pdf_detalles')) {
-                        $rules = ['file', 'mimes:pdf', 'max:10240'];
-                        $validator = validator(['file' => $value], ['file' => $rules]);
-                        if ($validator->fails()) {
-                            $fail($validator->errors()->first('file'));
-                        }
-                    } elseif (is_string($value) && !filter_var($value, FILTER_VALIDATE_URL)) {
-                        $fail('El PDF debe ser un archivo o una URL válida.');
-                    }
-                }
-            ],
-            'imagen_portada' => [
-                'nullable',
-                function ($attribute, $value, $fail) {
-                    if ($this->hasFile('imagen_portada')) {
-                        $rules = ['image', 'mimes:jpeg,png,jpg,gif', 'max:5120'];
-                        $validator = validator(['file' => $value], ['file' => $rules]);
-                        if ($validator->fails()) {
-                            $fail($validator->errors()->first('file'));
-                        }
-                    } elseif (is_string($value) && !filter_var($value, FILTER_VALIDATE_URL)) {
-                        $fail('La imagen debe ser un archivo o una URL válida.');
-                    }
-                }
-            ],
+            'areas' => 'required',
+            'pdf_detalles' => 'required|file|mimes:pdf|max:10240',
+            'imagen_portada' => 'required|file|mimes:jpeg,jpg,png|max:10240',
             'activo' => 'boolean',
         ];
     }

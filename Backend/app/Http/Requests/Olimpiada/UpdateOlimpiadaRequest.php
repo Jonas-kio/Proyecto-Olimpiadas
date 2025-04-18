@@ -17,13 +17,13 @@ class UpdateOlimpiadaRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'nombre' => 'required|string|max:255',
-            'descripcion' => 'nullable|string',
-            'fecha_inicio' => 'required|date',
-            'fecha_fin' => 'required|date|after_or_equal:fecha_inicio',
+            'nombre' => 'sometimes|string|max:255',
+            'descripcion' => 'sometimes|string',
+            'fecha_inicio' => 'sometimes|date',
+            'fecha_fin' => 'sometimes|date|after_or_equal:fecha_inicio',
             'cupo_minimo' => 'nullable|integer|min:0',
             'modalidad' => [
-                'required',
+                'sometimes',
                 function ($attribute, $value, $fail) {
                     if (!OlimpiadaModalidades::isValid($value)) {
                         $fail("El nombre de grado no es válido. Valores permitidos: " . implode(', ', OlimpiadaModalidades::values()));
@@ -32,17 +32,13 @@ class UpdateOlimpiadaRequest extends FormRequest
             ],
             'areas' => 'sometimes|array|min:1',
             'areas.*' => 'exists:area,id',
-            'pdf_detalles' => 'nullable|file|mimes:pdf|max:10240',
-            'imagen_portada' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
+            'pdf_detalles' => 'sometimes|file|mimes:pdf|max:10240',
+            'imagen_portada' => 'sometimes|image|mimes:jpeg,png,jpg|max:5120',
             'activo' => 'boolean',
         ];
     }
 
-    /**
-     * Obtener los mensajes de error para las reglas de validación definidas.
-     *
-     * @return array<string, string>
-     */
+
     public function messages(): array
     {
         return [

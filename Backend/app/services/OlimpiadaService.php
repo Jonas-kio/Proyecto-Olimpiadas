@@ -28,12 +28,12 @@ class OlimpiadaService
             $olimpiada = Olimpiada::create($data);
 
             if ($pdfDetalles) {
-                $rutaPdf = $pdfDetalles->store('olimpiadas/pdfs', 'public');
+                $rutaPdf = Storage::disk('public')->putFile('olimpiadas/pdfs', $pdfDetalles);
                 $olimpiada->ruta_pdf_detalles = $rutaPdf;
             }
 
             if ($imagenPortada) {
-                $rutaImagen = $imagenPortada->store('olimpiadas/portadas', 'public');
+                $rutaImagen = Storage::disk('public')->putFile('olimpiadas/portadas', $imagenPortada);
                 $olimpiada->ruta_imagen_portada = $rutaImagen;
             }
 

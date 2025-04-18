@@ -7,6 +7,7 @@ use App\Http\Requests\Olimpiada\StoreOlimpiadaRequest;
 use App\Http\Requests\Olimpiada\UpdateOlimpiadaRequest;
 use App\Models\Olimpiada;
 use App\Services\OlimpiadaService;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Http\JsonResponse;
 
 class OlimpiadaController extends Controller
@@ -30,34 +31,70 @@ class OlimpiadaController extends Controller
 
     public function store(StoreOlimpiadaRequest $request): JsonResponse
     {
-        $data = $request->safe()->except(['pdf_detalles', 'imagen_portada', 'areas']);
+        try {
+            // Depuración detallada
+            Log::info('Request data:', $request->all());
+            Log::info('Files present:', [
+                'hasFiles' => $request->hasFile('pdf_detalles') || $request->hasFile('imagen_portada'),
+                'pdf_detalles' => $request->hasFile('pdf_detalles') ? 'Present' : 'Not present',
+                'imagen_portada' => $request->hasFile('imagen_portada') ? 'Present' : 'Not present'
+            ]);
 
+            // Depurar las áreas
+            Log::info('Areas data:', [
+                'raw' => $request->input('areas'),
+                'type' => gettype($request->input('areas')),
+            ]);
 
-        $pdfDetalles = $request->hasFile('pdf_detalles')
-            ? $request->file('pdf_detalles')
-            : $request->input('ruta_pdf_detalles');
+            $data = $request->safe()->except(['pdf_detalles', 'imagen_portada', 'areas']);
 
-        $imagenPortada = $request->hasFile('imagen_portada')
-            ? $request->file('imagen_portada')
-            : $request->input('ruta_imagen_portada');
+            $pdfDetalles = $request->hasFile('pdf_detalles')
+                ? $request->file('pdf_detalles')
+                : null;
 
+            $imagenPortada = $request->hasFile('imagen_portada')
+                ? $request->file('imagen_portada')
+                : null;
 
-        $areas = $request->input('areas', []);
-        if (is_string($areas)) {
-            $areas = json_decode($areas, true) ?: [];
+            $areas = $request->input('areas', []);
+            if (is_string($areas)) {
+                // Intenta diferentes formatos de conversión
+                $areas = json_decode($areas, true);
+                if ($areas === null) {
+                    $areas = array_map('trim', explode(',', str_replace(['[', ']'], '', $areas)));
+                    $areas = array_map('intval', $areas);
+                }
+            }
+
+            // Registra los datos procesados
+            Log::info('Processed data:', [
+                'data' => $data,
+                'areas' => $areas,
+                'hasPdf' => $pdfDetalles !== null,
+                'hasImage' => $imagenPortada !== null
+            ]);
+
+            $olimpiada = $this->olimpiadaService->createOlimpiada(
+                $data,
+                $pdfDetalles,
+                $imagenPortada,
+                $areas
+            );
+
+            return response()->json([
+                'message' => 'Olimpiada creada exitosamente',
+                'data' => $olimpiada
+            ], 201);
+        } catch (\Exception $e) {
+            Log::error('Error creating olympiad: ' . $e->getMessage());
+            Log::error($e->getTraceAsString());
+
+            return response()->json([
+                'error' => 'Error al crear la olimpiada',
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ], 500);
         }
-
-        $olimpiada = $this->olimpiadaService->createOlimpiada(
-            $data,
-            $pdfDetalles,
-            $imagenPortada,
-            $areas
-        );
-
-        return response()->json([
-            'message' => 'Olimpiada creada exitosamente',
-            'data' => $olimpiada
-        ], 201);
     }
 
     public function show(Olimpiada $olimpiada): JsonResponse
@@ -73,12 +110,17 @@ class OlimpiadaController extends Controller
 
     public function update(UpdateOlimpiadaRequest $request, Olimpiada $olimpiada): JsonResponse
     {
+        $areas = $request->input('areas', null);
+        if (is_string($areas)) {
+            $areas = json_decode($areas, true);
+        }
+
         $olimpiadaActualizada = $this->olimpiadaService->updateOlimpiada(
             $olimpiada,
             $request->safe()->except(['areas', 'pdf_detalles', 'imagen_portada']),
-            $request->file('pdf_detalles'),
-            $request->file('imagen_portada'),
-            $request->has('areas') ? $request->areas : []
+            $request->hasFile('pdf_detalles') ? $request->file('pdf_detalles') : null,
+            $request->hasFile('imagen_portada') ? $request->file('imagen_portada') : null,
+            $areas
         );
 
         return response()->json([
