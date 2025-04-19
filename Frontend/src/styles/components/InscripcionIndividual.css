@@ -89,6 +89,11 @@ input::placeholder {
   color: red;
   margin-left: 4px;
 }
+.mensaje-error {
+  color: red;
+  display: flex;
+  justify-content: flex-start;
+}
 
 .campo > label {
   color: #364051;
@@ -100,10 +105,10 @@ input::placeholder {
   display: flex;
   justify-content: end;
 }
-input.error::placeholder,
+/* input.error::placeholder,
 select.error {
   color: rgb(248, 39, 39);
-}
+} */
 
 .botones {
   margin-top: 1rem;
@@ -269,5 +274,74 @@ select.error {
   color: white;
   border: none;
   border-radius: 4px;
+  cursor: pointer;
+}
+
+.boton-agregar-tutor {
+  background-color: #0b4884;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.boton-agregar-tutor:hover {
+  background-color: #003a85;
+}
+
+.boton-eliminar-tutor {
+  background-color: #dc2626;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.boton-eliminar-tutor:hover {
+  background-color: #b91c1c;
+}
+
+.botones-tutores {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 20px;
+}
+.campo select {
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+}
+.fila-categorias {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.fila-categorias .campo {
+  flex: 1;
+  min-width: 250px;
+}
+.etiqueta-area {
+  background-color: #0a53be;
+  color: white;
+  border-radius: 999px;
+  padding: 0.4rem 1rem;
+  margin: 0.3rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.etiqueta-area button {
+  background: none;
+  border: none;
+  color: white;
+  font-weight: bold;
   cursor: pointer;
 }

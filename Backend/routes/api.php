@@ -26,6 +26,10 @@ Route::post('/inscripcion/tutor', [TutorController::class, 'store']);
 //Ruta de area
 Route::get('/inscripcion/area', [AreaController::class, 'index']);
 
+//Ruta para obetener niveles inscripcion
+    Route::get('/categoryLevelUser', [CategoryLevelController::class, 'index']); //Prueba
+
+
 //TODO: Rutas Publicas
 Route::post('register', [AuthController::class, 'register']);
 Route::post('login', [AuthController::class, 'login']);
