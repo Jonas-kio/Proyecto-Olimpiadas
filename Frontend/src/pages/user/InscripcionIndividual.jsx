@@ -12,6 +12,14 @@ import {
 import SuccessModal from "../../components/common/SuccessModal";
 import ErrorModal from "../../components/common/ErrorModal";
 
+//Boletas
+import BoletaPago from "../../components/boleta/BoletaPago";
+import {
+  generarNumeroBoleta,
+  generarBoletaPDF,
+  enviarBoletaPorEmail,
+} from "../../services/boletaService";
+
 // Formularios divididos
 import FormEstudiantes from "../../components/forms/FormEstudiantes";
 import FormTutores from "../../components/forms/FormTutores";
@@ -36,7 +44,10 @@ const InscripcionIndividual = () => {
     correo_electronico: "",
     colegio: "",
   });
-
+  //ESTADO BOLETAS
+  const [mostrarBoleta, setMostrarBoleta] = useState(false);
+  const [numeroBoleta, setNumeroBoleta] = useState("");
+  const [inscripcionCompletada, setInscripcionCompletada] = useState(false);
   const [tutores, setTutores] = useState([
     { nombres: "", apellidos: "", correo_electronico: "", telefono: "" },
   ]);
@@ -151,7 +162,10 @@ const InscripcionIndividual = () => {
   const categoriaElegida = categoriasDisponibles.find(
     (cat) => cat.id === parseInt(categoriaSeleccionada)
   );
-
+  const volverDesdeBoletaPago = () => {
+    setMostrarBoleta(false);
+    setPaso(1);
+  };
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -161,10 +175,6 @@ const InscripcionIndividual = () => {
     );
 
     try {
-      // const respuestaEstudiante = await inscripcionCompetidor(formulario);
-      // for (const tutor of tutoresFormulario) {
-      //   await inscripcionTutor(tutor);
-      // }
       const respuestaEstudiante = await inscripcionCompetidor(formulario);
       console.log(
         "Estudiante registrado exitosamente:",
@@ -175,12 +185,69 @@ const InscripcionIndividual = () => {
         const respuesta = await inscripcionTutor(tutor);
         console.log("Tutor registrado exitosamente:", respuesta.data); // <- este log
       }
+      // Generar número de boleta
+      const nuevoBoleta = generarNumeroBoleta();
+      console.log("NÚMERO DE BOLETA GENERADO:", nuevoBoleta);
+      setNumeroBoleta(nuevoBoleta);
+
+      // Enviar áreas seleccionadas al backend (si es necesario)
+      // Esto depende de tu API, podrías necesitar ajustarlo
+      for (const area of areasSeleccionadas) {
+        await inscripcionArea({
+          estudiante_id: respuestaEstudiante.data.id,
+          area_nombre: area,
+        });
+      }
+      // Generar el PDF de la boleta
+      const boletaPDF = await generarBoletaPDF(
+        estudiante,
+        tutores,
+        areasSeleccionadas,
+        nuevoBoleta
+      );
+      // Descargar automáticamente el PDF
+      const url = URL.createObjectURL(boletaPDF);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `Boleta_${nuevoBoleta}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      // Envío automático de la boleta al correo del usuario
+      const correoDestino = estudiante.correo_electronico;
+      try {
+        console.log(
+          "Enviando boleta automáticamente al correo:",
+          correoDestino
+        );
+        await enviarBoletaPorEmail(
+          estudiante,
+          tutores,
+          areasSeleccionadas,
+          nuevoBoleta,
+          correoDestino
+        );
+        console.log("Boleta enviada automáticamente con éxito");
+      } catch (errorEnvio) {
+        console.error("Error al enviar boleta automáticamente:", errorEnvio);
+        // No impedir la continuación del flujo si falla el envío automático
+      }
+
+      // Marcar como completado y mostrar boleta en lugar del modal
+
+      setInscripcionCompletada(true);
+      setMostrarBoleta(true);
       setModalAbierto(true);
     } catch (error) {
       const mensajeErrorBase =
         error.response?.data?.message ||
         "Error al guardar los datos. Por favor, verifique los campos.";
-
+      console.error(
+        "Error al inscribir:",
+        error.response?.data || error.message
+      );
       const camposErrores = error.response?.data?.errors;
       if (camposErrores) {
         const campos = Object.keys(camposErrores);
@@ -205,73 +272,82 @@ const InscripcionIndividual = () => {
 
   return (
     <div className="inscripcion-container">
-      <div className="formulario-wrapper">
-        <h1>Inscripción Individual</h1>
-        <p>
-          Complete el formulario para inscribirse en las Olimpiadas Oh! SanSi
-        </p>
+      {mostrarBoleta ? (
+        <BoletaPago
+          estudiante={estudiante}
+          tutores={tutores}
+          areasSeleccionadas={areasSeleccionadas}
+          numeroBoleta={numeroBoleta}
+          onVolver={volverDesdeBoletaPago}
+        />
+      ) : (
+        <div className="formulario-wrapper">
+          <h1>Inscripción Individual</h1>
+          <p>
+            Complete el formulario para inscribirse en las Olimpiadas Oh! SanSi
+          </p>
 
-        <BarraPasos pasoActual={paso} />
+          <BarraPasos pasoActual={paso} />
 
-        <form className="formulario" onSubmit={handleSubmit}>
-          {paso === 1 && (
-            <FormEstudiantes
-              estudiante={estudiante}
-              handleEstudianteChange={handleEstudianteChange}
-              errores={errores}
-              textoValido={textoValido}
-              documentoValido={documentoValido}
-              fechaNacimientoValida={fechaNacimientoValida}
-              correoValido={correoValido}
+          <form className="formulario" onSubmit={handleSubmit}>
+            {paso === 1 && (
+              <FormEstudiantes
+                estudiante={estudiante}
+                handleEstudianteChange={handleEstudianteChange}
+                errores={errores}
+                textoValido={textoValido}
+                documentoValido={documentoValido}
+                fechaNacimientoValida={fechaNacimientoValida}
+                correoValido={correoValido}
+              />
+            )}
+
+            {paso === 2 && (
+              <FormTutores
+                tutores={tutores}
+                setTutores={setTutores}
+                errores={errores}
+                handleTutorChange={handleTutorChange}
+                textoValido={textoValido}
+                correoValido={correoValido}
+                telefonoValido={telefonoValido}
+                tutorActivo={tutorActivo}
+                setTutorActivo={setTutorActivo}
+              />
+            )}
+
+            {paso === 3 && (
+              <FormAreasCategorias
+                areasDisponibles={areasDisponibles}
+                areasSeleccionadas={areasSeleccionadas}
+                setAreasSeleccionadas={setAreasSeleccionadas}
+                categoriasFiltradas={categoriasFiltradas}
+                categoriaSeleccionada={categoriaSeleccionada}
+                setCategoriaSeleccionada={setCategoriaSeleccionada}
+                categoriasDisponibles={categoriasDisponibles}
+              />
+            )}
+
+            {paso === 4 && (
+              <FormResumen
+                estudiante={estudiante}
+                tutores={tutores}
+                areasSeleccionadas={areasSeleccionadas}
+                categoriaElegida={categoriaElegida}
+              />
+            )}
+
+            <BotonesPaso
+              paso={paso}
+              siguiente={siguiente}
+              anterior={anterior}
+              puedeAvanzar={puedeAvanzar}
             />
-          )}
-
-          {paso === 2 && (
-            <FormTutores
-              tutores={tutores}
-              setTutores={setTutores}
-              errores={errores}
-              handleTutorChange={handleTutorChange}
-              textoValido={textoValido}
-              correoValido={correoValido}
-              telefonoValido={telefonoValido}
-              tutorActivo={tutorActivo}
-              setTutorActivo={setTutorActivo}
-            />
-          )}
-
-          {paso === 3 && (
-            <FormAreasCategorias
-              areasDisponibles={areasDisponibles}
-              areasSeleccionadas={areasSeleccionadas}
-              setAreasSeleccionadas={setAreasSeleccionadas}
-              categoriasFiltradas={categoriasFiltradas}
-              categoriaSeleccionada={categoriaSeleccionada}
-              setCategoriaSeleccionada={setCategoriaSeleccionada}
-              categoriasDisponibles={categoriasDisponibles}
-            />
-          )}
-
-          {paso === 4 && (
-            <FormResumen
-              estudiante={estudiante}
-              tutores={tutores}
-              areasSeleccionadas={areasSeleccionadas}
-              categoriaElegida={categoriaElegida}
-            />
-          )}
-
-          <BotonesPaso
-            paso={paso}
-            siguiente={siguiente}
-            anterior={anterior}
-            puedeAvanzar={puedeAvanzar}
-          />
-        </form>
-      </div>
-
+          </form>
+        </div>
+      )}
       <SuccessModal
-        isOpen={modalAbierto}
+        isOpen={modalAbierto && !inscripcionCompletada}
         onClose={() => {
           setModalAbierto(false);
           navigate("/Inscripcion");
@@ -280,7 +356,6 @@ const InscripcionIndividual = () => {
         successMessage="Tu inscripción se ha completado correctamente."
         detailMessage="Gracias por participar en la Olimpiada Oh! SanSi."
       />
-
       <ErrorModal
         isOpen={errorModalAbierto}
         onClose={() => setErrorModalAbierto(false)}
