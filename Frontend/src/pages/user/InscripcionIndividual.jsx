@@ -953,6 +953,7 @@ const InscripcionIndividual = () => {
         successMessage="Tu inscripción se ha completado correctamente."
         detailMessage="Gracias por participar en la Olimpiada Oh! SanSi."
       />
+      {/* Nuevo actualizacion */}
       <ErrorModal
         isOpen={errorModalAbierto}
         onClose={() => setErrorModalAbierto(false)}
