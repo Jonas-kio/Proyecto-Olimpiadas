@@ -85,7 +85,7 @@ const DetalleInscripcion = () => {
       id: `#${id}`,
       nuevoEstado: "INSCRITO"
     }));
-    navigate(`/user/detalle-inscripcion/${id}`);
+    navigate(`/user/detalle-inscripcion/${id}`); //redireccionamiento a Detalle de Inscripción
   };
 
   return (
