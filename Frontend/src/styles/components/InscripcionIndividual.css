@@ -160,6 +160,11 @@ select.error {
   color: #2c3e50;
 }
 
+.etiqueta {
+  font-weight: 600;
+  min-width: 180px; /* esto alinea todas las etiquetas a la izquierda */
+  color: #343a40;
+}
 .etiquetas-contenedor {
   margin-top: 1rem;
   display: flex;
@@ -186,66 +191,87 @@ select.error {
   font-size: 1rem;
   cursor: pointer;
 }
-
+.fila-resumen {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  gap: 1rem;
+  font-size: 15px;
+}
+.seccion,
+.bloque-resumen {
+  text-align: left; /* asegura que no se centre el texto dentro de los bloques */
+}
 .confirmacion {
-  background: #fff;
+  background: #ffffff;
   padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  margin: 15px 0;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  margin: 20px 0;
 }
 
 .seccion {
-  background: #f8f9fa;
-  padding: 15px;
-  margin-bottom: 15px;
-  border-radius: 5px;
+  background-color: #f9f9f9;
+  padding: 15px 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  border-left: 4px solid #0b4884;
 }
 
 .seccion h3 {
   color: #0b4884;
-  margin-top: 0;
-  margin-bottom: 15px;
-  font-size: 16px;
-  border-bottom: 1px solid #dee2e6;
-  padding-bottom: 8px;
+  font-size: 18px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid #dbe2e8;
+  padding-bottom: 6px;
 }
 
 .campo {
   display: flex;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
 }
 
 .campo-label {
-  width: 30%;
+  width: 180px;
   font-weight: 500;
-  color: #495057;
+  color: #333;
 }
-
-.campo-valor {
-  width: 70%;
+.valor {
   color: #212529;
+}
+.campo-valor {
+  flex: 1;
+  color: #444;
 }
 
 .areas-lista {
   list-style-type: disc;
-  padding-left: 20px;
-  margin: 10px 0;
+  padding-left: 25px;
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: #333;
 }
-
+.tutores {
+  text-align: right;
+}
 .areas-lista li {
   margin-bottom: 5px;
 }
 
 .total {
   font-weight: bold;
-  font-size: 1.1em;
+  font-size: 1rem;
+  color: #0b4884;
+  margin-top: 10px;
 }
 
 .terminos {
-  margin: 20px 0;
+  margin-top: 25px;
   display: flex;
   align-items: flex-start;
+  gap: 10px;
 }
 
 .terminos input[type="checkbox"] {
@@ -316,6 +342,7 @@ select.error {
   border: 1px solid #d1d5db;
   border-radius: 0.5rem;
 }
+
 .fila-categorias {
   display: flex;
   gap: 2rem;
@@ -344,4 +371,35 @@ select.error {
   color: white;
   font-weight: bold;
   cursor: pointer;
+}
+.subseccion-tutor {
+  text-align: left;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e0e0e0;
+}
+subseccion-tutor:last-child {
+  border-bottom: none;
+}
+.subtitulo-tutor {
+  text-align: left;
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  font-weight: bold;
+  color: #333;
+}
+.subseccion-tutor p {
+  display: flex;
+  justify-content: flex-start;
+  gap: 0.5rem;
+  margin: 4px 0;
+  font-size: 15px;
+}
+.subseccion-tutor strong {
+  width: 160px;
+  color: #212529;
+}
+
+.seccion h3 {
+  text-align: left;
 }

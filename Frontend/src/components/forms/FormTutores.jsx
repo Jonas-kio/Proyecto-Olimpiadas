@@ -101,6 +101,12 @@ const FormTutores = ({
                 className={errores[`t${idx}-correo_electronico`] ? "error" : ""}
                 onFocus={() => setTutorActivo(idx)}
               />
+              {tutor.correo_electronico.length > 50 && tutorActivo === idx && (
+                <span className="mensaje-error">
+                  Límite de 50 caracteres alcanzado
+                </span>
+              )}
+
               {!correoValido(tutor.correo_electronico) &&
                 tutor.correo_electronico &&
                 tutorActivo === idx && (
@@ -123,11 +129,17 @@ const FormTutores = ({
                 className={errores[`t${idx}-telefono`] ? "error" : ""}
                 onFocus={() => setTutorActivo(idx)}
               />
+              {tutor.telefono.length > 8 && tutorActivo === idx && (
+                <span className="mensaje-error">
+                  Límite de 8 dígitos alcanzado
+                </span>
+              )}
+
               {!telefonoValido(tutor.telefono) &&
                 tutor.telefono &&
                 tutorActivo === idx && (
                   <span className="mensaje-error">
-                    El teléfono debe contener solo números
+                    Solo se permiten números
                   </span>
                 )}
             </div>

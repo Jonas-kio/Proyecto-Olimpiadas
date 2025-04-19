@@ -138,6 +138,7 @@ const InscripcionIndividual = () => {
     if ((name === "nombres" || name === "apellidos") && value.length > 50)
       return;
     if (name === "colegio" && value.length > 100) return;
+    if (name === "provincia" && value.length > 100) return;
     if (name === "correo_electronico") {
       // Limitar a 50 caracteres en total
       if (value.length > 40) return;
@@ -146,6 +147,7 @@ const InscripcionIndividual = () => {
       const index = value.indexOf(".com");
       if (index !== -1 && value.length > index + 4) return;
     }
+
     setEstudiante((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -153,6 +155,8 @@ const InscripcionIndividual = () => {
     const { name, value } = e.target;
     if ((name === "nombres" || name === "apellidos") && value.length > 50)
       return;
+    if (name === "correo_electronico" && value.length > 50) return;
+    if (name === "telefono" && value.length > 8) return;
     const nuevos = [...tutores];
     nuevos[idx][name] = value;
     setTutores(nuevos);

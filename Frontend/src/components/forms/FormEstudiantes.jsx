@@ -110,6 +110,11 @@ const FormEstudiantes = ({
             onChange={handleEstudianteChange}
             className={errores.provincia ? "error" : ""}
           />
+          {estudiante.provincia.length === 100 && (
+            <span className="mensaje-error">
+              Límite de caracteres alcanzado
+            </span>
+          )}
         </div>
       </div>
 

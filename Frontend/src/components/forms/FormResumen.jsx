@@ -7,16 +7,19 @@ const FormResumen = ({
   areasSeleccionadas,
   categoriaElegida,
 }) => {
+  const precioPorArea = 50;
+  const total = areasSeleccionadas.length * precioPorArea;
+
   return (
-    <div className="resumen-inscripcion">
+    <div className="formulario confirmacion">
       <h2 className="titulo-confirmacion">Confirmación de Inscripción</h2>
       <p className="subtitulo-confirmacion">
         Por favor revise la información ingresada antes de confirmar su
         inscripción.
       </p>
 
-      {/* Datos personales */}
-      <div className="bloque-resumen">
+      {/* Sección: Datos Personales */}
+      <div className="seccion">
         <h3>Datos Personales</h3>
         <div className="fila-resumen">
           <span className="etiqueta">Nombre completo:</span>
@@ -38,42 +41,47 @@ const FormResumen = ({
         </div>
       </div>
 
-      {/* Datos del tutor */}
-      <div className="bloque-resumen">
+      {/* Sección: Tutores */}
+      <div className="seccion">
         <h3>Datos del Tutor</h3>
         {tutores.map((tutor, idx) => (
-          <div key={idx} className="sub-bloque-tutor">
-            <div className="fila-resumen">
-              <span className="etiqueta">
-                {idx === 0 ? "Tutor Principal:" : `Tutor ${idx + 1}:`}
-              </span>
-              <span className="valor">
-                {tutor.nombres} {tutor.apellidos}
-              </span>
-            </div>
-            <div className="fila-resumen">
-              <span className="etiqueta">Contacto:</span>
-              <span className="valor">
-                {tutor.correo_electronico} / {tutor.telefono}
-              </span>
+          <div className="fila-resumen" key={idx}>
+            <div className="subseccion-tutor">
+              <p>
+                <h4 className="subtitulo-tutor">
+                  {idx === 0 ? "Tutor Principal" : `Tutor ${idx + 1}`}
+                </h4>
+              </p>
+              <p>
+                <span className="etiqueta">Nombre completo:</span>{" "}
+                <span className="valor">
+                  {" "}
+                  {tutor.nombres} {tutor.apellidos}
+                </span>
+              </p>
+              <p>
+                <span className="etiqueta">Contacto:</span>{" "}
+                <span>
+                  {tutor.correo_electronico} / {tutor.telefono}
+                </span>
+              </p>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Áreas seleccionadas */}
-      <div className="bloque-resumen">
+      {/* Sección: Áreas de Competencia */}
+      <div className="seccion">
         <h3>Áreas de Competencia</h3>
-        {areasSeleccionadas.map((area, i) => (
-          <div className="fila-resumen" key={i}>
-            <span className="etiqueta">Área {i + 1}:</span>
-            <span className="valor">{area}</span>
-          </div>
-        ))}
+        <ul className="areas-lista">
+          {areasSeleccionadas.map((area, index) => (
+            <li key={index}>{area}</li>
+          ))}
+        </ul>
       </div>
 
-      {/* Categoría */}
-      <div className="bloque-resumen">
+      {/* Sección: Categoría */}
+      <div className="seccion">
         <h3>Categoría Seleccionada</h3>
         {categoriaElegida ? (
           <>
@@ -90,14 +98,12 @@ const FormResumen = ({
             </div>
           </>
         ) : (
-          <div className="fila-resumen">
-            <span className="valor">No seleccionada</span>
-          </div>
+          <span className="valor">No seleccionada</span>
         )}
       </div>
 
-      {/* Institución */}
-      <div className="bloque-resumen">
+      {/* Sección: Institución */}
+      <div className="seccion">
         <h3>Información Institucional</h3>
         <div className="fila-resumen">
           <span className="etiqueta">Institución:</span>
@@ -109,25 +115,26 @@ const FormResumen = ({
         </div>
       </div>
 
-      {/* Costo de inscripción */}
-      <div className="bloque-resumen">
+      {/* Sección: Costos */}
+      <div className="seccion">
         <h3>Costo de Inscripción</h3>
         {areasSeleccionadas.map((area, i) => (
           <div className="fila-resumen" key={i}>
             <span className="etiqueta">{area}:</span>
-            <span className="valor">Bs. 50</span>
+            <span className="valor">Bs. {precioPorArea}</span>
           </div>
         ))}
-        <div className="fila-resumen" style={{ fontWeight: "bold" }}>
+        <div className="fila-resumen total">
           <span className="etiqueta">Total:</span>
-          <span className="valor">Bs. {areasSeleccionadas.length * 50}</span>
+          <span className="valor">Bs. {total}</span>
         </div>
       </div>
 
-      <div className="campo checkbox" style={{ marginTop: "20px" }}>
+      {/* Aceptar términos */}
+      <div className="terminos">
+        <input type="checkbox" required />
         <label>
-          <input type="checkbox" required /> Acepto los términos y condiciones
-          de la Olimpiada Oh! SanSi
+          Acepto los términos y condiciones de la Olimpiada Oh! SanSi
         </label>
       </div>
     </div>
