@@ -69,7 +69,7 @@ const MisInscripciones = () => {
                     <span
                       className="link-fecha"
                       onClick={() =>
-                        navigate(`/detalle-inscripcion/${item.id.replace("#", "")}`)
+                        navigate(`detalle-inscripcion/${item.id.replace("#", "")}`)
                       }
                     >
                       {item.fecha}
@@ -88,7 +88,7 @@ const MisInscripciones = () => {
                   <button
                     onClick={() => {
                       if (item.estado === "PENDIENTE") {
-                        navigate(`/detalle-inscripcion/${item.id.replace("#", "")}`);
+                        navigate(`/user/detalle-inscripcion/${item.id.replace("#", "")}`);
                       }
                     }}
                     className={getBotonClass(item.estado)}

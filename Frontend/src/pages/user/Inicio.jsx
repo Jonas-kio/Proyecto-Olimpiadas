@@ -178,7 +178,7 @@ const Inicio = () => {
 <div
   className="beneficio"
   style={{ cursor: "pointer" }}
-  onClick={() => navigate("/mis-inscripciones")}
+  onClick={() => navigate("/user/mis-inscripciones")}
 >
   <span>📊</span>
   <h3>Reportes Detallados</h3>
