@@ -6,6 +6,7 @@ use App\Http\Controllers\API\CostController;
 use App\Http\Controllers\API\AreaController;
 use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\API\CategoryLevelController;
+use App\Http\Controllers\API\Olimpiada\OlimpiadaController;
 use App\Http\Middleware\IsAdmin;
 use App\Http\Middleware\IsUserAuth;
 
@@ -26,8 +27,17 @@ Route::post('/inscripcion/tutor', [TutorController::class, 'store']);
 //Ruta de area
 Route::get('/inscripcion/area', [AreaController::class, 'index']);
 
+
 //Ruta para obetener niveles inscripcion
     Route::get('/categoryLevelUser', [CategoryLevelController::class, 'index']); //Prueba
+
+
+// Rutas públicas de olimpiadas (visibles sin autenticación)
+Route::get('/Olimpiadas', [OlimpiadaController::class, 'index'])->name('olimpiadas.index');
+Route::get('/olimpiadas/{olimpiada}', [OlimpiadaController::class, 'show']);
+
+
+
 
 
 //TODO: Rutas Publicas
@@ -64,41 +74,35 @@ Route::middleware([IsUserAuth::class])->group(
                     Route::delete('/costs/{cost}', 'destroy');
                 });
 
+                // Rutas de administración de olimpiadas
+                Route::prefix('olimpiadas')->group(function () {
+                    Route::get('/', [OlimpiadaController::class, 'index'])->name('olimpiadas.index');
+                    Route::post('/', [OlimpiadaController::class, 'store'])->name('olimpiadas.store');
+                    Route::get('/{olimpiada}', [OlimpiadaController::class, 'show'])->name('olimpiadas.show');
+                    Route::put('/{olimpiada}', [OlimpiadaController::class, 'update'])->name('olimpiadas.update');
+                    Route::delete('/{olimpiada}', [OlimpiadaController::class, 'destroy'])->name('olimpiadas.destroy');
+                    Route::patch('/{olimpiada}/status', [OlimpiadaController::class, 'changeStatus']);
+
+                    // Manejo de áreas en olimpiadas
+                    Route::get('/{olimpiada}/areas', [OlimpiadaController::class, 'getAreas']);
+                    Route::post('/{olimpiada}/areas', [OlimpiadaController::class, 'attachAreas']);
+                    Route::delete('/{olimpiada}/areas/{area}', [OlimpiadaController::class, 'detachArea']);
+                });
+
+
                 // Mas Rutas de Admin ........
             }
         );
 
         //TODO: Rutas Para Usuario que no es administrador
         //....... AQUI!!!
+        Route::prefix('user')->group(function () {
+            Route::post('/olimpiadas/{olimpiada}/inscribir', [OlimpiadaController::class, 'inscribir']);
+            Route::get('/olimpiadas/inscripciones', [OlimpiadaController::class, 'misInscripciones']);
+            Route::post('/olimpiadas/inscripciones/{inscripcion}/comprobante', [OlimpiadaController::class, 'subirComprobante']);
+        });
+
         //Ruta del competidor
         Route::post('/inscripcion/competidor', [CompetitorController::class, 'store']);
     }
 );
-/*
-
-//Rutas para Costos
-
-Route::get('/costs', [CostController::class, 'index']);
-Route::post('/costs', [CostController::class, 'store']);
-Route::put('/costs/{cost}', [CostController::class, 'update']);
-Route::delete('/costs/{cost}', [CostController::class, 'destroy']);
-/* Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum'); */
-/*
-
-// Rutas para Áreas de Competencia
-Route::apiResource('area', AreaController::class);
-
-// Ruta para cambiar el estado de un área
-Route::patch('area/{id}/status', [AreaController::class, 'changeStatus']);
-Route::patch('areas/{id}/status', [AreaController::class, 'changeStatus']);
-
-
-//Rutas para el controlador  de category_lavel
-
-Route::apiResource('categoryLevel', CategoryLevelController::class);
-
-Route::patch('categoryLevel/{id}', [CategoryLevelController::class, 'update']);
-Route::delete('categoryLevel/{id}', [CategoryLevelController::class, 'destroy']);
-*/
