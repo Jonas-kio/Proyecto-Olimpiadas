@@ -14,6 +14,7 @@ import "../../../index.css";
 
 
 import { validateLevelForm, buildLevelApiData } from '../../../utils/validators/nivelesValidators';
+import LoadingModal from '../../../components/modals/LoadingModal';
 
 const NivelesYCategorias = () => {
   const [showForm, setShowForm] = useState(false);
@@ -360,6 +361,8 @@ const NivelesYCategorias = () => {
   ];
 
   return (
+    <>
+    {isLoading && <LoadingModal isOpen={isLoading} />}
     <div className="app-container relative">
       <SuccessModal
         isOpen={showSuccessModal}
@@ -448,6 +451,7 @@ const NivelesYCategorias = () => {
         />
       </Card>
     </div>
+    </>
   );
 };
 
