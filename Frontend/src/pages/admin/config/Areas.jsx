@@ -7,6 +7,8 @@ import Button from '../../../components/common/Button';
 import DeleteConfirmationModal from '../../../components/common/DeleteConfirmationModal';
 import SuccessModal from '../../../components/common/SuccessModal';
 import ErrorModal from '../../../components/common/ErrorModal';
+import LoadingModal from '../../../components/modals/LoadingModal';
+
 
 import { 
   getAllAreas, 
@@ -36,7 +38,7 @@ const Areas = () => {
   const [formErrors, setFormErrors] = useState({});
   const [isFormSubmitted, setIsFormSubmitted] = useState(false);
   const [hideFieldErrors, setHideFieldErrors] = useState(true); // Iniciar con true para ocultar errores en campos
-
+  
   // Estados para modales
   const [deleteModal, setDeleteModal] = useState({
     show: false,
@@ -463,6 +465,8 @@ const Areas = () => {
   };
 
   return (
+    <>
+    {loading && <LoadingModal isOpen={loading} />}
     <div className="area-container">
       {/* Mostrar mensajes de error si los hay */}
       {error && (
@@ -524,7 +528,16 @@ const Areas = () => {
         errorMessage={errorModal.message}
         errorFields={errorModal.fields}
       />
+{/* 👇 Aquí insertamos el modal de carga 
+<LoadingModal
+      isOpen={loading}
+      message="Cargando áreas y niveles, por favor espere..."
+    />
+    */}
+      
     </div>
+    </>
+
   );
 };
 
