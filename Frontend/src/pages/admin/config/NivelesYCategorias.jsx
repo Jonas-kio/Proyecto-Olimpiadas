@@ -14,7 +14,7 @@ import "../../../index.css";
 
 
 import { validateLevelForm, buildLevelApiData } from '../../../utils/validators/nivelesValidators';
-import LoadingModal from '../../../components/modals/LoadingModal';
+import LoadingModal from '../../../components/modals/LoadingModal'; //Importacion del Modal
 
 const NivelesYCategorias = () => {
   const [showForm, setShowForm] = useState(false);

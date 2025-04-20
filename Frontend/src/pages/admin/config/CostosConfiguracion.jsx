@@ -11,7 +11,7 @@ import { getLevels } from "../../../services/nivelesService";
 import SuccessModal from "../../../components/common/SuccessModal";
 import ErrorModal from "../../../components/common/ErrorModal";
 import DeleteConfirmationModal from "../../../components/common/DeleteConfirmationModal";
-import LoadingModal from '../../../components/modals/LoadingModal';
+import LoadingModal from '../../../components/modals/LoadingModal'; //Importacion  del Modal
 
 import { 
   validateCostForm, 
