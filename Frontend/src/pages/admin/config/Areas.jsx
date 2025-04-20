@@ -465,8 +465,10 @@ const Areas = () => {
   };
 
   return (
+    
     <>
-    {loading && <LoadingModal isOpen={loading} />}
+    {loading && <LoadingModal isOpen={loading} />} 
+    {/* Mostrar Modal Cargando Datos */}
     <div className="area-container">
       {/* Mostrar mensajes de error si los hay */}
       {error && (
