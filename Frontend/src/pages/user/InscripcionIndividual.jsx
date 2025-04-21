@@ -14,7 +14,7 @@ import SuccessModal from "../../components/common/SuccessModal";
 import ErrorModal from "../../components/common/ErrorModal";
 
 //Boletas
-import BoletaPago from "../../components/boleta/BoletaPago";
+import BoletaPago from "./BoletaPago";
 import {
   generarNumeroBoleta,
   generarBoletaPDF,

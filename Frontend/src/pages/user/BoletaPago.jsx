@@ -1,7 +1,8 @@
 // components/boleta/BoletaPago.jsx
 import React, { useState, useEffect } from 'react';
 import { generarBoletaPDF, enviarBoletaPorEmail } from '../../services/boletaService';
-import './BoletaPago.css';
+import "../../styles/components/BoletaPago.css";
+
 
 const BoletaPago = ({ estudiante, tutores, areasSeleccionadas, numeroBoleta, onVolver }) => {
   const [correoDestino, setCorreoDestino] = useState('');
