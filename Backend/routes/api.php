@@ -28,9 +28,14 @@ Route::post('/inscripcion/tutor', [TutorController::class, 'store']);
 Route::get('/inscripcion/area', [AreaController::class, 'index']);
 
 
+//Ruta para obetener niveles inscripcion
+    Route::get('/categoryLevelUser', [CategoryLevelController::class, 'index']); //Prueba
+
+
 // Rutas públicas de olimpiadas (visibles sin autenticación)
 Route::get('/Olimpiadas', [OlimpiadaController::class, 'index'])->name('olimpiadas.index');
 Route::get('/olimpiadas/{olimpiada}', [OlimpiadaController::class, 'show']);
+
 
 
 
