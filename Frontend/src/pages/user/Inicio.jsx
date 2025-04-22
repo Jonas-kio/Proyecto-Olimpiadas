@@ -164,6 +164,7 @@ const Inicio = () => {
               segura.
             </p>
           </div>
+ {/* 
           <div className="beneficio">
             <span>📊</span>
             <h3>Reportes Detallados</h3>
@@ -172,6 +173,22 @@ const Inicio = () => {
               participación.
             </p>
           </div>
+*/}
+
+<div
+  className="beneficio"
+  style={{ cursor: "pointer" }}
+  onClick={() => navigate("/user/mis-inscripciones")}
+>
+  <span>📊</span>
+  <h3>Reportes Detallados</h3>
+  <p className="parrafoBeneficio">
+    Accede a informes completos sobre inscripciones, pagos y participación.
+  </p>
+</div>
+
+
+
         </div>
       </section>
 

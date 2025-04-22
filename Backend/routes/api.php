@@ -14,7 +14,7 @@ use App\Http\Controllers\CompetitorController;
 
 use App\Http\Controllers\TutorController;
 use App\Http\Controllers\CostController as ControllersCostController;
-
+use App\Http\Controllers\BoletaPagoController;
 
 
 
@@ -106,3 +106,7 @@ Route::middleware([IsUserAuth::class])->group(
         Route::post('/inscripcion/competidor', [CompetitorController::class, 'store']);
     }
 );
+
+// Ruta de boleta
+Route::get('/boleta/{registro}', [BoletaPagoController::class, 'generarPDF']);
+Route::post('/boleta/enviar', [BoletaPagoController::class, 'enviarPorCorreo']);
