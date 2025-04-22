@@ -68,8 +68,8 @@ const InscripcionIndividual = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const responseAreas = await inscripcionArea();
-        const responseCategorias = await inscripcionCategoryLevel();
+        const responseAreas = await inscripcionArea(); //Llamada al backen areas
+        const responseCategorias = await inscripcionCategoryLevel(); // llamada al backend cater
         setAreasDisponibles(responseAreas.data?.data || []);
         setCategoriasDisponibles(responseCategorias.data?.data || []);
       } catch (error) {
@@ -187,7 +187,7 @@ const InscripcionIndividual = () => {
 
       for (const tutor of tutoresFormulario) {
         const respuesta = await inscripcionTutor(tutor);
-        console.log("Tutor registrado exitosamente:", respuesta.data); // <- este log
+        console.log("Tutor registrado exitosamente:", respuesta.data); 
       }
       // Generar número de boleta
       const nuevoBoleta = generarNumeroBoleta();
