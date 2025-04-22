@@ -11,6 +11,7 @@ import { getLevels } from "../../../services/nivelesService";
 import SuccessModal from "../../../components/common/SuccessModal";
 import ErrorModal from "../../../components/common/ErrorModal";
 import DeleteConfirmationModal from "../../../components/common/DeleteConfirmationModal";
+import LoadingModal from '../../../components/modals/LoadingModal'; //Importacion  del Modal
 
 import { 
   validateCostForm, 
@@ -242,6 +243,8 @@ const CostConfiguracion = () => {
   };
 
   return (
+    <>
+    {loading && <LoadingModal isOpen={loading} />}
     <div className="p-4 space-y-4">
       <Card
         title="Costos Específicos"
@@ -324,6 +327,7 @@ const CostConfiguracion = () => {
         itemType="costo"
       />
     </div>
+    </>
   );
 };
 
