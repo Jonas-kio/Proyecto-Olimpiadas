@@ -1,0 +1,370 @@
+/* components/ListaOlimpiadas.css */
+.lista-olimpiadas-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.olimpiadas-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 2rem;
+    margin-top: 2rem;
+}
+
+.olimpiada-card {
+    background: #fafafa;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    transition: transform 0.3s ease;
+}
+
+.olimpiada-card:hover {
+    transform: translateY(-5px);
+}
+
+.olimpiada-header {
+    padding: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #eee;
+    background: white;
+}
+
+.olimpiada-header h2 {
+    font-size: 1.2rem;
+    color: #4361A6;
+    margin: 0;
+}
+
+.estado-badge {
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.estado-badge.en-curso {
+    background: #4CAF50;
+    color: white;
+}
+
+.estado-badge.terminado {
+    background: #9E9E9E;
+    color: white;
+}
+
+.estado-badge.pendiente {
+    background: #FF9800;
+    color: white;
+}
+
+.olimpiada-content {
+    background: white;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    height: 150px;
+}
+
+.edicion-container {
+    display: flex;
+    align-items: baseline;
+    margin-right: 1rem;
+}
+
+.edicion-numero {
+    font-size: 5rem;
+    font-weight: bold;
+    color: #FFB300;
+    line-height: 1;
+}
+
+.edicion-texto {
+    font-size: 1.5rem;
+    color: #FFB300;
+    margin-left: 0.25rem;
+}
+
+.flecha-decorativa {
+    position: relative;
+    margin: 0 1rem;
+    display: flex;
+    align-items: center;
+}
+
+.flecha-linea {
+    width: 120px;
+    height: 3px;
+    background: linear-gradient(to right, #FFB300, #FF6F00);
+    position: relative;
+}
+
+.flecha-punta {
+    width: 0;
+    height: 0;
+    border-top: 8px solid transparent;
+    border-bottom: 8px solid transparent;
+    border-left: 12px solid #FF6F00;
+    margin-left: -1px;
+}
+
+.olimpiada-logo {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.atom-icon {
+    width: 80px;
+    height: 80px;
+    position: relative;
+}
+
+.nucleus {
+    width: 16px;
+    height: 16px;
+    background: #2196F3;
+    border-radius: 50%;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.electron-orbit {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    border: 2px solid #2196F3;
+    border-radius: 50%;
+}
+
+.orbit-1 {
+    width: 60px;
+    height: 20px;
+    transform: translate(-50%, -50%) rotate(-30deg);
+}
+
+.orbit-2 {
+    width: 60px;
+    height: 20px;
+    transform: translate(-50%, -50%) rotate(30deg);
+}
+
+.electron {
+    width: 8px;
+    height: 8px;
+    background: #FFC107;
+    border-radius: 50%;
+    position: absolute;
+}
+
+.electron-1 {
+    top: 10px;
+    left: 15px;
+    animation: orbit1 3s linear infinite;
+}
+
+.electron-2 {
+    top: 60px;
+    left: 30px;
+    animation: orbit2 3s linear infinite;
+}
+
+.electron-3 {
+    top: 40px;
+    left: 60px;
+    animation: orbit3 3s linear infinite;
+}
+
+@keyframes orbit1 {
+    from { transform: rotate(0deg) translateX(30px) rotate(0deg); }
+    to { transform: rotate(360deg) translateX(30px) rotate(-360deg); }
+}
+
+@keyframes orbit2 {
+    from { transform: rotate(120deg) translateX(30px) rotate(-120deg); }
+    to { transform: rotate(480deg) translateX(30px) rotate(-480deg); }
+}
+
+@keyframes orbit3 {
+    from { transform: rotate(240deg) translateX(30px) rotate(-240deg); }
+    to { transform: rotate(600deg) translateX(30px) rotate(-600deg); }
+}
+
+.texto-principal {
+    display: flex;
+    flex-direction: column;
+}
+
+.olimpiada-text {
+    font-size: 1.8rem;
+    font-weight: bold;
+    background: linear-gradient(45deg, #D32F2F, #F57C00, #FFC107, #388E3C, #1976D2, #7B1FA2);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    line-height: 1.2;
+}
+
+.cientifica-text {
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: #2196F3;
+    line-height: 1.2;
+}
+
+.estudiante-text {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #4361A6;
+    line-height: 1.2;
+}
+
+.plurinacional-text {
+    font-size: 0.9rem;
+    color: #5D4037;
+    line-height: 1.2;
+}
+
+.olimpiada-info {
+    padding: 1rem;
+    background: white;
+    border-top: 1px solid #eee;
+}
+
+.olimpiada-info p {
+    margin: 0.5rem 0;
+    color: #555;
+    font-size: 0.95rem;
+}
+
+.olimpiada-info strong {
+    color: #333;
+}
+
+.olimpiada-acciones {
+    padding: 1rem;
+    border-top: 1px solid #eee;
+    background: white;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.btn-registrarse {
+    background: #4CAF50;
+    color: white;
+    border: none;
+    padding: 0.7rem 1.5rem;
+    border-radius: 4px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.btn-registrarse:hover {
+    background: #45a049;
+}
+
+.btn-proximamente {
+    background: #FFA726;
+    color: white;
+    border: none;
+    padding: 0.7rem 1.5rem;
+    border-radius: 4px;
+    font-weight: 600;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.btn-terminado {
+    background: #9E9E9E;
+    color: white;
+    border: none;
+    padding: 0.7rem 1.5rem;
+    border-radius: 4px;
+    font-weight: 600;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.loading {
+    text-align: center;
+    padding: 2rem;
+    font-size: 1.2rem;
+    color: #666;
+}
+
+@media (max-width: 768px) {
+    .olimpiadas-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .lista-olimpiadas-container {
+        padding: 1rem;
+    }
+    
+    .olimpiada-content {
+        flex-direction: column;
+        height: auto;
+        gap: 1rem;
+        padding: 1rem;
+    }
+    
+    .flecha-decorativa {
+        transform: rotate(90deg);
+        margin: 1rem 0;
+    }
+    
+    .edicion-numero {
+        font-size: 4rem;
+    }
+    
+    .olimpiada-text,
+    .cientifica-text {
+        font-size: 1.5rem;
+    }
+    
+    .estudiante-text {
+        font-size: 1rem;
+    }
+    
+    .plurinacional-text {
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .olimpiada-header {
+        flex-direction: column;
+        gap: 0.5rem;
+        align-items: flex-start;
+    }
+    
+    .olimpiada-content {
+        padding: 0.5rem;
+    }
+    
+    .edicion-numero {
+        font-size: 3rem;
+    }
+    
+    .olimpiada-text,
+    .cientifica-text {
+        font-size: 1.2rem;
+    }
+    
+    .atom-icon {
+        width: 60px;
+        height: 60px;
+    }
+    
+    .flecha-linea {
+        width: 80px;
+    }
+}
