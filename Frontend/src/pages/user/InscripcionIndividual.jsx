@@ -1,61 +1,39 @@
-import React, { useState } from "react";
-// import "./styles/InscripcionIndividual.css";
+import React, { useState, useEffect } from "react";
 import "../../styles/components/InscripcionIndividual.css";
 import { useNavigate } from "react-router-dom";
 import {
   inscripcionCompetidor,
   inscripcionTutor,
-} from "../../services/apiInscripcion";
+  inscripcionArea,
+  inscripcionCategoryLevel,
+} from "../../services/apiConfig";
+
+// Componentes comunes
+import SuccessModal from "../../components/common/SuccessModal";
+import ErrorModal from "../../components/common/ErrorModal";
+
+//Boletas
+import BoletaPago from "../../components/boleta/BoletaPago";
+import {
+  generarNumeroBoleta,
+  generarBoletaPDF,
+  enviarBoletaPorEmail,
+} from "../../services/boletaService";
+
+// Formularios divididos
+import FormEstudiantes from "../../components/forms/FormEstudiantes";
+import FormTutores from "../../components/forms/FormTutores";
+import FormAreasCategorias from "../../components/forms/FormAreasCategorias";
+import FormResumen from "../../components/forms/FormResumen";
+
+// Navegación de pasos
+import BarraPasos from "../../components/common/BarraPasos";
+import BotonesPaso from "../../components/common/BotonesPaso";
 
 const InscripcionIndividual = () => {
   const navigate = useNavigate();
-  //
-  //
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    // Arma los datos del formulario (esto depende de tus states)
-    const formulario = {
-      nombres: estudiante.nombres,
-      apellidos: estudiante.apellidos,
-      documento_identidad: estudiante.documento_identidad,
-      provincia: estudiante.provincia,
-      fecha_nacimiento: estudiante.fecha_nacimiento,
-      curso: estudiante.curso,
-      correo_electronico: estudiante.correo_electronico,
-      colegio: estudiante.colegio,
-    };
-
-    try {
-      const respuesta = await inscripcionCompetidor(formulario);
-      console.log("Inscripción exitosa", respuesta.data);
-
-      // Mostrar mensaje solo si se guardó bien
-      alert("Inscripción exitosa");
-      navigate("/Inscripcion");
-    } catch (error) {
-      const mensajeError =
-        error.response?.data?.message ||
-        "Error al guardar los datos. Por favor, verifique los campos.";
-      console.error(
-        "Error al inscribir:",
-        error.response?.data || error.message
-      );
-
-      alert(`No se pudo guardar: ${mensajeError}`);
-      // navigate("/InscripcionIndividual");
-    }
-  };
-  //
-  //
-  // const confirmarInscripcion = (e) => {
-  //   // e.preventDefault();
-  //   // onSubmit = { handleSubmit };
-  //   // alert("Inscripción exitosa");
-  //   navigate("/Inscripcion");
-  // };
-
   const [paso, setPaso] = useState(1);
+
   const [estudiante, setEstudiante] = useState({
     nombres: "",
     apellidos: "",
@@ -66,492 +44,328 @@ const InscripcionIndividual = () => {
     correo_electronico: "",
     colegio: "",
   });
+  //ESTADO BOLETAS
+  const [mostrarBoleta, setMostrarBoleta] = useState(false);
+  const [numeroBoleta, setNumeroBoleta] = useState("");
+  const [inscripcionCompletada, setInscripcionCompletada] = useState(false);
   const [tutores, setTutores] = useState([
-    { nombres: "", apellidos: "", correo: "", telefono: "" },
-    { nombres: "", apellidos: "", correo: "", telefono: "" },
-    { nombres: "", apellidos: "", correo: "", telefono: "" },
+    { nombres: "", apellidos: "", correo_electronico: "", telefono: "" },
   ]);
+  const [tutorActivo, setTutorActivo] = useState(null);
+
+  const [areasDisponibles, setAreasDisponibles] = useState([]);
   const [areasSeleccionadas, setAreasSeleccionadas] = useState([]);
+  const [categoriasDisponibles, setCategoriasDisponibles] = useState([]);
+  const [categoriasFiltradas, setCategoriasFiltradas] = useState([]);
+  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState("");
+
   const [errores, setErrores] = useState({});
+  const [modalAbierto, setModalAbierto] = useState(false);
+  const [errorModalAbierto, setErrorModalAbierto] = useState(false);
+  const [mensajeDeError, setMensajeDeError] = useState("");
+  const [camposConError, setCamposConError] = useState([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const responseAreas = await inscripcionArea();
+        const responseCategorias = await inscripcionCategoryLevel();
+        setAreasDisponibles(responseAreas.data?.data || []);
+        setCategoriasDisponibles(responseCategorias.data?.data || []);
+      } catch (error) {
+        console.error("Error al obtener datos:", error);
+      }
+    };
+    fetchData();
+  }, []);
+
+  useEffect(() => {
+    const relacionadas = categoriasDisponibles.filter((cat) =>
+      areasSeleccionadas.includes(cat.area?.nombre)
+    );
+    setCategoriasFiltradas(relacionadas);
+  }, [areasSeleccionadas, categoriasDisponibles]);
+
+  const textoValido = (texto) => /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$/.test(texto);
+  const correoValido = (correo) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo);
+  const telefonoValido = (tel) => /^\d+$/.test(tel);
+  const documentoValido = (doc) => /^\d+$/.test(doc);
+  const fechaNacimientoValida = (fecha) => new Date(fecha) <= new Date();
+  const categoriaSeleccionadaValida = () => categoriaSeleccionada.trim() !== "";
+
+  const camposEstudianteCompletos = () => {
+    const llenos = Object.values(estudiante).every((v) => v.trim());
+    return (
+      llenos &&
+      correoValido(estudiante.correo_electronico) &&
+      documentoValido(estudiante.documento_identidad) &&
+      textoValido(estudiante.nombres) &&
+      textoValido(estudiante.apellidos) &&
+      fechaNacimientoValida(estudiante.fecha_nacimiento)
+    );
+  };
+
+  const camposTutoresCompletos = () => {
+    return tutores.every((tutor) => {
+      const llenos = Object.values(tutor).every((v) => v.trim());
+      return (
+        llenos &&
+        correoValido(tutor.correo_electronico) &&
+        telefonoValido(tutor.telefono)
+      );
+    });
+  };
+
+  const camposAreasCompletos = () => areasSeleccionadas.length > 0;
+  const puedeAvanzar = () => {
+    if (paso === 1) return camposEstudianteCompletos();
+    if (paso === 2) return camposTutoresCompletos();
+    if (paso === 3)
+      return camposAreasCompletos() && categoriaSeleccionadaValida();
+    return true;
+  };
 
   const siguiente = () => {
-    if (paso === 1 && !validarEstudiante()) return;
-    if (paso === 2 && !validarTutorPrincipal()) return;
+    if (!puedeAvanzar()) return;
     setPaso((prev) => Math.min(prev + 1, 4));
   };
 
   const anterior = () => setPaso((prev) => Math.max(prev - 1, 1));
 
-  const validarEstudiante = () => {
-    const nuevosErrores = {};
-    for (const campo in estudiante) {
-      if (!estudiante[campo].trim()) {
-        nuevosErrores[campo] = true;
-      }
-    }
-    setErrores(nuevosErrores);
-    if (Object.keys(nuevosErrores).length > 0) {
-      alert("Debe llenar todos los campos obligatorios.");
-      return false;
-    }
-    return true;
-  };
-
-  const validarTutorPrincipal = () => {
-    const nuevosErrores = {};
-    const tutor = tutores[0];
-    Object.entries(tutor).forEach(([key, value]) => {
-      if (!value.trim()) {
-        nuevosErrores[`t0-${key}`] = true;
-      }
-    });
-    setErrores(nuevosErrores);
-    if (Object.keys(nuevosErrores).length > 0) {
-      alert("Debe llenar al menos los campos del Tutor Principal.");
-      return false;
-    }
-    return true;
-  };
-
   const handleEstudianteChange = (e) => {
-    setEstudiante({ ...estudiante, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    if (name === "documento_identidad" && value.length > 10) return;
+    if ((name === "nombres" || name === "apellidos") && value.length > 50)
+      return;
+    if (name === "colegio" && value.length > 100) return;
+    if (name === "provincia" && value.length > 100) return;
+    if (name === "correo_electronico") {
+      // Limitar a 50 caracteres en total
+      if (value.length > 40) return;
+
+      // Bloquear más caracteres después de .com
+      const index = value.indexOf(".com");
+      if (index !== -1 && value.length > index + 4) return;
+    }
+
+    setEstudiante((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleTutorChange = (e, idx) => {
+    const { name, value } = e.target;
+    if ((name === "nombres" || name === "apellidos") && value.length > 50)
+      return;
+    if (name === "correo_electronico" && value.length > 50) return;
+    if (name === "telefono" && value.length > 8) return;
     const nuevos = [...tutores];
-    nuevos[idx][e.target.name] = e.target.value;
+    nuevos[idx][name] = value;
     setTutores(nuevos);
+    setTutorActivo(idx);
   };
 
-  const handleAreaChange = (e) => {
-    const options = Array.from(e.target.selectedOptions, (opt) => opt.value);
-    setAreasSeleccionadas(options);
+  const categoriaElegida = categoriasDisponibles.find(
+    (cat) => cat.id === parseInt(categoriaSeleccionada)
+  );
+  const volverDesdeBoletaPago = () => {
+    setMostrarBoleta(false);
+    setPaso(1);
+  };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    const formulario = { ...estudiante };
+    const tutoresFormulario = tutores.filter(
+      (t) => t.nombres || t.apellidos || t.correo_electronico || t.telefono
+    );
+
+    try {
+      const respuestaEstudiante = await inscripcionCompetidor(formulario);
+      console.log(
+        "Estudiante registrado exitosamente:",
+        respuestaEstudiante.data
+      ); // <- este log
+
+      for (const tutor of tutoresFormulario) {
+        const respuesta = await inscripcionTutor(tutor);
+        console.log("Tutor registrado exitosamente:", respuesta.data); // <- este log
+      }
+      // Generar número de boleta
+      const nuevoBoleta = generarNumeroBoleta();
+      console.log("NÚMERO DE BOLETA GENERADO:", nuevoBoleta);
+      setNumeroBoleta(nuevoBoleta);
+
+      // Enviar áreas seleccionadas al backend (si es necesario)
+      // Esto depende de tu API, podrías necesitar ajustarlo
+      for (const area of areasSeleccionadas) {
+        await inscripcionArea({
+          estudiante_id: respuestaEstudiante.data.id,
+          area_nombre: area,
+        });
+      }
+      // Generar el PDF de la boleta
+      const boletaPDF = await generarBoletaPDF(
+        estudiante,
+        tutores,
+        areasSeleccionadas,
+        nuevoBoleta
+      );
+      // Descargar automáticamente el PDF
+      const url = URL.createObjectURL(boletaPDF);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `Boleta_${nuevoBoleta}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      // Envío automático de la boleta al correo del usuario
+      const correoDestino = estudiante.correo_electronico;
+      try {
+        console.log(
+          "Enviando boleta automáticamente al correo:",
+          correoDestino
+        );
+        await enviarBoletaPorEmail(
+          estudiante,
+          tutores,
+          areasSeleccionadas,
+          nuevoBoleta,
+          correoDestino
+        );
+        console.log("Boleta enviada automáticamente con éxito");
+      } catch (errorEnvio) {
+        console.error("Error al enviar boleta automáticamente:", errorEnvio);
+        // No impedir la continuación del flujo si falla el envío automático
+      }
+
+      // Marcar como completado y mostrar boleta en lugar del modal
+
+      setInscripcionCompletada(true);
+      setMostrarBoleta(true);
+      setModalAbierto(true);
+    } catch (error) {
+      const mensajeErrorBase =
+        error.response?.data?.message ||
+        "Error al guardar los datos. Por favor, verifique los campos.";
+      console.error(
+        "Error al inscribir:",
+        error.response?.data || error.message
+      );
+      const camposErrores = error.response?.data?.errors;
+      if (camposErrores) {
+        const campos = Object.keys(camposErrores);
+        setCamposConError(campos);
+        if (
+          campos.includes("documento_identidad") ||
+          campos.includes("correo_electronico")
+        ) {
+          setMensajeDeError(
+            "Ya existe un competidor registrado con ese documento o correo."
+          );
+        } else {
+          setMensajeDeError(mensajeErrorBase);
+        }
+      } else {
+        setCamposConError([]);
+        setMensajeDeError(mensajeErrorBase);
+      }
+      setErrorModalAbierto(true);
+    }
   };
 
   return (
     <div className="inscripcion-container">
-      <h1>Inscripción Individual</h1>
-      <p>Complete el formulario para inscribirse en las Olimpiadas Oh! SanSi</p>
+      {mostrarBoleta ? (
+        <BoletaPago
+          estudiante={estudiante}
+          tutores={tutores}
+          areasSeleccionadas={areasSeleccionadas}
+          numeroBoleta={numeroBoleta}
+          onVolver={volverDesdeBoletaPago}
+        />
+      ) : (
+        <div className="formulario-wrapper">
+          <h1>Inscripción Individual</h1>
+          <p>
+            Complete el formulario para inscribirse en las Olimpiadas Oh! SanSi
+          </p>
 
-      <div className="barra-pasos">
-        {[
-          "Datos Estudiante",
-          "Datos Tutor",
-          "Áreas de Competencia",
-          "Confirmación",
-        ].map((titulo, i) => (
-          <div key={i} className={`paso ${paso === i + 1 ? "activo" : ""}`}>
-            <div className="numero">{i + 1}</div>
-            <span>{titulo}</span>
-          </div>
-        ))}
-      </div>
+          <BarraPasos pasoActual={paso} />
 
-      <form
-        className="formulario"
-        // onSubmit={(e) => e.preventDefault()}
-        onSubmit={handleSubmit}
-      >
-        {paso === 1 && (
-          <>
-            <h2>Datos Personales</h2>
-            <div className="fila">
-              <div className="campo">
-                <label>
-                  Nombres <span className="asterisco rojo">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="nombres"
-                  placeholder={
-                    errores.nombres
-                      ? "Ingrese sus nombres"
-                      : "Ingrese sus nombres"
-                  }
-                  value={estudiante.nombres}
-                  onChange={handleEstudianteChange}
-                  className={errores.nombres ? "error" : ""}
-                />
-              </div>
-              <div className="campo">
-                <label>
-                  Apellidos <span className="asterisco rojo">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="apellidos"
-                  placeholder={
-                    errores.apellidos
-                      ? "Ingrese sus apellidos"
-                      : "Ingrese sus apellidos"
-                  }
-                  value={estudiante.apellidos}
-                  onChange={handleEstudianteChange}
-                  className={errores.apellidos ? "error" : ""}
-                />
-              </div>
-            </div>
-
-            <div className="fila">
-              <div className="campo">
-                <label>
-                  Número de Documento de Identidad
-                  <span className="asterisco rojo">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="documento_identidad"
-                  placeholder={
-                    errores.documento_identidad
-                      ? "Ingrese su numero de carnet"
-                      : "Ej. 12345678"
-                  }
-                  value={estudiante.documento_identidad}
-                  onChange={handleEstudianteChange}
-                  className={errores.documento_identidad ? "error" : ""}
-                />
-              </div>
-              <div className="campo">
-                <label>
-                  Provincia <span className="asterisco rojo">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="provincia"
-                  placeholder={
-                    errores.provincia ? "Ej. Cercado" : "Ej. Cercado"
-                  }
-                  value={estudiante.provincia}
-                  onChange={handleEstudianteChange}
-                  className={errores.provincia ? "error" : ""}
-                />
-              </div>
-            </div>
-
-            <div className="fila">
-              <div className="campo">
-                <label>
-                  Fecha de Nacimiento <span className="asterisco rojo">*</span>
-                </label>
-                <input
-                  type="date"
-                  name="fecha_nacimiento"
-                  value={estudiante.fecha_nacimiento}
-                  onChange={handleEstudianteChange}
-                  className={errores.fecha_nacimiento ? "error" : ""}
-                />
-              </div>
-              <div className="campo">
-                <label>
-                  Curso <span className="asterisco rojo">*</span>
-                </label>
-                <select
-                  name="curso"
-                  value={estudiante.curso}
-                  onChange={handleEstudianteChange}
-                  className={errores.curso ? "error" : ""}
-                >
-                  <option value="">Seleccione un curso</option>
-                  <option value="1ro Primaria">1ro Primaria</option>
-                  <option value="2do Primaria">2do Primaria</option>
-                  <option value="3ro Primaria">3ro Primaria</option>
-                  <option value="4to Primaria">4to Primaria</option>
-                  <option value="5to Primaria">5to Primaria</option>
-                  <option value="6to Primaria">6to Primaria</option>
-                  {/* -   */}
-                  <option value="1ro Secundaria">1ro Secundaria</option>
-                  <option value="2do Secundaria">2do Secundaria</option>
-                  <option value="3ro Secundaria">3ro Secundaria</option>
-                  <option value="4to Secundaria">4to Secundaria</option>
-                  <option value="5to Secundaria">5to Secundaria</option>
-                  <option value="6to Secundaria">6to Secundaria</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="campo">
-              <label>
-                Correo Electrónico <span className="asterisco rojo">*</span>
-              </label>
-              <input
-                type="email"
-                name="correo_electronico"
-                placeholder={
-                  errores.correo_electronico
-                    ? "Ingrese su correo electronico"
-                    : "ejemplo@correo.com"
-                }
-                value={estudiante.correo_electronico}
-                onChange={handleEstudianteChange}
-                className={errores.correo_electronico ? "error" : ""}
+          <form className="formulario" onSubmit={handleSubmit}>
+            {paso === 1 && (
+              <FormEstudiantes
+                estudiante={estudiante}
+                handleEstudianteChange={handleEstudianteChange}
+                errores={errores}
+                textoValido={textoValido}
+                documentoValido={documentoValido}
+                fechaNacimientoValida={fechaNacimientoValida}
+                correoValido={correoValido}
               />
-            </div>
-
-            <div className="campo">
-              <label>
-                Colegio <span className="asterisco rojo">*</span>
-              </label>
-              <input
-                type="text"
-                name="colegio"
-                placeholder={
-                  errores.colegio ? "Ingrese su colegio" : "Ingrese su colegio"
-                }
-                value={estudiante.colegio}
-                onChange={handleEstudianteChange}
-                className={errores.colegio ? "error" : ""}
-              />
-            </div>
-          </>
-        )}
-
-        {paso === 2 && (
-          <>
-            {/* TUTOR PRINCIPAL */}
-            <div className="bloque-tutor">
-              <h3>Tutor Principal</h3>
-              <div className="fila">
-                <div className="campo">
-                  <label>
-                    Nombres <span className="asterisco rojo">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="nombres"
-                    placeholder="Nombres"
-                    value={tutores[0].nombres}
-                    onChange={(e) => handleTutorChange(e, 0)}
-                    className={errores[`t0-nombres`] ? "error" : ""}
-                  />
-                </div>
-                <div className="campo">
-                  <label>
-                    Apellidos <span className="asterisco rojo">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="apellidos"
-                    placeholder="Apellidos"
-                    value={tutores[0].apellidos}
-                    onChange={(e) => handleTutorChange(e, 0)}
-                    className={errores[`t0-apellidos`] ? "error" : ""}
-                  />
-                </div>
-              </div>
-              <div className="fila">
-                <div className="campo">
-                  <label>
-                    Correo Electrónico <span className="asterisco rojo">*</span>
-                  </label>
-                  <input
-                    type="email"
-                    name="correo"
-                    placeholder="Correo Electrónico"
-                    value={tutores[0].correo}
-                    onChange={(e) => handleTutorChange(e, 0)}
-                    className={errores[`t0-correo`] ? "error" : ""}
-                  />
-                </div>
-                <div className="campo">
-                  <label>
-                    Teléfono/Celular <span className="asterisco rojo">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="telefono"
-                    placeholder="Teléfono/Celular"
-                    value={tutores[0].telefono}
-                    onChange={(e) => handleTutorChange(e, 0)}
-                    className={errores[`t0-telefono`] ? "error" : ""}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* TUTOR PRINCIPAL 1 */}
-            <div className="bloque-tutor">
-              <h3>Tutor Principal 1</h3>
-              <div className="fila">
-                <div className="campo">
-                  <label>Nombres</label>
-                  <input
-                    type="text"
-                    name="nombres"
-                    placeholder="Nombres"
-                    value={tutores[1].nombres}
-                    onChange={(e) => handleTutorChange(e, 1)}
-                  />
-                </div>
-                <div className="campo">
-                  <label>Apellidos</label>
-                  <input
-                    type="text"
-                    name="apellidos"
-                    placeholder="Apellidos"
-                    value={tutores[1].apellidos}
-                    onChange={(e) => handleTutorChange(e, 1)}
-                  />
-                </div>
-              </div>
-              <div className="fila">
-                <div className="campo">
-                  <label>Correo Electrónico</label>
-                  <input
-                    type="email"
-                    name="correo"
-                    placeholder="Correo Electrónico"
-                    value={tutores[1].correo}
-                    onChange={(e) => handleTutorChange(e, 1)}
-                  />
-                </div>
-                <div className="campo">
-                  <label>Teléfono/Celular</label>
-                  <input
-                    type="text"
-                    name="telefono"
-                    placeholder="Teléfono/Celular"
-                    value={tutores[1].telefono}
-                    onChange={(e) => handleTutorChange(e, 1)}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* TUTOR PRINCIPAL 2 */}
-            <div className="bloque-tutor">
-              <h3>Tutor Principal 2</h3>
-              <div className="fila">
-                <div className="campo">
-                  <label>Nombres</label>
-                  <input
-                    type="text"
-                    name="nombres"
-                    placeholder="Nombres"
-                    value={tutores[2].nombres}
-                    onChange={(e) => handleTutorChange(e, 2)}
-                  />
-                </div>
-                <div className="campo">
-                  <label>Apellidos</label>
-                  <input
-                    type="text"
-                    name="apellidos"
-                    placeholder="Apellidos"
-                    value={tutores[2].apellidos}
-                    onChange={(e) => handleTutorChange(e, 2)}
-                  />
-                </div>
-              </div>
-              <div className="fila">
-                <div className="campo">
-                  <label>Correo Electrónico</label>
-                  <input
-                    type="email"
-                    name="correo"
-                    placeholder="Correo Electrónico"
-                    value={tutores[2].correo}
-                    onChange={(e) => handleTutorChange(e, 2)}
-                  />
-                </div>
-                <div className="campo">
-                  <label>Teléfono/Celular</label>
-                  <input
-                    type="text"
-                    name="telefono"
-                    placeholder="Teléfono/Celular"
-                    value={tutores[2].telefono}
-                    onChange={(e) => handleTutorChange(e, 2)}
-                  />
-                </div>
-              </div>
-            </div>
-          </>
-        )}
-
-        {paso === 3 && (
-          <>
-            <h2>Selección de Áreas</h2>
-            <div className="alerta">
-              Puedes inscribirte en múltiples áreas. El costo se calculará en
-              base a tu selección.
-            </div>
-            <div className="campo">
-              <label>
-                Áreas de Competencia <span className="asterisco rojo">*</span>
-              </label>
-              <select
-                onChange={(e) => {
-                  const valor = e.target.value;
-                  if (valor && !areasSeleccionadas.includes(valor)) {
-                    setAreasSeleccionadas([...areasSeleccionadas, valor]);
-                  }
-                  e.target.value = ""; // reset dropdown
-                }}
-                defaultValue=""
-              >
-                <option value="" disabled>
-                  Selecciona un área
-                </option>
-                {["Matemáticas", "Física", "Química", "Biología"]
-                  .filter((area) => !areasSeleccionadas.includes(area))
-                  .map((area) => (
-                    <option key={area} value={area}>
-                      {area}
-                    </option>
-                  ))}
-              </select>
-            </div>
-
-            {areasSeleccionadas.length > 0 && (
-              <div className="etiquetas-contenedor">
-                {areasSeleccionadas.map((area) => (
-                  <span className="etiqueta-area" key={area}>
-                    {area}
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setAreasSeleccionadas(
-                          areasSeleccionadas.filter((a) => a !== area)
-                        )
-                      }
-                    >
-                      ×
-                    </button>
-                  </span>
-                ))}
-              </div>
             )}
-          </>
-        )}
 
-        {paso === 4 && (
-          <>
-            <h2>Confirmación de Inscripción PArteKEVIN</h2>
-            <p>Revise sus datos antes de confirmar la inscripción.</p>
-            <div className="campo checkbox">
-              <label>
-                <input type="checkbox" required /> Acepto los términos y
-                condiciones de la Olimpiada Oh! SanSi
-              </label>
-            </div>
-          </>
-        )}
+            {paso === 2 && (
+              <FormTutores
+                tutores={tutores}
+                setTutores={setTutores}
+                errores={errores}
+                handleTutorChange={handleTutorChange}
+                textoValido={textoValido}
+                correoValido={correoValido}
+                telefonoValido={telefonoValido}
+                tutorActivo={tutorActivo}
+                setTutorActivo={setTutorActivo}
+              />
+            )}
 
-        <div className="botones">
-          {paso > 1 && (
-            <button type="button" onClick={anterior}>
-              Anterior
-            </button>
-          )}
-          {paso < 4 ? (
-            <button type="button" onClick={siguiente}>
-              Siguiente
-            </button>
-          ) : (
-            <button type="submit">Confirmar y Generar Boleta</button>
-          )}
+            {paso === 3 && (
+              <FormAreasCategorias
+                areasDisponibles={areasDisponibles}
+                areasSeleccionadas={areasSeleccionadas}
+                setAreasSeleccionadas={setAreasSeleccionadas}
+                categoriasFiltradas={categoriasFiltradas}
+                categoriaSeleccionada={categoriaSeleccionada}
+                setCategoriaSeleccionada={setCategoriaSeleccionada}
+                categoriasDisponibles={categoriasDisponibles}
+              />
+            )}
+
+            {paso === 4 && (
+              <FormResumen
+                estudiante={estudiante}
+                tutores={tutores}
+                areasSeleccionadas={areasSeleccionadas}
+                categoriaElegida={categoriaElegida}
+              />
+            )}
+
+            <BotonesPaso
+              paso={paso}
+              siguiente={siguiente}
+              anterior={anterior}
+              puedeAvanzar={puedeAvanzar}
+            />
+          </form>
         </div>
-      </form>
+      )}
+      <SuccessModal
+        isOpen={modalAbierto && !inscripcionCompletada}
+        onClose={() => {
+          setModalAbierto(false);
+          navigate("/Inscripcion");
+        }}
+        tittleMessage="¡Inscripción Exitosa!"
+        successMessage="Tu inscripción se ha completado correctamente."
+        detailMessage="Gracias por participar en la Olimpiada Oh! SanSi."
+      />
+      <ErrorModal
+        isOpen={errorModalAbierto}
+        onClose={() => setErrorModalAbierto(false)}
+        errorMessage={mensajeDeError}
+        errorFields={camposConError}
+      />
     </div>
   );
 };

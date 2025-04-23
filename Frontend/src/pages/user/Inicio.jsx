@@ -1,27 +1,72 @@
 import "../../styles/components/Inicio.css";
-import React from "react";
-// import Estudents from "../assets/images/Estudents.png";
-// import "./styles/Inicio.css";
+import { useRef, useEffect } from "react";
 
 import { useNavigate } from "react-router-dom";
 
 const Inicio = () => {
   const navigate = useNavigate();
+  // Dentro del componente Inicio
+  const detalleRef = useRef(null);
+
+  useEffect(() => {
+    const container = detalleRef.current;
+    if (!container) return;
+
+    let currentIndex = 0;
+    const itemCount = container.children.length;
+
+    const scrollToIndex = (index) => {
+      const itemWidth = container.offsetWidth;
+      container.scrollTo({
+        left: index * itemWidth,
+        behavior: "smooth",
+      });
+    };
+
+    const autoScroll = setInterval(() => {
+      currentIndex = (currentIndex + 1) % itemCount;
+      scrollToIndex(currentIndex);
+    }, 3000); // cada 3 segundos
+
+    return () => clearInterval(autoScroll);
+  }, []);
+  // Datos dinámicos de la olimpiada
+  const olimpiadaActual = {
+    nombre: "Olimpiada en Ciencias y Tecnología",
+    subtitulo: "Oh! SanSi",
+    descripcion:
+      "Plataforma oficial de inscripción para las Olimpiadas Científicas de la Universidad Mayor de San Simón.",
+    imagenPortada: "/src/assets/images/Estudents.png",
+    fechaLimiteInscripcion: "30 de junio de 2025",
+    fechaInicio: "15 de abril de 2025",
+    fechaFin: "30 de junio de 2025",
+    cupoMinimo: 50,
+    modalidad: "Presencial",
+    detallePDF: "/documentos/detalle_olimpiada.pdf",
+    areas: [
+      { nombre: "Matemáticas", icono: "➗" },
+      { nombre: "Física", icono: "🧬" },
+      { nombre: "Química", icono: "🧪" },
+      { nombre: "Biología", icono: "🧫" },
+      { nombre: "Informática", icono: "💻" },
+      { nombre: "Astronomía", icono: "🔭" },
+      { nombre: "Robótica", icono: "🤖" },
+      { nombre: "Ciencias Sociales", icono: "🌍" },
+    ],
+  };
+
   return (
     <div className="inicio-container">
       {/* HERO */}
       <section className="hero">
         <div className="hero-texto">
-          <h1>Olimpiada en Ciencias y Tecnología</h1>
-          <h2>Oh! SanSi</h2>
-          <p>
-            Plataforma oficial de inscripción para las Olimpiadas Científicas de
-            la Universidad Mayor de San Simón.
-          </p>
+          <h1>{olimpiadaActual.nombre}</h1>
+          <h2>{olimpiadaActual.subtitulo}</h2>
+          <p>{olimpiadaActual.descripcion}</p>
           <div className="hero-botones">
             <button
               className="btn-primario"
-              onClick={() => navigate("/Inscripcion")}
+              onClick={() => navigate("/user/inscripcion")}
             >
               Inscríbete ahora
             </button>
@@ -30,7 +75,7 @@ const Inicio = () => {
         </div>
         <div className="hero-imagen">
           <img
-            src="src/assets/images/Estudents.png"
+            src={olimpiadaActual.imagenPortada}
             alt="Estudiantes"
             width={500}
           />
@@ -39,18 +84,62 @@ const Inicio = () => {
 
       {/* BANNER */}
       <div className="banner-inscripcion">
-        ¡Inscripciones abiertas hasta el <strong>30 de junio de 2025</strong>!{" "}
+        ¡Inscripciones abiertas hasta el{" "}
+        <strong>{olimpiadaActual.fechaLimiteInscripcion}</strong>!{" "}
         <a
           href="#"
           onClick={(e) => {
             e.preventDefault();
-            navigate("/inscripcion");
+            navigate("/user/inscripcion");
           }}
         >
           Inscríbete aquí
         </a>
       </div>
 
+      <section className="detalle-olimpiada">
+        <h2>Detalles de la Olimpiada</h2>
+        <div className="detalle-scroll" ref={detalleRef}>
+          {[
+            {
+              label: "Fecha de inicio",
+              valor: olimpiadaActual.fechaInicio,
+              img: "/src/assets/images/fechaInicio.jpg",
+            },
+            {
+              label: "Fecha de fin",
+              valor: olimpiadaActual.fechaFin,
+              img: "/src/assets/images/fechaFin.jpg",
+            },
+            {
+              label: "Cupo mínimo",
+              valor: `${olimpiadaActual.cupoMinimo} participantes`,
+              img: "/src/assets/images/cupoMinimo.png",
+            },
+            {
+              label: "Modalidad",
+              valor: olimpiadaActual.modalidad,
+              img: "/src/assets/images/modalidad.webp",
+            },
+          ].map((item, index) => (
+            <div className="detalle-item" key={index}>
+              <img src={item.img} alt={item.label} />
+              <p>
+                <strong>{item.label}:</strong> {item.valor}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        <a
+          href={olimpiadaActual.detallePDF}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="btn-secundario link-detalle-pdf"
+        >
+          📄 Ver detalles de la olimpiada (PDF)
+        </a>
+      </section>
       {/* BENEFICIOS */}
       <section className="beneficios-section">
         <h2 className="titulo2">Un proceso de inscripción simplificado</h2>
@@ -75,6 +164,7 @@ const Inicio = () => {
               segura.
             </p>
           </div>
+ {/* 
           <div className="beneficio">
             <span>📊</span>
             <h3>Reportes Detallados</h3>
@@ -83,6 +173,22 @@ const Inicio = () => {
               participación.
             </p>
           </div>
+*/}
+
+<div
+  className="beneficio"
+  style={{ cursor: "pointer" }}
+  onClick={() => navigate("/user/mis-inscripciones")}
+>
+  <span>📊</span>
+  <h3>Reportes Detallados</h3>
+  <p className="parrafoBeneficio">
+    Accede a informes completos sobre inscripciones, pagos y participación.
+  </p>
+</div>
+
+
+
         </div>
       </section>
 
@@ -94,16 +200,7 @@ const Inicio = () => {
           estudiantes de todos los niveles.
         </p>
         <div className="areas-grid">
-          {[
-            { nombre: "Matemáticas", icono: "➗" },
-            { nombre: "Física", icono: "🧬" },
-            { nombre: "Química", icono: "🧪" },
-            { nombre: "Biología", icono: "🧫" },
-            { nombre: "Informática", icono: "💻" },
-            { nombre: "Astronomía", icono: "🔭" },
-            { nombre: "Robótica", icono: "🤖" },
-            { nombre: "Ciencias Sociales", icono: "🌍" },
-          ].map((area) => (
+          {olimpiadaActual.areas.map((area) => (
             <div key={area.nombre} className="area-card">
               <span className="area-icon">{area.icono}</span>
               <h3>{area.nombre}</h3>
@@ -125,7 +222,7 @@ const Inicio = () => {
         <div className="participacion-botones">
           <button
             className="btn-primario"
-            onClick={() => navigate("/inscripcion")}
+            onClick={() => navigate("/user/inscripcion")}
           >
             Comenzar Inscripción
           </button>

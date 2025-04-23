@@ -13,7 +13,9 @@ class AreaService
      */
     public function getAllAreas()
     {
-        return Area::all();
+        // return Area::all();
+        return Area::where('activo', true)->get(); // solo si manejas el campo 'activo'
+
     }
 
     /**
