@@ -14,7 +14,8 @@ use App\Http\Controllers\CompetitorController;
 
 use App\Http\Controllers\TutorController;
 use App\Http\Controllers\CostController as ControllersCostController;
-
+use App\Http\Controllers\BoletaPagoController;
+use App\Http\Controllers\API\OCR\OcrController;
 
 
 
@@ -28,9 +29,14 @@ Route::post('/inscripcion/tutor', [TutorController::class, 'store']);
 Route::get('/inscripcion/area', [AreaController::class, 'index']);
 
 
+//Ruta para obetener niveles inscripcion
+    Route::get('/categoryLevelUser', [CategoryLevelController::class, 'index']); //Prueba
+
+
 // Rutas públicas de olimpiadas (visibles sin autenticación)
 Route::get('/Olimpiadas', [OlimpiadaController::class, 'index'])->name('olimpiadas.index');
 Route::get('/olimpiadas/{olimpiada}', [OlimpiadaController::class, 'show']);
+
 
 
 
@@ -101,3 +107,10 @@ Route::middleware([IsUserAuth::class])->group(
         Route::post('/inscripcion/competidor', [CompetitorController::class, 'store']);
     }
 );
+
+// Ruta de boleta
+Route::get('/boleta/{registro}', [BoletaPagoController::class, 'generarPDF']);
+Route::post('/boleta/enviar', [BoletaPagoController::class, 'enviarPorCorreo']);
+
+// Ruta ocrcontroller
+Route::post('/validar-comprobante', [OcrController::class, 'validarComprobante']);
