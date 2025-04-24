@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { LayoutGrid, Settings, FileText, Users, LogOut } from 'lucide-react';
+import { LayoutGrid, Settings, FileText, Users, LogOut, Trophy } from 'lucide-react';
 import { useState, useEffect } from "react";
 import "../styles/Sidebar.css";
 
@@ -23,6 +23,8 @@ const Sidebar = () => {
     
     if (currentPath === "/" || currentPath === "/app" || currentPath === "/app/homeAdmin" || currentPath === "/app/dashboard") {
       setActiveItem("dashboard");
+    } else if (currentPath.includes("/app/dasboardOlimpiada")) {
+      setActiveItem("dasboardOlimpiada");
     } else if (currentPath.includes("/app/configuracion")) {
       setActiveItem("configuracion");
     } else if (currentPath.includes("/app/reportes")) {
@@ -62,6 +64,16 @@ const Sidebar = () => {
             >
               <LayoutGrid size={20} />
               <span>Dashboard</span>
+            </Link>
+          </li>
+          <li>
+            <Link 
+              to="/app/dasboardOlimpiada" 
+              className={`nav-item ${activeItem === "dasboardOlimpiada" ? "active" : ""}`}
+              onClick={() => setActiveItem("dasboardOlimpiada")}
+            >
+              <Trophy size={20} />
+              <span>Crear Olimpiada</span>
             </Link>
           </li>
           <li>
