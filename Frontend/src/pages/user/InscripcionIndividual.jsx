@@ -80,6 +80,9 @@ const InscripcionIndividual = () => {
     };
     fetchData();
   }, []);
+  useEffect(() => {
+    console.log("Áreas seleccionadas:", areasSeleccionadas);
+  }, [areasSeleccionadas]);
 
   useEffect(() => {
     const relacionadas = categoriasDisponibles.filter((cat) =>
@@ -179,7 +182,8 @@ const InscripcionIndividual = () => {
     const tutoresFormulario = tutores.filter(
       (t) => t.nombres || t.apellidos || t.correo_electronico || t.telefono
     );
-
+    console.log("JSON del estudiante:", formulario);
+    console.log("JSON de tutores:", tutoresFormulario);
     try {
       const respuestaEstudiante = await inscripcionCompetidor(formulario);
       console.log(

@@ -149,8 +149,6 @@ const FormEstudiantes = ({
           >
             <option value="">Seleccione un curso</option>
             {[
-              "1ro Primaria",
-              "2do Primaria",
               "3ro Primaria",
               "4to Primaria",
               "5to Primaria",
