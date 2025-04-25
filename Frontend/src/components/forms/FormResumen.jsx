@@ -47,11 +47,7 @@ const FormResumen = ({
         {tutores.map((tutor, idx) => (
           <div className="fila-resumen" key={idx}>
             <div className="subseccion-tutor">
-              <p>
-                <h4 className="subtitulo-tutor">
-                  {idx === 0 ? "Tutor Principal" : `Tutor ${idx + 1}`}
-                </h4>
-              </p>
+              <p>{idx === 0 ? "Tutor Principal" : `Tutor ${idx + 1}`}</p>
               <p>
                 <span className="etiqueta">Nombre completo:</span>{" "}
                 <span className="valor">
@@ -131,9 +127,9 @@ const FormResumen = ({
       </div>
 
       {/* Aceptar términos */}
-      <div className="terminos">
-        <input type="checkbox" required />
+      <div className="terminos" style={{ marginTop: "20px" }}>
         <label>
+          <input type="checkbox" required />
           Acepto los términos y condiciones de la Olimpiada Oh! SanSi
         </label>
       </div>
