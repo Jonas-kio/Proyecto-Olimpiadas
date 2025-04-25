@@ -7,6 +7,7 @@ use App\Http\Requests\Olimpiada\StoreOlimpiadaRequest;
 use App\Http\Requests\Olimpiada\UpdateOlimpiadaRequest;
 use App\Models\Olimpiada;
 use App\Services\OlimpiadaService;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
@@ -24,7 +25,7 @@ class OlimpiadaController extends Controller
     {
         try {
             $olimpiadas = $this->olimpiadaService->getPaginatedOlimpiadas();
-            
+
             return $this->successResponse([
                 'olimpiadas' => $olimpiadas
             ]);
@@ -36,8 +37,13 @@ class OlimpiadaController extends Controller
     public function store(StoreOlimpiadaRequest $request): JsonResponse
     {
         try {
+            $fechaInicio = Carbon::parse($request->input('fecha_inicio'));
+            $fechaFin = Carbon::parse($request->input('fecha_fin'));
 
-                $data = $this->prepareStoreData($request);
+            $this->validarFechas($fechaInicio, $fechaFin);
+
+            $data = $this->prepareStoreData($request);
+
             $olimpiada = $this->olimpiadaService->createOlimpiada(
                 $data,
                 $request->file('pdf_detalles'),
@@ -70,7 +76,14 @@ class OlimpiadaController extends Controller
         try {
             $parsedData = $this->parseMultipartFormData($request);
             $updateData = $this->prepareUpdateData($parsedData['data']);
-            
+
+            $hoy = Carbon::today();
+            $fechaInicio = Carbon::parse($updateData['fecha_inicio'] ?? $olimpiada->fecha_inicio);
+            $fechaFin = Carbon::parse($updateData['fecha_fin'] ?? $olimpiada->fecha_fin);
+
+            $this->validarFechas($fechaInicio, $fechaFin);
+
+
             $olimpiadaActualizada = $this->olimpiadaService->updateOlimpiada(
                 $olimpiada,
                 $updateData,
@@ -87,11 +100,28 @@ class OlimpiadaController extends Controller
         }
     }
 
+    private function validarFechas(Carbon $fechaInicio, Carbon $fechaFin): void
+    {
+        $hoy = Carbon::today();
+
+        if ($fechaInicio->lt($hoy)) {
+            throw new \Exception('La fecha de inicio no puede ser una fecha pasada.');
+        }
+
+        if ($fechaFin->lt($hoy)) {
+            throw new \Exception('La fecha de fin no puede ser una fecha pasada.');
+        }
+        $diferenciaDias = $fechaInicio->diffInDays($fechaFin);
+        if ($diferenciaDias < 10) {
+            throw new \Exception('La fecha de fin debe ser al menos 10 días posterior a la fecha de inicio.');
+        }
+    }
+
     public function destroy(Olimpiada $olimpiada): JsonResponse
     {
         try {
             $this->olimpiadaService->deleteOlimpiada($olimpiada);
-            
+
             return $this->successResponse([
                 'id' => $olimpiada->id,
                 'nombre' => $olimpiada->nombre
@@ -112,23 +142,23 @@ class OlimpiadaController extends Controller
         $parts = array_slice(explode($boundary, $rawContent), 1);
         $data = [];
         $files = [];
-        
+
         foreach ($parts as $part) {
             if ($part == "--\r\n") break;
-            
+
             $part = ltrim($part, "\r\n");
             list($raw_headers, $body) = explode("\r\n\r\n", $part, 2);
-            
+
             $headers = $this->parseHeaders($raw_headers);
-            
+
             if (isset($headers['content-disposition'])) {
                 $this->processPart($headers['content-disposition'], $body, $data, $files);
             }
         }
-        
+
         Log::info('Parsed form data:', $data);
         Log::info('Files detected:', array_keys($files));
-        
+
         return ['data' => $data, 'files' => $files];
     }
 
@@ -146,7 +176,7 @@ class OlimpiadaController extends Controller
     {
         preg_match('/^(.+); *name="([^"]+)"(; *filename="([^"]+)")?/', $contentDisposition, $matches);
         list(, $type, $name) = $matches;
-        
+
         if (isset($matches[4])) {
             $filename = $matches[4];
             Log::info('Archivo detectado:', [
@@ -171,7 +201,7 @@ class OlimpiadaController extends Controller
         $fileInfo = $files[$key];
         $tempPath = tempnam(sys_get_temp_dir(), substr($fileInfo['name'], 0, 3) . '_');
         file_put_contents($tempPath, $fileInfo['content']);
-        
+
         return new \Illuminate\Http\UploadedFile(
             $tempPath,
             $fileInfo['name'],
@@ -189,7 +219,7 @@ class OlimpiadaController extends Controller
     private function prepareUpdateData(array $data): array
     {
         $updateData = [];
-        
+
         if (isset($data['nombre'])) $updateData['nombre'] = trim($data['nombre']);
         if (isset($data['descripcion'])) $updateData['descripcion'] = trim($data['descripcion']);
         if (isset($data['fecha_inicio'])) $updateData['fecha_inicio'] = trim($data['fecha_inicio']);
@@ -202,7 +232,7 @@ class OlimpiadaController extends Controller
         if (isset($data['activo'])) {
             $updateData['activo'] = in_array(strtolower(trim($data['activo'])), ['true', '1', 'yes', 'si', 't']);
         }
-        
+
         return $updateData;
     }
 

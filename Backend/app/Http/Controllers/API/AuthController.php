@@ -20,6 +20,25 @@ class AuthController extends Controller
     }
 
 
+    public function crearAdmin()
+    {
+        $result = $this->authService->createAdmin();
+
+        if ($result['success']) {
+            return response()->json([
+                'success' => true,
+                'message' => $result['message'],
+                'user' => $result['user']
+            ], 201);
+        } else {
+            return response()->json([
+                'success' => false,
+                'message' => $result['message'],
+                'user' => $result['user'] ?? null
+            ], 400);
+        }
+    }
+
     public function register(AuthStoreRequest $request)
     {
         [$user, $token] = $this->authService->registerUser($request->validated());

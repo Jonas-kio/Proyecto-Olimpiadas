@@ -30,7 +30,8 @@ class InscripcionIndividualService
         // Verificar que no exista una inscripción previa
         if (InscripcionIndividual::where('olimpiada_id', $data['olimpiada_id'])
             ->where('participante_id', $data['participante_id'])
-            ->exists()) {
+            ->exists()
+        ) {
             throw new \Exception('Ya existe una inscripción para este participante en esta olimpiada');
         }
 
@@ -58,10 +59,10 @@ class InscripcionIndividualService
     {
         $extension = $file->getClientOriginalExtension();
         $filename = self::COMPROBANTES_DIRECTORY . '/' . Str::uuid() . '.' . $extension;
-        
+
         Storage::disk('public')->put($filename, file_get_contents($file));
         $this->logFileUpload($filename);
-        
+
         return $filename;
     }
 
@@ -82,4 +83,4 @@ class InscripcionIndividualService
             'path' => $path
         ]);
     }
-} 
+}

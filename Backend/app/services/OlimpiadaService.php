@@ -30,7 +30,17 @@ class OlimpiadaService
         ?array $areas = []
     ): Olimpiada {
         return DB::transaction(function () use ($data, $pdfDetalles, $imagenPortada, $areas) {
-            $data['estado'] = $this->determinarEstado($data['fecha_inicio'], $data['fecha_fin']);
+            $dataEstado = $this->determinarEstado($data['fecha_inicio'], $data['fecha_fin']);
+            $data['estado'] = $dataEstado['estado'];
+            $data['activo'] = $dataEstado['activo'];
+
+
+            Log::info('Creando olimpiada con datos', [
+                'estado' => $data['estado'],
+                'activo' => $data['activo']
+            ]);
+
+            $olimpiada = Olimpiada::create($data);
 
             $olimpiada = Olimpiada::create($data);
 
@@ -60,7 +70,11 @@ class OlimpiadaService
             if (isset($data['fecha_inicio']) || isset($data['fecha_fin'])) {
                 $fechaInicio = $data['fecha_inicio'] ?? $olimpiada->fecha_inicio;
                 $fechaFin = $data['fecha_fin'] ?? $olimpiada->fecha_fin;
-                $data['estado'] = $this->determinarEstado($fechaInicio, $fechaFin);
+
+                $estadoActivo = $this->determinarEstado($fechaInicio, $fechaFin);
+
+                $data['estado'] = $estadoActivo['estado'];
+                $data['activo'] = $estadoActivo['activo'];
             }
 
             if ($olimpiada->fill($data)->isDirty()) {
@@ -227,24 +241,28 @@ class OlimpiadaService
 
     //ESTADO OLIMPIADA
 
-    private function determinarEstado($fechaInicio, $fechaFin): string
+    private function determinarEstado($fechaInicio, $fechaFin): array
     {
         $today = Carbon::today();
         $fechaInicio = $fechaInicio instanceof Carbon ? $fechaInicio : Carbon::parse($fechaInicio);
         $fechaFin = $fechaFin instanceof Carbon ? $fechaFin : Carbon::parse($fechaFin);
 
+        $estado = OlimpiadaEstado::TERMINADO->value;
+        $activo = false;
+
         if ($today->lt($fechaInicio)) {
             $estado = OlimpiadaEstado::PENDIENTE->value;
-            $data['activo'] = false;
         } elseif ($today->lte($fechaFin)) {
             $estado = OlimpiadaEstado::ENPROCESO->value;
-            $data['activo'] = true;
-        } else {
-            $estado = OlimpiadaEstado::TERMINADO->value;
-            $data['activo'] = false;
+            $activo = true;
         }
-        return $estado;
+
+        return [
+            'estado' => $estado,
+            'activo' => $activo,
+        ];
     }
+
     public function actualizarEstadosOlimpiadas(): void
     {
         $today = Carbon::today();

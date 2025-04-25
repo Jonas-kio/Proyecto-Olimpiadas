@@ -33,11 +33,6 @@ class StoreOlimpiadaRequest extends FormRequest
             $inputs['areas'] = $decoded ?: [];
         }
 
-        if ($this->has('activo') && is_string($this->input('activo'))) {
-            $activo = $this->input('activo');
-            $inputs['activo'] = in_array(strtolower($activo), ['true', '1', 'yes', 'si']) ? true : false;
-        }
-
         if ($this->has('cupo_minimo') && is_string($this->input('cupo_minimo'))) {
             $inputs['cupo_minimo'] = (int) $this->input('cupo_minimo');
         }
@@ -53,7 +48,7 @@ class StoreOlimpiadaRequest extends FormRequest
             'nombre' => 'required|string|max:255',
             'descripcion' => 'nullable|string',
             'fecha_inicio' => 'required|date',
-            'fecha_fin' => 'required|date|after_or_equal:fecha_inicio',
+            'fecha_fin' => 'required|date',
             'cupo_minimo' => 'nullable|integer|min:0',
             'modalidad' => [
                 'required',
@@ -66,7 +61,6 @@ class StoreOlimpiadaRequest extends FormRequest
             'areas' => 'required',
             'pdf_detalles' => 'required|file|mimes:pdf|max:10240',
             'imagen_portada' => 'required|file|mimes:jpeg,jpg,png|max:10240',
-            'activo' => 'boolean',
         ];
     }
 

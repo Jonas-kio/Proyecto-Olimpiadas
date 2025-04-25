@@ -45,6 +45,8 @@ Route::get('/olimpiadas/{olimpiada}', [OlimpiadaController::class, 'show']);
 
 
 //TODO: Rutas Publicas
+
+Route::get('crear-admin', [AuthController::class, 'crearAdmin']);
 Route::post('register', [AuthController::class, 'register']);
 Route::post('login', [AuthController::class, 'login']);
 
