@@ -21,6 +21,7 @@ use App\Http\Controllers\InscripcionController;
 
 
 
+
 //Ruta del competidor
 Route::post('/inscripcion/competidor', [CompetitorController::class, 'store']);
 
@@ -141,3 +142,9 @@ Route::prefix('inscripcion')->group(function () {
     Route::post('/pago/{paymentBillId}', [InscripcionController::class, 'actualizarEstadoPago']);
     Route::get('/estado/{registrationId}', [InscripcionController::class, 'consultarEstado']);
 });
+
+Route::post('/boleta/pdf', [BoletaPagoController::class, 'generarBoletaPDF']);
+Route::post('/boleta/email', [BoletaPagoController::class, 'enviarBoletaPorCorreo']);
+Route::post('/boleta/ocr', [BoletaPagoController::class, 'extraerNumeroDesdeOCR']);
+Route::post('/boleta/ocr-imagen', [BoletaPagoController::class, 'procesarImagenOCR']);
+Route::post('/ocr/comprobante', [OcrController::class, 'extraerYValidarComprobante']);
