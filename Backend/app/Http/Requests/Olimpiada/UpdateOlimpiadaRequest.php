@@ -5,6 +5,10 @@ namespace App\Http\Requests\Olimpiada;
 use App\Enums\OlimpiadaModalidades;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
+
+
+use App\Models\Olimpiada;
 
 class UpdateOlimpiadaRequest extends FormRequest
 {
@@ -59,11 +63,16 @@ class UpdateOlimpiadaRequest extends FormRequest
 
     public function rules(): array
     {
-        return [
+        $today = Carbon::today()->format('Y-m-d');
+
+        $olimpiada = null;
+        if ($this->route('olimpiada')) {
+            $olimpiada = $this->route('olimpiada');
+        }
+
+        $rules = [
             'nombre' => 'sometimes|nullable|string|max:255',
             'descripcion' => 'sometimes|nullable|string',
-            'fecha_inicio' => 'sometimes|nullable|date',
-            'fecha_fin' => 'sometimes|nullable|date|after_or_equal:fecha_inicio',
             'cupo_minimo' => 'sometimes|nullable|integer|min:0',
             'modalidad' => [
                 'sometimes',
@@ -80,6 +89,41 @@ class UpdateOlimpiadaRequest extends FormRequest
             'imagen_portada' => 'sometimes|nullable|image|mimes:jpeg,png,jpg|max:10240',
             'activo' => 'sometimes|nullable|boolean',
         ];
+
+        if ($olimpiada) {
+            $rules['fecha_inicio'] = [
+                'sometimes',
+                'nullable',
+                'date',
+                function ($attribute, $value, $fail) use ($today, $olimpiada) {
+                    if ($value !== $olimpiada->fecha_inicio->format('Y-m-d')) {
+                        if (Carbon::parse($value)->lt(Carbon::today())) {
+                            $fail('La fecha de inicio debe ser igual o posterior a la fecha actual.');
+                        }
+                    }
+                }
+            ];
+
+            $rules['fecha_fin'] = [
+                'sometimes',
+                'nullable',
+                'date',
+                'after_or_equal:fecha_inicio',
+                function ($attribute, $value, $fail) use ($olimpiada) {
+                    if (!$this->has('fecha_inicio') && $value) {
+                        $fechaInicio = $olimpiada->fecha_inicio;
+                        if (Carbon::parse($value)->lt($fechaInicio)) {
+                            $fail('La fecha de fin debe ser posterior o igual a la fecha de inicio.');
+                        }
+                    }
+                }
+            ];
+        } else {
+            $rules['fecha_inicio'] = 'sometimes|nullable|date|after_or_equal:' . $today;
+            $rules['fecha_fin'] = 'sometimes|nullable|date|after_or_equal:fecha_inicio';
+        }
+
+        return $rules;
     }
 
     public function messages(): array
@@ -99,6 +143,7 @@ class UpdateOlimpiadaRequest extends FormRequest
             'imagen_portada.max' => 'La imagen no debe ser mayor a 5MB.',
         ];
     }
+
 
     protected function passedValidation()
     {

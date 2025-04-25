@@ -36,7 +36,8 @@ class OlimpiadaController extends Controller
     public function store(StoreOlimpiadaRequest $request): JsonResponse
     {
         try {
-            $data = $this->prepareStoreData($request);
+
+                $data = $this->prepareStoreData($request);
             $olimpiada = $this->olimpiadaService->createOlimpiada(
                 $data,
                 $request->file('pdf_detalles'),

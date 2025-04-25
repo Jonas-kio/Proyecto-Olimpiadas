@@ -2,7 +2,9 @@
 
 namespace App\Services;
 
+use App\Enums\OlimpiadaEstado;
 use App\Models\Olimpiada;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\UploadedFile;
@@ -28,6 +30,8 @@ class OlimpiadaService
         ?array $areas = []
     ): Olimpiada {
         return DB::transaction(function () use ($data, $pdfDetalles, $imagenPortada, $areas) {
+            $data['estado'] = $this->determinarEstado($data['fecha_inicio'], $data['fecha_fin']);
+
             $olimpiada = Olimpiada::create($data);
 
             $this->handleFileUploads($olimpiada, $pdfDetalles, $imagenPortada);
@@ -53,6 +57,12 @@ class OlimpiadaService
             $this->processModalidad($data);
             $this->processActivo($data);
 
+            if (isset($data['fecha_inicio']) || isset($data['fecha_fin'])) {
+                $fechaInicio = $data['fecha_inicio'] ?? $olimpiada->fecha_inicio;
+                $fechaFin = $data['fecha_fin'] ?? $olimpiada->fecha_fin;
+                $data['estado'] = $this->determinarEstado($fechaInicio, $fechaFin);
+            }
+
             if ($olimpiada->fill($data)->isDirty()) {
                 $this->logDirtyFields($olimpiada);
                 $olimpiada->save();
@@ -72,7 +82,7 @@ class OlimpiadaService
     {
         try {
             $this->logOperationStart('eliminación', $olimpiada);
-            
+
             $this->deleteFiles($olimpiada);
             $olimpiada->delete();
 
@@ -117,7 +127,7 @@ class OlimpiadaService
         }
 
         $this->logAreasUpdate($areas);
-        
+
         if (!empty($areas)) {
             $olimpiada->areas()->sync($areas);
         } else {
@@ -213,6 +223,61 @@ class OlimpiadaService
     public function getOlimpiadaAreas(Olimpiada $olimpiada)
     {
         return $olimpiada->areas;
-        //ver olimpiadas
+    }
+
+    //ESTADO OLIMPIADA
+
+    private function determinarEstado($fechaInicio, $fechaFin): string
+    {
+        $today = Carbon::today();
+        $fechaInicio = $fechaInicio instanceof Carbon ? $fechaInicio : Carbon::parse($fechaInicio);
+        $fechaFin = $fechaFin instanceof Carbon ? $fechaFin : Carbon::parse($fechaFin);
+
+        if ($today->lt($fechaInicio)) {
+            $estado = OlimpiadaEstado::PENDIENTE->value;
+            $data['activo'] = false;
+        } elseif ($today->lte($fechaFin)) {
+            $estado = OlimpiadaEstado::ENPROCESO->value;
+            $data['activo'] = true;
+        } else {
+            $estado = OlimpiadaEstado::TERMINADO->value;
+            $data['activo'] = false;
+        }
+        return $estado;
+    }
+    public function actualizarEstadosOlimpiadas(): void
+    {
+        $today = Carbon::today();
+        Log::info('Actualizando estados de olimpiadas', ['fecha' => $today->toDateString()]);
+
+        $olimpiadasParaIniciar = Olimpiada::where('estado', OlimpiadaEstado::PENDIENTE->value)
+            ->where('fecha_inicio', '<=', $today)
+            ->get();
+
+        foreach ($olimpiadasParaIniciar as $olimpiada) {
+            $olimpiada->estado = OlimpiadaEstado::ENPROCESO->value;
+            $olimpiada->activo = true;
+            $olimpiada->save();
+            Log::info('Olimpiada iniciada', [
+                'id' => $olimpiada->id,
+                'nombre' => $olimpiada->nombre,
+                'activo' => $olimpiada->activo
+            ]);
+        }
+
+        $olimpiadasParaTerminar = Olimpiada::where('estado', OlimpiadaEstado::ENPROCESO->value)
+            ->where('fecha_fin', '<', $today)
+            ->get();
+
+        foreach ($olimpiadasParaTerminar as $olimpiada) {
+            $olimpiada->estado = OlimpiadaEstado::TERMINADO->value;
+            $olimpiada->activo = false;
+            $olimpiada->save();
+            Log::info('Olimpiada terminada', [
+                'id' => $olimpiada->id,
+                'nombre' => $olimpiada->nombre,
+                'activo' => $olimpiada->activo
+            ]);
+        }
     }
 }
