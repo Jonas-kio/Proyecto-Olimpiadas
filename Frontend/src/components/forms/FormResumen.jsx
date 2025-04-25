@@ -42,6 +42,29 @@ const FormResumen = ({
       </div>
 
       {/* Sección: Tutores */}
+      <div className="seccion">
+        <h3>Datos del Tutor</h3>
+        {tutores.map((tutor, idx) => (
+          <div className="fila-resumen" key={idx}>
+            <div className="subseccion-tutor">
+              <p>{idx === 0 ? "Tutor Principal" : `Tutor ${idx + 1}`}</p>
+              <p>
+                <span className="etiqueta">Nombre completo:</span>{" "}
+                <span className="valor">
+                  {" "}
+                  {tutor.nombres} {tutor.apellidos}
+                </span>
+              </p>
+              <p>
+                <span className="etiqueta">Contacto:</span>{" "}
+                <span>
+                  {tutor.correo_electronico} / {tutor.telefono}
+                </span>
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
      <div className="seccion">
        <h3>Datos del Tutor</h3>
      {tutores.map((tutor, idx) => (
@@ -128,9 +151,9 @@ const FormResumen = ({
       </div>
 
       {/* Aceptar términos */}
-      <div className="terminos">
-        <input type="checkbox" required />
+      <div className="terminos" style={{ marginTop: "20px" }}>
         <label>
+          <input type="checkbox" required />
           Acepto los términos y condiciones de la Olimpiada Oh! SanSi
         </label>
       </div>
