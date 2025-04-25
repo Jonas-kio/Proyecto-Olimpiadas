@@ -19,6 +19,7 @@ use App\Http\Controllers\API\OCR\OcrController;
 
 
 
+
 //Ruta del competidor
 Route::post('/inscripcion/competidor', [CompetitorController::class, 'store']);
 
@@ -109,8 +110,8 @@ Route::middleware([IsUserAuth::class])->group(
 );
 
 // Ruta de boleta
-Route::get('/boleta/{registro}', [BoletaPagoController::class, 'generarPDF']);
-Route::post('/boleta/enviar', [BoletaPagoController::class, 'enviarPorCorreo']);
-
-// Ruta ocrcontroller
-Route::post('/validar-comprobante', [OcrController::class, 'validarComprobante']);
+Route::post('/boleta/pdf', [BoletaPagoController::class, 'generarBoletaPDF']);
+Route::post('/boleta/email', [BoletaPagoController::class, 'enviarBoletaPorCorreo']);
+Route::post('/boleta/ocr', [BoletaPagoController::class, 'extraerNumeroDesdeOCR']);
+Route::post('/boleta/ocr-imagen', [BoletaPagoController::class, 'procesarImagenOCR']);
+Route::post('/ocr/comprobante', [OcrController::class, 'extraerYValidarComprobante']);

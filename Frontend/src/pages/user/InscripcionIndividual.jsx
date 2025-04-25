@@ -11,6 +11,7 @@ import {
 // Componentes comunes
 import SuccessModal from "../../components/common/SuccessModal";
 import ErrorModal from "../../components/common/ErrorModal";
+import ProcesandoModal from "../../components/common/ProcesandoModal";
 
 //Boletas
 import BoletaPago from "../../components/boleta/BoletaPago";
@@ -62,14 +63,15 @@ const InscripcionIndividual = () => {
   const [errores, setErrores] = useState({});
   const [modalAbierto, setModalAbierto] = useState(false);
   const [errorModalAbierto, setErrorModalAbierto] = useState(false);
+  const [procesando, setProcesando] = useState(false);
   const [mensajeDeError, setMensajeDeError] = useState("");
   const [camposConError, setCamposConError] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const responseAreas = await inscripcionArea();
-        const responseCategorias = await inscripcionCategoryLevel();
+        const responseAreas = await inscripcionArea(); //Llamada al backen areas
+        const responseCategorias = await inscripcionCategoryLevel(); // llamada al backend cater
         setAreasDisponibles(responseAreas.data?.data || []);
         setCategoriasDisponibles(responseCategorias.data?.data || []);
       } catch (error) {
@@ -172,7 +174,7 @@ const InscripcionIndividual = () => {
   };
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+    setProcesando(true);
     const formulario = { ...estudiante };
     const tutoresFormulario = tutores.filter(
       (t) => t.nombres || t.apellidos || t.correo_electronico || t.telefono
@@ -187,7 +189,7 @@ const InscripcionIndividual = () => {
 
       for (const tutor of tutoresFormulario) {
         const respuesta = await inscripcionTutor(tutor);
-        console.log("Tutor registrado exitosamente:", respuesta.data); // <- este log
+        console.log("Tutor registrado exitosamente:", respuesta.data);
       }
       // Generar número de boleta
       const nuevoBoleta = generarNumeroBoleta();
@@ -244,6 +246,7 @@ const InscripcionIndividual = () => {
       setInscripcionCompletada(true);
       setMostrarBoleta(true);
       setModalAbierto(true);
+      setProcesando(false);
     } catch (error) {
       const mensajeErrorBase =
         error.response?.data?.message ||
@@ -271,6 +274,7 @@ const InscripcionIndividual = () => {
         setMensajeDeError(mensajeErrorBase);
       }
       setErrorModalAbierto(true);
+      setProcesando(false);
     }
   };
 
@@ -366,6 +370,7 @@ const InscripcionIndividual = () => {
         errorMessage={mensajeDeError}
         errorFields={camposConError}
       />
+      {procesando && <ProcesandoModal />}
     </div>
   );
 };
