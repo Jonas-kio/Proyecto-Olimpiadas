@@ -4,40 +4,60 @@ namespace App\Http\Controllers\API\OCR;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\RegistrationProcess;
-
+use App\Models\Boleta;
+use Illuminate\Support\Facades\Storage;
+use thiagoalessio\TesseractOCR\TesseractOCR;
 
 class OcrController extends Controller
 {
-    public function validarComprobante(Request $request)
+    public function extraerYValidarComprobante(Request $request)
     {
-        $texto = $request->input('texto');
+        // Validar que venga la imagen
+        $request->validate([
+            'imagen' => 'required|image|mimes:jpeg,png,jpg|max:2048',
+        ]);
 
-        if (!$texto) {
-            return response()->json(['error' => 'Texto OCR no proporcionado.'], 400);
-        }
+        // Guardar temporalmente la imagen
+        $imagen = $request->file('imagen');
+        $ruta = $imagen->storeAs('ocr', uniqid() . '.' . $imagen->getClientOriginalExtension(), 'public');
+        $rutaCompleta = storage_path('app/public/' . $ruta);
+
+        // Ejecutar OCR con Tesseract
+        $texto = (new TesseractOCR($rutaCompleta))->lang('spa')->run();
+
+        // Eliminar imagen después de usar
+        Storage::disk('public')->delete($ruta);
 
         // Buscar número de boleta en el texto
         preg_match('/boleta[:\s\-]*([0-9]+)/i', $texto, $coincidencias);
 
         if (!isset($coincidencias[1])) {
-            return response()->json(['error' => 'No se encontró un número de boleta en el texto.'], 422);
+            return response()->json([
+                'valido' => false,
+                'mensaje' => 'No se encontró un número de boleta en el texto.',
+                'texto_detectado' => $texto,
+            ], 422);
         }
 
         $numeroBoleta = $coincidencias[1];
 
-        // Buscar si el número existe en la base de datos
-        $registro = RegistrationProcess::where('codigo_boleta', $numeroBoleta)->first();
+        // Verificar si la boleta existe
+        $boleta = Boleta::where('numero_boleta', $numeroBoleta)->first();
 
-        if (!$registro) {
-            return response()->json(['valido' => false, 'mensaje' => 'Número de boleta no válido.']);
+        if (!$boleta) {
+            return response()->json([
+                'valido' => false,
+                'mensaje' => 'Número de boleta no válido.',
+                'numero_boleta_detectado' => $numeroBoleta,
+                'texto_detectado' => $texto,
+            ]);
         }
 
         return response()->json([
             'valido' => true,
             'mensaje' => 'Boleta válida.',
             'numero_boleta' => $numeroBoleta,
-            'registro_id' => $registro->id,
+            'boleta_id' => $boleta->id,
         ]);
     }
 }
