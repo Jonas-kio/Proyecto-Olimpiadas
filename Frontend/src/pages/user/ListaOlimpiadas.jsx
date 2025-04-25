@@ -1,7 +1,5 @@
-// ListaOlimpiadas.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import DeleteConfirmationModal from "../../components/common/DeleteConfirmationModal";
 import "../../styles/components/ListaOlimpiadas.css";
 import "../../styles/components/Table.css";
 import olimpiada14 from "../../assets/images/olimpiada14.png";
