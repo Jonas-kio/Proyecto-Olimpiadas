@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\OlimpiadaEstado;
 use App\Enums\OlimpiadaModalidades;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -22,6 +23,7 @@ class Olimpiada extends Model
         'modalidad',
         'ruta_pdf_detalles',
         'ruta_imagen_portada',
+        'estado',
         'activo'
     ];
 
@@ -42,6 +44,7 @@ class Olimpiada extends Model
         'cupo_minimo' => 'integer',
         'activo' => 'boolean',
         'modalidad' => OlimpiadaModalidades::class,
+        'estado' => OlimpiadaEstado::class,
     ];
 
     public function getFormattedAreasAttribute()

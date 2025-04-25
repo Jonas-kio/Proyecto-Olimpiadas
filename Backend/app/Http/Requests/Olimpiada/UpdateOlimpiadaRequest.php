@@ -4,45 +4,85 @@ namespace App\Http\Requests\Olimpiada;
 
 use App\Enums\OlimpiadaModalidades;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Log;
+
 
 class UpdateOlimpiadaRequest extends FormRequest
 {
-
     public function authorize(): bool
     {
         return true;
     }
 
+    protected function prepareForValidation()
+    {
+        $allInputs = $this->all();
+        Log::info('PrepareForValidation - Original inputs:', $allInputs);
+
+        $inputs = [];
+
+        if ($this->has('areas')) {
+            $areas = $this->input('areas');
+            if (is_string($areas)) {
+                $decoded = json_decode($areas, true);
+                if ($decoded === null) {
+                    $areas = trim($areas, '[]');
+                    $decoded = array_map('trim', explode(',', $areas));
+                }
+                $inputs['areas'] = array_map('intval', array_filter($decoded));
+            }
+        }
+
+        if ($this->has('activo')) {
+            $activo = $this->input('activo');
+            $inputs['activo'] = in_array(strtolower($activo), ['true', '1', 'yes', 'si', 't']) ? true : false;
+        }
+
+        if ($this->has('cupo_minimo')) {
+            $inputs['cupo_minimo'] = (int) $this->input('cupo_minimo');
+        }
+
+        if ($this->has('modalidad')) {
+            $inputs['modalidad'] = strtoupper($this->input('modalidad'));
+        }
+
+        foreach (['nombre', 'descripcion', 'fecha_inicio', 'fecha_fin'] as $field) {
+            if ($this->has($field)) {
+                $inputs[$field] = $this->input($field);
+            }
+        }
+
+        if (!empty($inputs)) {
+            $this->merge($inputs);
+            Log::info('Final merged inputs:', $this->all());
+        }
+    }
 
     public function rules(): array
     {
-        return [
-            'nombre' => 'required|string|max:255',
-            'descripcion' => 'nullable|string',
-            'fecha_inicio' => 'required|date',
-            'fecha_fin' => 'required|date|after_or_equal:fecha_inicio',
-            'cupo_minimo' => 'nullable|integer|min:0',
+        $rules = [
+            'nombre' => 'sometimes|nullable|string|max:255',
+            'descripcion' => 'sometimes|nullable|string',
+            'cupo_minimo' => 'sometimes|nullable|integer|min:0',
             'modalidad' => [
-                'required',
+                'sometimes',
+                'nullable',
                 function ($attribute, $value, $fail) {
-                    if (!OlimpiadaModalidades::isValid($value)) {
-                        $fail("El nombre de grado no es válido. Valores permitidos: " . implode(', ', OlimpiadaModalidades::values()));
+                    if ($value && !OlimpiadaModalidades::isValid($value)) {
+                        $fail("La modalidad no es válida. Valores permitidos: " . implode(', ', OlimpiadaModalidades::values()));
                     }
                 }
             ],
-            'areas' => 'sometimes|array|min:1',
-            'areas.*' => 'exists:area,id',
-            'pdf_detalles' => 'nullable|file|mimes:pdf|max:10240',
-            'imagen_portada' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
-            'activo' => 'boolean',
+            'areas' => 'sometimes|nullable|array',
+            'areas.*' => 'integer|exists:areas,id',
+            'pdf_detalles' => 'sometimes|nullable|file|mimes:pdf|max:10240',
+            'imagen_portada' => 'sometimes|nullable|image|mimes:jpeg,png,jpg|max:10240',
+            'activo' => 'sometimes|nullable|boolean',
         ];
+
+        return $rules;
     }
 
-    /**
-     * Obtener los mensajes de error para las reglas de validación definidas.
-     *
-     * @return array<string, string>
-     */
     public function messages(): array
     {
         return [
@@ -59,5 +99,11 @@ class UpdateOlimpiadaRequest extends FormRequest
             'imagen_portada.mimes' => 'La imagen debe ser de tipo: jpeg, png, jpg, gif.',
             'imagen_portada.max' => 'La imagen no debe ser mayor a 5MB.',
         ];
+    }
+
+
+    protected function passedValidation()
+    {
+        Log::info('Validation passed. Validated data:', $this->validated());
     }
 }
