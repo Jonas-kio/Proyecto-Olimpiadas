@@ -6,7 +6,7 @@ import DashboardConfig from "../pages/admin/config/DashboardConfig";
 import Reportes from "../pages/admin/config/Reportes";
 import HomeAdmin from "../pages/admin/HomeAdmin";
 import DasboardOlimpiada from '../pages/admin/DasboardOlimpiada';
-import FormularioOlimpiada from '../pages/admin/FormularioOlimpiada';
+import FormularioOlimpiada from "../pages/admin/formularioOlimpiada";
 
 const AppRouterAdmin = () => {
   return (
@@ -15,6 +15,7 @@ const AppRouterAdmin = () => {
       <Route path="/homeAdmin" element={<HomeAdmin/>} />
       <Route path="/dasboardOlimpiada" element={<DasboardOlimpiada/>} />
       <Route path="/formulario_Olimpiada" element={<FormularioOlimpiada />} />
+      <Route path="/formulario_Olimpiada/:id" element={<FormularioOlimpiada />} />
       <Route path="/configuracion" element={<DashboardConfig />} />
       <Route path="/reports" element={<Reportes/>} />
     </Routes>
