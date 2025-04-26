@@ -4,20 +4,31 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
-    public function up(): void {
-        Schema::create('boletas', function (Blueprint $table) {
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('boleta', function (Blueprint $table) {
             $table->id();
-            $table->string('numero')->unique();
-            $table->date('fecha_emision');
-            $table->decimal('monto_total', 8, 2);
-            $table->string('correo_destino')->nullable();
-            $table->string('estado')->default('pendiente');
+            $table->string('numero_boleta')->unique();
+            $table->unsignedBigInteger('registration_process_id');
             $table->timestamps();
+
+            $table->foreign('registration_process_id')
+                ->references('id')
+                ->on('registration_process')
+                ->onDelete('cascade');
         });
     }
 
-    public function down(): void {
-        Schema::dropIfExists('boletas');
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('boleta');
     }
 };
