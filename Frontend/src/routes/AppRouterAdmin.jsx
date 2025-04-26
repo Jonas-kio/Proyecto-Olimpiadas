@@ -6,7 +6,7 @@ import DashboardConfig from "../pages/admin/config/DashboardConfig";
 import Reportes from "../pages/admin/config/Reportes";
 import HomeAdmin from "../pages/admin/HomeAdmin";
 import DasboardOlimpiada from '../pages/admin/DasboardOlimpiada';
-import FormularioOlimpiada from '../pages/admin/FormularioOlimpiada';
+import FormularioOlimpiada from "../pages/admin/formularioOlimpiada";
 
 const AppRouterAdmin = () => {
   return (
