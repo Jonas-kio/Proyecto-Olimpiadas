@@ -1,95 +1,127 @@
-import React from 'react'
-import { PlusIcon } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
-import OlympicCard from '../../components/layout/OlimpiadaCard'
-import '../../styles/components/DasboardOlimpiada.css'
+import React, { useEffect, useState } from 'react';
+import { PlusIcon } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import OlympicCard from '../../components/layout/OlimpiadaCard';
+import { obtenerOlimpiadas, eliminarOlimpiada } from '../../services/apiConfig';
+import DeleteConfirmationModal from '../../components/common/DeleteConfirmationModal';
+import SuccessModal from '../../components/common/SuccessModal';
+import '../../styles/components/DasboardOlimpiada.css';
 
 function DasboardOlimpiada() {
+  const navigate = useNavigate();
+  const [olympicsData, setOlympicsData] = useState([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedOlimpiadaId, setSelectedOlimpiadaId] = useState(null);
+  const [selectedOlimpiadaName, setSelectedOlimpiadaName] = useState('');
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
-  const navigate = useNavigate()
+  useEffect(() => {
+    fetchData();
+  }, []);
 
-  const olympicsData = [
-    {
-      id: 1,
-      title: 'Olimpia Científica 2022',
-      status: 'En Curso',
-      statusColor: 'text-green-600 bg-green-100',
-      areas: 'Matemáticas, Física',
-      participants: 50,
-      modality: 'Virtual',
-      imageUrl:
-        'https://anitrendz.net/news/wp-content/uploads/2023/02/angel-next-door-spoils-me-rotten-mahiru-shiina-valentines-visual-e1676143192341.jpg',
-    },
-    {
-      id: 2,
-      title: 'Olimpia Científica 2019',
-      status: 'Terminado',
-      statusColor: 'text-red-600 bg-red-100',
-      areas: 'Química, Robótica',
-      participants: 45,
-      modality: 'Presencial',
-      imageUrl:
-        'https://uploadthingy.s3.us-west-1.amazonaws.com/aZGHtpZzaBEziP9uzAe13s/image.png',
-    },
-    {
-      id: 3,
-      title: 'Olimpia Científica 2025',
-      status: 'Pendiente',
-      statusColor: 'text-blue-600 bg-blue-100',
-      areas: 'Matemáticas, Física',
-      participants: 60,
-      modality: 'Virtual',
-      imageUrl:
-        'https://uploadthingy.s3.us-west-1.amazonaws.com/aZGHtpZzaBEziP9uzAe13s/image.png',
-    },
-    {
-      id: 4,
-      title: 'Olimpia Científica 2017',
-      status: 'Terminado',
-      statusColor: 'text-red-600 bg-red-100',
-      areas: 'Matemáticas, Robótica',
-      participants: 35,
-      modality: 'Híbrida',
-      imageUrl:
-        'https://uploadthingy.s3.us-west-1.amazonaws.com/aZGHtpZzaBEziP9uzAe13s/image.png',
-    },
-    {
-      id: 5,
-      title: 'Olimpia Científica 2015',
-      status: 'Terminado',
-      statusColor: 'text-red-600 bg-red-100',
-      areas: 'Informática, Robótica',
-      participants: 103,
-      modality: 'Presencial',
-      imageUrl:
-        'https://uploadthingy.s3.us-west-1.amazonaws.com/aZGHtpZzaBEziP9uzAe13s/image.png',
-    },
-  ]
+  const fetchData = async () => {
+    try {
+      const res = await obtenerOlimpiadas();
+      const lista = res.data?.data?.olimpiadas?.data || [];
+      const parsed = lista.map((item) => ({
+        id: item.id,
+        title: item.nombre,
+        status: item.estado,
+        statusColor:
+          item.estado === 'En Proceso'
+            ? 'text-green-600 bg-green-100'
+            : item.estado === 'Terminado'
+            ? 'text-red-600 bg-red-100'
+            : 'text-blue-600 bg-blue-100',
+        areas: item.areas.map((a) => a.nombre).join(', '),
+        participants: 0, // valor fijo por ahora
+        modality: item.modalidad,
+        imageUrl: `http://localhost:8000/storage/${item.ruta_imagen_portada}`,
+      }));
+      setOlympicsData(parsed);
+    } catch (err) {
+      console.error('❌ Error al obtener olimpiadas:', err);
+    }
+  };
+
+  const handleDelete = (id, name) => {
+    setSelectedOlimpiadaId(id);
+    setSelectedOlimpiadaName(name);
+    setIsModalOpen(true);
+  };
+
+  const confirmarEliminacion = async () => {
+    if (!selectedOlimpiadaId) return;
+    try {
+      await eliminarOlimpiada(selectedOlimpiadaId);
+      setShowSuccessModal(true); // ✅ Mostrar modal de éxito
+    } catch (err) {
+      console.error('Error al eliminar:', err);
+      alert('❌ No se pudo eliminar la olimpiada');
+    } finally {
+      setIsModalOpen(false);
+      setSelectedOlimpiadaId(null);
+      setSelectedOlimpiadaName('');
+    }
+  };
+
+  const cancelarEliminacion = () => {
+    setIsModalOpen(false);
+    setSelectedOlimpiadaId(null);
+    setSelectedOlimpiadaName('');
+  };
+
+  const handleCloseSuccessModal = () => {
+    setShowSuccessModal(false);
+    fetchData(); // Recargar lista de olimpiadas
+  };
+
+  const handleEdit = (id) => {
+    navigate(`/app/formulario_Olimpiada/${id}`);
+  };
 
   return (
     <div className="dashboard-olimpiada">
-
       <div className="dashboard-header card-style">
         <div>
           <h2 className="dashboard-title">Olimpiadas</h2>
-          <p className="dashboard-subtitle">
-            Historial de las olimpiadas creadas
-          </p>
+          <p className="dashboard-subtitle">Historial de las olimpiadas creadas</p>
         </div>
         <button className="create-btn" onClick={() => navigate('/app/formulario_Olimpiada')}>
-          <PlusIcon size={16} />
-          Crear nueva olimpiada
+          <PlusIcon size={16} /> Crear nueva olimpiada
         </button>
       </div>
 
-
       <div className="dashboard-grid">
         {olympicsData.map((olympic) => (
-          <OlympicCard key={olympic.id} olympic={olympic} />
+          <OlympicCard
+            key={olympic.id}
+            olympic={olympic}
+            onDelete={() => handleDelete(olympic.id, olympic.title)}
+            onEdit={handleEdit}
+          />
         ))}
       </div>
+
+      {/* Modal de confirmación de eliminación */}
+      <DeleteConfirmationModal
+        isOpen={isModalOpen}
+        onClose={cancelarEliminacion}
+        onConfirm={confirmarEliminacion}
+        itemName={selectedOlimpiadaName}
+        itemType="olimpiada"
+      />
+
+      {/* Modal de éxito */}
+      <SuccessModal
+        isOpen={showSuccessModal}
+        onClose={handleCloseSuccessModal}
+        tittleMessage="¡Eliminación Exitosa!"
+        successMessage="La olimpiada fue eliminada correctamente."
+        detailMessage="Ahora puedes gestionar el resto de las olimpiadas."
+      />
     </div>
-  )
+  );
 }
 
-export default DasboardOlimpiada
+export default DasboardOlimpiada;

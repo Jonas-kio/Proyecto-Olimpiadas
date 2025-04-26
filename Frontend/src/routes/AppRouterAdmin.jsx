@@ -15,6 +15,7 @@ const AppRouterAdmin = () => {
       <Route path="/homeAdmin" element={<HomeAdmin/>} />
       <Route path="/dasboardOlimpiada" element={<DasboardOlimpiada/>} />
       <Route path="/formulario_Olimpiada" element={<FormularioOlimpiada />} />
+      <Route path="/formulario_Olimpiada/:id" element={<FormularioOlimpiada />} />
       <Route path="/configuracion" element={<DashboardConfig />} />
       <Route path="/reports" element={<Reportes/>} />
     </Routes>
