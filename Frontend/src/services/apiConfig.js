@@ -7,7 +7,7 @@ const API_URL = "http://localhost:8000/api";
 const api = axios.create({
   baseURL: API_URL,
   headers: {
-    "Content-Type": "application/json",
+    //"Content-Type": "application/json",
     Accept: "application/json",
   },
 });
@@ -83,34 +83,45 @@ export const inscripcionCategoryLevel = async () => {
   return await api.get("/categoryLevelUser");
 };
 
-// FUNCIONES PARA OLIMPIADAS
-export const getOlimpiadas = async () => {
-  return await api.get("/Olimpiadas");
+//FUNCIONES PARA LAS OLIMPIADAS
+
+export const crearOlimpiada = async (olimpiada) => {
+  return await api.post("/olimpiadas", olimpiada);
 };
 
-export const getOlimpiadaDetail = async (id) => {
-  return await api.get(`/olimpiadas/${id}`);
+export const obtenerOlimpiadas = async () => {
+  return await api.get("/olimpiadas");
 };
 
-export const inscribirEnOlimpiada = async (olimpiadaId, datos) => {
-  return await api.post(`/user/olimpiadas/${olimpiadaId}/inscribir`, datos);
+export const eliminarOlimpiada = async (id) => {
+  return await api.delete(`/olimpiadas/${id}`);
 };
 
-export const getInscripciones = async () => {
-  return await api.get(`/user/olimpiadas/inscripciones`);
+export const actualizarOlimpiada = async (id, newOlimpiada) => {
+  return await api.put(`/olimpiadas/${id}`, newOlimpiada);
 };
 
-export const subirComprobante = async (inscripcionId, formData) => {
-  return await api.post(
-    `/user/olimpiadas/inscripciones/${inscripcionId}/comprobante`,
-    formData,
-    {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    }
-  );
+export const obtenerAreas = async () => {
+  const response = await api.get('/inscripcion/area');
+  return response.data;
 };
+
+export const obtenerOlimpiadaPorId = async (id) => {
+  const response = await api.get(`/olimpiadas/${id}`);
+  return response.data;
+};
+
+/* Funciones de Olimpiadas
+export const obtenerOlimpiadas = async () => await api.get("/olimpiadas");
+export const obtenerOlimpiadaPorId = async (id) => await api.get(`/olimpiadas/${id}`);
+export const crearOlimpiada = async (olimpiada) => await api.post("/olimpiadas", olimpiada, { headers: { "Content-Type": "multipart/form-data" } });
+export const actualizarOlimpiada = async (id, olimpiada) => await api.patch(`/olimpiadas/${id}`, olimpiada, { headers: { "Content-Type": "multipart/form-data" } });
+export const eliminarOlimpiada = async (id) => await api.delete(`/olimpiadas/${id}`);
+
+// Funciones de Áreas
+export const obtenerAreas = async () => await api.get("/inscripcion/area");
+*/
+
 
 // export const obtenerCategoriasPorArea = async (areaId) => {
 //   return await api.get(`/categoryLevelUser?area_id=${areaId}`);
