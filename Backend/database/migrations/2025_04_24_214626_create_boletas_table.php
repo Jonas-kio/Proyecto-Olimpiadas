@@ -14,12 +14,12 @@ return new class extends Migration
         Schema::create('boleta', function (Blueprint $table) {
             $table->id();
             $table->string('numero_boleta')->unique();
-            $table->unsignedBigInteger('registration_detail_id');
+            $table->unsignedBigInteger('registration_process_id');
             $table->timestamps();
 
-            $table->foreign('registration_detail_id')
+            $table->foreign('registration_process_id')
                 ->references('id')
-                ->on('registration_detail')
+                ->on('registration_process')
                 ->onDelete('cascade');
         });
     }

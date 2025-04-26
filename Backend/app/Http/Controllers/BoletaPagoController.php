@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Boleta;
-use App\Models\RegistrationDetail;
+use App\Models\RegistrationProcess;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\BoletaMail;
@@ -22,35 +22,27 @@ class BoletaPagoController extends Controller
 
     public function enviarBoletaPorCorreo(Request $request)
     {
-        $request->validate([
-            'numero' => 'required',
-            'monto_total' => 'required|numeric',
-            'correo_destino' => 'required|email',
-            'registration_detail_id' => 'required|exists:registration_detail,id'
-        ]);
-
         $data = $request->all();
         $pdf = Pdf::loadView('boleta.pdf', $data)->output();
-        
+
         Mail::to($data['correo_destino'])->send(new BoletaMail($pdf, $data['numero']));
 
         Boleta::create([
-            'numero_boleta' => $data['numero'],
-            'registration_detail_id' => $data['registration_detail_id'],
+            'numero' => $data['numero'],
             'fecha_emision' => now(),
             'monto_total' => $data['monto_total'],
             'correo_destino' => $data['correo_destino'],
             'estado' => 'enviado',
+            'registration_process_id' => $data['registration_process_id']
         ]);
 
-        return response()->json(['message' => 'Boleta enviada y registrada con éxito.']);
+        return response()->json(['message' => 'Boleta enviada con éxito.']);
     }
 
     public function extraerNumeroDesdeOCR(Request $request)
     {
         $texto = $request->input('texto');
-
-        preg_match('/\b\d{5,}\b/', $texto, $matches); // Extrae un número largo
+        preg_match('/\\b\\d{5,}\\b/', $texto, $matches);
 
         if ($matches) {
             return response()->json(['numero' => $matches[0]]);
@@ -72,7 +64,7 @@ class BoletaPagoController extends Controller
             ->lang('spa')
             ->run();
 
-        preg_match('/\b\d{5,}\b/', $texto, $matches); // Extrae número largo
+        preg_match('/\\b\\d{5,}\\b/', $texto, $matches);
 
         if ($matches) {
             return response()->json([

@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
@@ -9,11 +10,11 @@ class Boleta extends Model
 
     protected $fillable = [
         'numero_boleta',
-        'registration_detail_id',
+        'registration_process_id',
     ];
 
-    public function registrationDetail()
+    public function registrationProcess()
     {
-        return $this->belongsTo(RegistrationDetail::class);
+        return $this->belongsTo(RegistrationProcess::class);
     }
 }
