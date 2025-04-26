@@ -18,9 +18,9 @@ return new class extends Migration
             $table->timestamps();
 
             $table->foreign('registration_detail_id')
-                  ->references('id')
-                  ->on('registration_detail')
-                  ->onDelete('cascade');
+                ->references('id')
+                ->on('registration_detail')
+                ->onDelete('cascade');
         });
     }
 
