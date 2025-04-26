@@ -5,13 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 
-class InscripcionIndividual extends Model
+class ProcesoInscripcion extends Model
 {
     use HasFactory;
 
-    protected $table = 'inscripciones_individuales';
+    protected $table = 'proceso_inscripcion';
 
     protected $fillable = [
         'olimpiada_id',

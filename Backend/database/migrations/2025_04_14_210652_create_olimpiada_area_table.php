@@ -13,9 +13,9 @@ return new class extends Migration
             $table->id();
             $table->foreignId('olimpiada_id')->constrained('olimpiadas')->onDelete('cascade');
             $table->foreignId('area_id')->constrained('area')->onDelete('cascade');
-            $table->timestamps();
-
+            $table->boolean('activo');
             $table->unique(['olimpiada_id', 'area_id']);
+            $table->timestamps();
         });
     }
 
