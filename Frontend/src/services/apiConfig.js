@@ -64,6 +64,7 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
 //FUNCIONES DE INSCRIPCIÓN INDIVIDUAL
 
 export const inscripcionCompetidor = async (formulario) => {
@@ -80,6 +81,35 @@ export const inscripcionArea = async () => {
 
 export const inscripcionCategoryLevel = async () => {
   return await api.get("/categoryLevelUser");
+};
+
+// FUNCIONES PARA OLIMPIADAS
+export const getOlimpiadas = async () => {
+  return await api.get("/Olimpiadas");
+};
+
+export const getOlimpiadaDetail = async (id) => {
+  return await api.get(`/olimpiadas/${id}`);
+};
+
+export const inscribirEnOlimpiada = async (olimpiadaId, datos) => {
+  return await api.post(`/user/olimpiadas/${olimpiadaId}/inscribir`, datos);
+};
+
+export const getInscripciones = async () => {
+  return await api.get(`/user/olimpiadas/inscripciones`);
+};
+
+export const subirComprobante = async (inscripcionId, formData) => {
+  return await api.post(
+    `/user/olimpiadas/inscripciones/${inscripcionId}/comprobante`,
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
+  );
 };
 
 // export const obtenerCategoriasPorArea = async (areaId) => {
