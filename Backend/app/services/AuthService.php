@@ -18,6 +18,48 @@ use App\Enums\UserRoles;
 class AuthService
 {
 
+    public function createAdmin(array $data = null)
+    {
+        try {
+            DB::beginTransaction();
+
+            $adminData = $data ?? [
+                'full_name' => 'Administrador Principal',
+                'email' => 'admin@admin.com',
+                'password' => 'admin123',
+            ];
+            $existingUser = User::where('email', $adminData['email'])->first();
+            if ($existingUser) {
+                return [
+                    'success' => false,
+                    'message' => 'Ya existe un usuario con ese correo electrónico',
+                    'user' => $existingUser
+                ];
+            }
+
+            $admin = User::create([
+                'full_name' => $adminData['full_name'],
+                'email' => $adminData['email'],
+                'password' => Hash::make($adminData['password']),
+                'role' => UserRoles::ADMIN->value,
+            ]);
+            
+            DB::commit();
+            
+            return [
+                'success' => true,
+                'message' => 'Administrador creado exitosamente',
+                'user' => $admin
+            ];
+        } catch (Exception $e) {
+            DB::rollBack();
+            return [
+                'success' => false, 
+                'message' => 'Error al crear administrador: ' . $e->getMessage()
+            ];
+        }
+    }
+
     public function registerUser(array $data)
     {
         try {
