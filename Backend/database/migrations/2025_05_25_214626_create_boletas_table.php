@@ -21,11 +21,6 @@ return new class extends Migration
                 'pagado'
             ])->default('pendiente');
             $table->timestamps();
-
-            $table->foreign('registration_process_id')
-                ->references('id')
-                ->on('registration_process')
-                ->onDelete('cascade');
         });
     }
 

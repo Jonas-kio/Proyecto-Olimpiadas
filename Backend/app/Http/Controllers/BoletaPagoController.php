@@ -25,13 +25,18 @@ class BoletaPagoController extends Controller
 
         Mail::to($data['correo_destino'])->send(new BoletaMail($pdf, $data['numero']));
 
+        $registrationProcess = RegistrationProcess::find($data['registration_process_id']);
+        $competitor = $registrationProcess->competitor;
+        $nombreCompleto = $competitor->nombres . ' ' . $competitor->apellidos;
+
         Boleta::create([
             'numero' => $data['numero'],
             'fecha_emision' => now(),
             'monto_total' => $data['monto_total'],
             'correo_destino' => $data['correo_destino'],
             'estado' => 'enviado',
-            'registration_process_id' => $data['registration_process_id']
+            'registration_process_id' => $data['registration_process_id'],
+            'nombre_competidor' => $nombreCompleto,
         ]);
 
         return response()->json(['message' => 'Boleta enviada con éxito.']);
@@ -40,7 +45,7 @@ class BoletaPagoController extends Controller
     public function extraerNumeroDesdeOCR(Request $request)
     {
         $texto = $request->input('texto');
-        preg_match('/\\b\\d{5,}\\b/', $texto, $matches);
+        preg_match('/\b\d{5,}\b/', $texto, $matches);
 
         if ($matches) {
             return response()->json(['numero' => $matches[0]]);
@@ -62,7 +67,7 @@ class BoletaPagoController extends Controller
             ->lang('spa')
             ->run();
 
-        preg_match('/\\b\\d{5,}\\b/', $texto, $matches);
+        preg_match('/\b\d{5,}\b/', $texto, $matches);
 
         if ($matches) {
             return response()->json([

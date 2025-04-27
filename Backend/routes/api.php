@@ -18,6 +18,8 @@ use App\Http\Middleware\VerificarProcesoInscripcion;
 
 //TODO: Rutas Publicas
 
+
+
 //Ruta del competidor
 Route::post('/inscripcion/competidor', [CompetitorController::class, 'store']);
 
@@ -28,10 +30,20 @@ Route::post('/inscripcion/tutor', [TutorController::class, 'store']);
 Route::get('/inscripcion/area', [AreaController::class, 'index']);
 //Ruta para obetener niveles inscripcion
 Route::get('/categoryLevelUser', [CategoryLevelController::class, 'index']);
+    Route::get('/categoryLevelUser', [CategoryLevelController::class, 'index']); //Prueba
+
+
 // Rutas públicas de olimpiadas (visibles sin autenticación)
 Route::get('/Olimpiadas', [OlimpiadaController::class, 'index'])->name('olimpiadas.index');
 
 Route::get('crear-admin', [AuthController::class, 'crearAdmin']);
+Route::get('/olimpiadas/{olimpiada}', [OlimpiadaController::class, 'show']);
+
+
+
+
+
+//TODO: Rutas Publicas
 Route::post('register', [AuthController::class, 'register']);
 Route::post('login', [AuthController::class, 'login']);
 
@@ -70,7 +82,7 @@ Route::middleware([IsUserAuth::class])->group(
                     Route::get('/', [OlimpiadaController::class, 'index'])->name('olimpiadas.index');
                     Route::post('/', [OlimpiadaController::class, 'store'])->name('olimpiadas.store');
                     Route::get('/{olimpiada}', [OlimpiadaController::class, 'show'])->name('olimpiadas.show');
-                    Route::match(['put', 'patch'], '/{olimpiada}', [OlimpiadaController::class, 'update'])->name('olimpiadas.update');
+                    Route::put('/{olimpiada}', [OlimpiadaController::class, 'update'])->name('olimpiadas.update');
                     Route::delete('/{olimpiada}', [OlimpiadaController::class, 'destroy'])->name('olimpiadas.destroy');
                     Route::patch('/{olimpiada}/status', [OlimpiadaController::class, 'changeStatus']);
 
@@ -148,3 +160,7 @@ Route::post('/boleta/email', [BoletaPagoController::class, 'enviarBoletaPorCorre
 Route::post('/boleta/ocr', [BoletaPagoController::class, 'extraerNumeroDesdeOCR']);
 Route::post('/boleta/ocr-imagen', [BoletaPagoController::class, 'procesarImagenOCR']);
 Route::post('/ocr/comprobante', [OcrController::class, 'extraerYValidarComprobante']);
+
+
+// Ruta ocrcontroller
+Route::post('/validar-comprobante', [OcrController::class, 'validarComprobante']);
