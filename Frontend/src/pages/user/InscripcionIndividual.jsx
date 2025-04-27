@@ -398,7 +398,13 @@ const InscripcionIndividual = () => {
         errorMessage={mensajeDeError}
         errorFields={camposConError}
       />
-      {procesando && <ProcesandoModal />}
+      {showProcessingModal && (
+        <ProcesandoModal
+          isOpen={showProcessingModal}
+          title="Inscribiendote.. "
+          message="Por favor espere un momento..."
+        />
+      )}
     </div>
   );
 };
