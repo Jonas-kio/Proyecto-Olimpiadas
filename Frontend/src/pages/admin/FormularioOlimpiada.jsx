@@ -10,6 +10,7 @@ import {
 import LoadingModal from "../../components/modals/LoadingModal";
 import ProcesandoModal from "../../components/common/ProcesandoModal";
 import SuccessModal from "../../components/common/SuccessModal";
+import ErrorModal from "../../components/common/ErrorModal";
 import "../../styles/components/FormularioOlimpiada.css";
 
 function FormularioOlimpiada() {
@@ -19,6 +20,12 @@ function FormularioOlimpiada() {
   const [isLoading, setIsLoading] = useState(false);
   const [showProcessingModal, setShowProcessingModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [errorFields, setErrorFields] = useState([]);
+  const [successTitle, setSuccessTitle] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const [successDetailMessage, setSuccessDetailMessage] = useState("");
 
   const [formData, setFormData] = useState({
     name: "",
@@ -110,6 +117,11 @@ function FormularioOlimpiada() {
     setShowSuccessModal(false);
     navigate("/app/dasboardOlimpiada"); // Redireccionar después de aceptar
   };
+  const handleCloseErrorModal = () => {
+    setShowErrorModal(false);
+    setErrorMessage("");
+    setErrorFields([]);
+  };
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -147,15 +159,27 @@ function FormularioOlimpiada() {
       if (id) {
         await actualizarOlimpiada(id, data);
         // alert("✅ Olimpiada actualizada exitosamente");
-        setShowSuccessModal(true); // <-- Mostrar el SuccessModal
+        setSuccessTitle("¡Olimpiada actualizada exitosamente!");
+        setSuccessMessage("Los cambios fueron guardados correctamente.");
+        setSuccessDetailMessage(
+          "Puedes ver la olimpiada actualizada en el Dashboard."
+        );
+        setShowSuccessModal(true);
       } else {
         await crearOlimpiada(data);
-        alert("✅ Olimpiada creada exitosamente");
+        setSuccessTitle("¡Olimpiada creada exitosamente!");
+        setSuccessMessage("La nueva olimpiada fue registrada correctamente.");
+        setSuccessDetailMessage("Puedes verla en el Dashboard.");
+        setShowSuccessModal(true);
       }
       // navigate("/app/dasboardOlimpiada");
     } catch (error) {
       console.error("❌ Error al guardar olimpiada:", error);
-      alert("❌ Ocurrió un error al guardar la olimpiada");
+
+      // Mostrar modal de error
+      setErrorMessage("No se pudo guardar la olimpiada. Intenta nuevamente.");
+      setErrorFields(["Nombre", "Descripción", "Fechas", "Áreas", "Modalidad"]); // Puedes personalizar según donde falla
+      setShowErrorModal(true);
     } finally {
       setIsSubmitting(false);
       setShowProcessingModal(false);
@@ -396,9 +420,15 @@ function FormularioOlimpiada() {
       <SuccessModal
         isOpen={showSuccessModal}
         onClose={handleCloseSuccessModal}
-        tittleMessage="¡Olimpiada actualizada exitosamente!"
-        successMessage="Los cambios fueron guardados correctamente."
-        detailMessage="Puedes ver la olimpiada actualizada en el Dashboard."
+        tittleMessage={successTitle}
+        successMessage={successMessage}
+        detailMessage={successDetailMessage}
+      />
+      <ErrorModal
+        isOpen={showErrorModal}
+        onClose={handleCloseErrorModal}
+        errorMessage={errorMessage}
+        errorFields={errorFields}
       />
     </>
   );
