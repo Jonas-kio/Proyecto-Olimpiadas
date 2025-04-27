@@ -122,6 +122,44 @@ function FormularioOlimpiada() {
     setErrorMessage("");
     setErrorFields([]);
   };
+  const isFechaValida = () => {
+    if (!formData.startDate || !formData.endDate) return true; // Si no eligió todavía
+
+    const startDate = new Date(formData.startDate);
+    const endDate = new Date(formData.endDate);
+
+    const diferenciaDias = (endDate - startDate) / (1000 * 60 * 60 * 24);
+
+    return diferenciaDias >= 10;
+  };
+  const esFechaNoPasada = (fecha) => {
+    if (!fecha) return true;
+    const today = new Date();
+    const selected = new Date(fecha);
+    today.setHours(0, 0, 0, 0); // quitar horas
+    selected.setHours(0, 0, 0, 0); // quitar horas
+    return selected >= today;
+  };
+
+  const isFormValid = () => {
+    return (
+      formData.name.trim() !== "" &&
+      formData.name.length <= 100 &&
+      formData.description.trim() !== "" &&
+      formData.description.length <= 300 &&
+      formData.startDate !== "" &&
+      formData.endDate !== "" &&
+      esFechaNoPasada(formData.startDate) && //  validar inicio no pasado
+      esFechaNoPasada(formData.endDate) && //  validar fin no pasado
+      isFechaValida() && // mínimo 10 días
+      formData.selectedAreas.length > 0 &&
+      formData.minParticipants !== "" &&
+      parseInt(formData.minParticipants) >= 20 &&
+      formData.modality !== "" &&
+      formData.coverImage !== null &&
+      formData.pdfFile !== null
+    );
+  };
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -245,19 +283,31 @@ function FormularioOlimpiada() {
                 className="input"
                 required
               />
+              {formData.name.length >= 100 && (
+                <p style={{ color: "red", marginTop: "5px", fontSize: "14px" }}>
+                  Límite de 100 caracteres excedido.
+                </p>
+              )}
             </div>
 
             <div className="input-group">
               <label className="label">Descripción</label>
               <textarea
                 value={formData.description}
-                onChange={(e) =>
-                  setFormData({ ...formData, description: e.target.value })
-                }
+                onChange={(e) => {
+                  if (e.target.value.length <= 300) {
+                    setFormData({ ...formData, description: e.target.value });
+                  }
+                }}
                 className="textarea"
                 rows={4}
                 required
               />
+              {formData.description.length === 300 && (
+                <p style={{ color: "red", marginTop: "5px", fontSize: "14px" }}>
+                  Límite máximo de 300 caracteres alcanzado.
+                </p>
+              )}
             </div>
 
             <div className="date-grid">
@@ -272,6 +322,13 @@ function FormularioOlimpiada() {
                   className="input"
                   required
                 />
+                {formData.startDate && !esFechaNoPasada(formData.startDate) && (
+                  <p
+                    style={{ color: "red", marginTop: "5px", fontSize: "14px" }}
+                  >
+                    No se puede elegir una fecha de inicio pasada.
+                  </p>
+                )}
               </div>
               <div>
                 <label className="label">Fecha de fin</label>
@@ -284,6 +341,20 @@ function FormularioOlimpiada() {
                   className="input"
                   required
                 />
+                {formData.endDate && !esFechaNoPasada(formData.endDate) && (
+                  <p
+                    style={{ color: "red", marginTop: "5px", fontSize: "14px" }}
+                  >
+                    No se puede elegir una fecha de fin pasada.
+                  </p>
+                )}
+                {formData.startDate && formData.endDate && !isFechaValida() && (
+                  <p
+                    style={{ color: "red", marginTop: "5px", fontSize: "14px" }}
+                  >
+                    El lapso mínimo de una olimpiada debe ser de 10 días.
+                  </p>
+                )}
               </div>
             </div>
 
@@ -339,6 +410,14 @@ function FormularioOlimpiada() {
                 min="1"
                 required
               />
+              {formData.minParticipants !== "" &&
+                parseInt(formData.minParticipants) < 20 && (
+                  <p
+                    style={{ color: "red", marginTop: "5px", fontSize: "14px" }}
+                  >
+                    El cupo mínimo es de 20 estudiantes.
+                  </p>
+                )}
             </div>
 
             <div className="input-group">
@@ -388,7 +467,7 @@ function FormularioOlimpiada() {
             <button
               type="submit"
               className="submit-btn"
-              disabled={isSubmitting}
+              disabled={!isFormValid() || isSubmitting}
             >
               <CheckIcon size={20} />{" "}
               {isSubmitting
