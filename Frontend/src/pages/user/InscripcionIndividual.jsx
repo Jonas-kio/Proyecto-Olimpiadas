@@ -6,6 +6,7 @@ import {
   inscripcionTutor,
   inscripcionArea,
   inscripcionCategoryLevel,
+  iniciarProceso,
 } from "../../services/apiConfig";
 
 // Componentes comunes
@@ -80,6 +81,9 @@ const InscripcionIndividual = () => {
     };
     fetchData();
   }, []);
+  useEffect(() => {
+    console.log("Áreas seleccionadas:", areasSeleccionadas);
+  }, [areasSeleccionadas]);
 
   useEffect(() => {
     const relacionadas = categoriasDisponibles.filter((cat) =>
@@ -175,22 +179,46 @@ const InscripcionIndividual = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setProcesando(true);
+
     const formulario = { ...estudiante };
     const tutoresFormulario = tutores.filter(
       (t) => t.nombres || t.apellidos || t.correo_electronico || t.telefono
     );
-
+    // console.log("JSON del estudiante:", formulario);
+    // console.log("JSON de tutores:", tutoresFormulario);
     try {
-      const respuestaEstudiante = await inscripcionCompetidor(formulario);
-      console.log(
-        "Estudiante registrado exitosamente:",
-        respuestaEstudiante.data
-      ); // <- este log
+      // 1. INICIAR PROCESO
+      const olimpiadaId = 1;
+      const respuestaProceso = await iniciarProceso(olimpiadaId, "individual");
+      const procesoId = respuestaProceso.data.proceso_id;
+      console.log("Proceso iniciado con ID:", procesoId);
+      // 2. REGISTRAR COMPETIDOR
+      const formularioEstudiante = { ...estudiante };
+      const respuestaEstudiante = await inscripcionCompetidor(
+        procesoId,
+        formularioEstudiante
+      );
+      const competidorId = respuestaEstudiante.data.competidor_id;
+      console.log("Competidor registrado con ID:", competidorId);
 
-      for (const tutor of tutoresFormulario) {
-        const respuesta = await inscripcionTutor(tutor);
-        console.log("Tutor registrado exitosamente:", respuesta.data);
-      }
+      // 3. REGISTRAR TUTORES EN PARALELO
+      const tutoresFormulario = tutores.filter(
+        (t) => t.nombres || t.apellidos || t.correo_electronico || t.telefono
+      );
+
+      const registrosTutores = tutoresFormulario.map((tutor, idx) => {
+        const payloadTutor = {
+          ...tutor,
+          competidores_ids: [competidorId],
+          es_principal: idx === tutorActivo, // Aquí marcamos si es el tutor principal
+          relacion: "Tutor",
+        };
+        console.log("Payload tutor:", payloadTutor);
+        return inscripcionTutor(procesoId, payloadTutor);
+      });
+
+      await Promise.all(registrosTutores);
+      console.log("Tutores registrados exitosamente");
       // Generar número de boleta
       const nuevoBoleta = generarNumeroBoleta();
       console.log("NÚMERO DE BOLETA GENERADO:", nuevoBoleta);
@@ -370,7 +398,13 @@ const InscripcionIndividual = () => {
         errorMessage={mensajeDeError}
         errorFields={camposConError}
       />
-      {procesando && <ProcesandoModal />}
+      {showProcessingModal && (
+        <ProcesandoModal
+          isOpen={showProcessingModal}
+          title="Inscribiendote.. "
+          message="Por favor espere un momento..."
+        />
+      )}
     </div>
   );
 };

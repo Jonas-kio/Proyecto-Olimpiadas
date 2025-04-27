@@ -25,56 +25,81 @@ export default LoadingModal;
 */
 import React from "react";
 
-const LoadingModal = ({ isOpen, message = "Cargando datos, por favor espere..." }) => {
+const LoadingModal = ({
+  isOpen,
+  message = "Cargando datos, por favor espere...",
+}) => {
   if (!isOpen) return null;
 
   return (
-    <div style={{
-      position: "fixed",
-      top: 0, left: 0, right: 0, bottom: 0,
-      backgroundColor: "rgba(0, 0, 0, 0.4)",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      zIndex: 9999
-    }}>
-      <div style={{
-        backgroundColor: "#fff",
-        padding: "30px 40px",
-        borderRadius: "10px",
-        width: "360px",
-        textAlign: "center",
-        boxShadow: "0 5px 20px rgba(0,0,0,0.1)"
-      }}>
+    <div
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: "rgba(0, 0, 0, 0.4)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 9999,
+      }}
+    >
+      <div
+        style={{
+          backgroundColor: "#fff",
+          padding: "30px 40px",
+          borderRadius: "10px",
+          width: "360px",
+          textAlign: "center",
+          boxShadow: "0 5px 20px rgba(0,0,0,0.1)",
+        }}
+      >
         {/* Spinner estilo círculo azul */}
-        <div style={{
-          width: "60px",
-          height: "60px",
-          borderRadius: "50%",
-          border: "6px solid #cce3ff",
-          borderTop: "6px solid #0a3f7d",
-          animation: "spin 1s linear infinite",
-          margin: "0 auto 20px"
-        }} />
+        <div
+          style={{
+            width: "60px",
+            height: "60px",
+            borderRadius: "50%",
+            border: "6px solid #cce3ff",
+            borderTop: "6px solid #0a3f7d",
+            animation: "spin 1s linear infinite",
+            margin: "0 auto 20px",
+          }}
+        />
 
         {/* Mensajes */}
-        <h2 style={{ fontSize: "20px", fontWeight: "bold", marginBottom: "10px" }}>Cargando datos</h2>
-        <p style={{ marginBottom: "20px" }}>{message}</p>
+        <h2
+          style={{
+            color: "#0a3f7d",
+            fontSize: "20px",
+            fontWeight: "bold",
+            marginBottom: "10px",
+          }}
+        >
+          Cargando datos
+        </h2>
+        <p style={{ color: "black ", marginBottom: "20px" }}>{message}</p>
 
         {/* Barra de carga */}
-        <div style={{
-          width: "100%",
-          height: "8px",
-          backgroundColor: "#eee",
-          borderRadius: "10px",
-          overflow: "hidden"
-        }}>
-          <div style={{
-            width: "60%",
-            height: "100%",
-            backgroundColor: "#0a3f7d",
-            animation: "loadingBar 1.5s infinite"
-          }} />
+        <div
+          style={{
+            width: "100%",
+            height: "8px",
+            backgroundColor: "#eee",
+            borderRadius: "10px",
+            overflow: "hidden",
+          }}
+        >
+          <div
+            style={{
+              width: "60%",
+              height: "100%",
+              backgroundColor: "#0a3f7d",
+              animation: "loadingBar 1.5s infinite",
+            }}
+          />
         </div>
       </div>
 
