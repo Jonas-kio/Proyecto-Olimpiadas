@@ -29,14 +29,15 @@ class Olimpiada extends Model
 
     public function areas(): BelongsToMany
     {
-        return $this->belongsToMany(Area::class, 'olimpiada_area', 'olimpiada_id', 'area_id')->withTimestamps();
+        return $this->belongsToMany(Area::class, 'olimpiada_area', 'olimpiada_id', 'area_id')
+            ->withPivot('activo')
+            ->withTimestamps();
     }
 
     public function getAreasAttribute()
     {
         return $this->areas()->get();
     }
-
 
     protected $casts = [
         'fecha_inicio' => 'date',
