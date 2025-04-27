@@ -7,6 +7,7 @@ use App\Models\Boleta;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\BoletaMail;
+use App\Models\RegistrationProcess;
 use thiagoalessio\TesseractOCR\TesseractOCR;
 
 class BoletaPagoController extends Controller
