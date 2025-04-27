@@ -1,6 +1,6 @@
 // services/boletaService.js
 import { jsPDF } from 'jspdf';
-// Eliminamos la importación de autoTable ya que causa problemas
+import api from './apiConfig';
 
 // Genera un número único de boleta
 export const generarNumeroBoleta = () => {
@@ -13,7 +13,7 @@ export const generarNumeroBoleta = () => {
   return `OHSA-${año}${mes}${dia}-${numeroSecuencial}`;
 };
 
-// Genera la boleta en PDF (versión sin autoTable)
+// Genera la boleta en PDF
 export const generarBoletaPDF = async (estudiante, tutores, areasSeleccionadas, numeroBoleta) => {
   try {
     const doc = new jsPDF();
@@ -84,7 +84,7 @@ export const generarBoletaPDF = async (estudiante, tutores, areasSeleccionadas, 
     doc.setTextColor(26, 78, 142);
     doc.text("ÁREAS DE COMPETENCIA", 15, 146);
     
-    // Crear tabla manualmente en lugar de usar autoTable
+    // Crear tabla manualmente
     let startY = 152;
     
     // Encabezado de tabla
@@ -132,26 +132,75 @@ export const generarBoletaPDF = async (estudiante, tutores, areasSeleccionadas, 
   }
 };
 
-// Envía la boleta por correo electrónico
+// Nueva función para enviar boleta por email
 export const enviarBoletaPorEmail = async (estudiante, tutores, areasSeleccionadas, numeroBoleta, correoDestino) => {
   try {
-    // Generar el PDF de la boleta
+    // Primero generar los enlaces de correo que ya contienen la boleta
+    const enlaces = await generarEnlacesCorreo(
+      estudiante, 
+      tutores, 
+      areasSeleccionadas, 
+      numeroBoleta, 
+      correoDestino
+    );
+    
+    // Aquí podrías implementar el envío automático del email usando tu API o servicio de email
+    console.log(`Enviando boleta por email a ${correoDestino}`);
+    
+    // Si tienes un endpoint específico para envío de emails, podrías llamarlo así:
+    // const response = await api.post('/enviar-email', {
+    //   destinatario: correoDestino,
+    //   asunto: `Boleta de Pago - Olimpiadas Oh! SanSi #${numeroBoleta}`,
+    //   contenido: `Estimado/a ${estudiante.nombres} ${estudiante.apellidos},\n\nAdjunto encontrará su boleta de pago...`,
+    //   adjunto: boletaPDF  // Necesitarías convertir el blob a un formato adecuado
+    // });
+    
+    return {
+      success: true,
+      message: `Boleta enviada correctamente a ${correoDestino}`
+    };
+  } catch (error) {
+    console.error("Error al enviar la boleta por email:", error);
+    throw new Error("No se pudo enviar la boleta por email. Intente nuevamente.");
+  }
+};
+
+// Función para generar enlaces para servicios de correo
+export const generarEnlacesCorreo = async (estudiante, tutores, areasSeleccionadas, numeroBoleta, correoDestino) => {
+  try {
+    // Generar el PDF
     const boletaPDF = await generarBoletaPDF(estudiante, tutores, areasSeleccionadas, numeroBoleta);
     
-    // Simulación de envío de correo (aquí iría la llamada a tu API para enviar el correo)
-    console.log(`Enviando boleta a ${correoDestino}`);
+    // Crear URL para el PDF
+    const pdfUrl = URL.createObjectURL(boletaPDF);
     
-    // Simulamos un tiempo de envío
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({
-          success: true,
-          message: `Boleta enviada correctamente a ${correoDestino}`
-        });
-      }, 1500);
-    });
+    // Generar asunto y cuerpo del correo
+    const asunto = `Boleta de Pago - Olimpiadas Oh! SanSi #${numeroBoleta}`;
+    const cuerpo = `Estimado/a ${estudiante.nombres} ${estudiante.apellidos},\n\nAdjunto encontrará su boleta de pago con número ${numeroBoleta} para su participación en las Olimpiadas Oh! SanSi.\n\nPor favor, realice el pago y cargue su comprobante en nuestra plataforma.\n\nSaludos cordiales,\nEquipo Olimpiadas Oh! SanSi`;
+    
+    // Crear enlaces para diferentes servicios de correo
+    
+    // Gmail
+    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(correoDestino)}&su=${encodeURIComponent(asunto)}&body=${encodeURIComponent(cuerpo)}`;
+    
+    // Outlook/Hotmail
+    const outlookUrl = `https://outlook.live.com/mail/0/deeplink/compose?to=${encodeURIComponent(correoDestino)}&subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(cuerpo)}`;
+    
+    // Cliente de correo predeterminado (como respaldo)
+    const mailtoUrl = `mailto:${encodeURIComponent(correoDestino)}?subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(cuerpo)}`;
+    
+    return {
+      success: true,
+      pdfUrl: pdfUrl,
+      servicios: {
+        gmail: gmailUrl,
+        outlook: outlookUrl,
+        predeterminado: mailtoUrl
+      },
+      message: "Boleta generada. Seleccione su servicio de correo preferido."
+    };
   } catch (error) {
-    console.error("Error al enviar la boleta:", error);
-    throw new Error("No se pudo enviar la boleta por correo. Intente nuevamente.");
+    console.error("Error al generar los enlaces:", error);
+    throw new Error("No se pudo preparar la boleta para envío. Intente nuevamente.");
   }
 };

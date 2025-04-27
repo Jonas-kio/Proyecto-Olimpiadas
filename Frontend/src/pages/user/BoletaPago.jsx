@@ -1,14 +1,30 @@
 // components/boleta/BoletaPago.jsx
+// components/boleta/BoletaPago.jsx
 import React, { useState, useEffect } from 'react';
-import { generarBoletaPDF, enviarBoletaPorEmail } from '../../services/boletaService';
+import { 
+  generarBoletaPDF, 
+  generarEnlacesCorreo
+} from '../../services/boletaService';
 import "../../styles/components/BoletaPago.css";
+import { 
+  FaDownload, 
+  FaEnvelope, 
+  FaSpinner, 
+  FaCheck, 
+  FaArrowLeft, 
+  FaGoogle, 
+  FaMicrosoft, 
+  
+} from 'react-icons/fa';
 
-
-const BoletaPago = ({ estudiante, tutores, areasSeleccionadas, numeroBoleta, onVolver }) => {
+const BoletaPago = ({ estudiante, tutores, areasSeleccionadas, numeroBoleta, registration_process_id, onVolver }) => {
   const [correoDestino, setCorreoDestino] = useState('');
   const [enviando, setEnviando] = useState(false);
   const [descargando, setDescargando] = useState(false);
   const [mensaje, setMensaje] = useState('');
+  const [estadoMensaje, setEstadoMensaje] = useState(''); // 'success', 'error', 'info'
+  const [mostrarOpcionesCorreo, setMostrarOpcionesCorreo] = useState(false);
+  const [enlacesCorreo, setEnlacesCorreo] = useState(null);
   
   // Calcular precio por áreas (50 Bs. por área)
   const precioArea = 50;
@@ -20,17 +36,28 @@ const BoletaPago = ({ estudiante, tutores, areasSeleccionadas, numeroBoleta, onV
   // Determinar nivel basado en el curso
   const nivel = estudiante.curso?.includes('Primaria') ? 'Primaria' : 'Secundaria';
   
-  // Establecer el correo por defecto
+  // Establecer el correo por defecto al cargar el componente
   useEffect(() => {
-    setCorreoDestino(estudiante.correo_electronico);
+    setCorreoDestino(estudiante.correo_electronico || '');
   }, [estudiante]);
+
+  // Función para mostrar mensajes temporales
+  const mostrarMensajeTemporal = (msg, tipo = 'info') => {
+    setMensaje(msg);
+    setEstadoMensaje(tipo);
+    setTimeout(() => {
+      setMensaje('');
+      setEstadoMensaje('');
+    }, 5000);
+  };
 
   // Descargar boleta en PDF
   const descargarBoleta = async () => {
     try {
       setDescargando(true);
-      setMensaje('Generando PDF...');
+      mostrarMensajeTemporal('Generando PDF...', 'info');
       
+      // Generar PDF en el frontend
       const boletaPDF = await generarBoletaPDF(estudiante, tutores, areasSeleccionadas, numeroBoleta);
       
       // Crear URL para descargar el PDF
@@ -38,46 +65,93 @@ const BoletaPago = ({ estudiante, tutores, areasSeleccionadas, numeroBoleta, onV
       const link = document.createElement('a');
       link.href = url;
       link.download = `Boleta_${numeroBoleta}.pdf`;
+      document.body.appendChild(link);
       link.click();
+      document.body.removeChild(link);
       
+      // Liberar el objeto URL
       URL.revokeObjectURL(url);
-      setMensaje('Boleta descargada correctamente');
+      mostrarMensajeTemporal('Boleta descargada correctamente', 'success');
     } catch (error) {
       console.error('Error al descargar boleta:', error);
-      setMensaje('Error al generar la boleta. Intente nuevamente.');
+      mostrarMensajeTemporal('Error al generar la boleta. Intente nuevamente.', 'error');
     } finally {
       setDescargando(false);
-      setTimeout(() => setMensaje(''), 3000);
     }
   };
 
-  // Enviar boleta por correo
-  const enviarBoleta = async () => {
+  // Preparar enlace para enviar por correo
+  const prepararEnvioCorreo = async () => {
     if (!correoDestino) {
-      setMensaje('Ingrese un correo electrónico válido');
-      setTimeout(() => setMensaje(''), 3000);
+      mostrarMensajeTemporal('Ingrese un correo electrónico válido', 'error');
       return;
     }
     
     try {
       setEnviando(true);
-      setMensaje('Enviando boleta al correo...');
+      mostrarMensajeTemporal('Preparando opciones de correo...', 'info');
       
-      await enviarBoletaPorEmail(estudiante, tutores, areasSeleccionadas, numeroBoleta, correoDestino);
+      // Generar enlaces para servicios de correo
+      const resultado = await generarEnlacesCorreo(
+        estudiante, 
+        tutores, 
+        areasSeleccionadas, 
+        numeroBoleta, 
+        correoDestino
+      );
       
-      setMensaje(`Boleta enviada correctamente a ${correoDestino}`);
+      // Guardar los enlaces y mostrar opciones
+      setEnlacesCorreo(resultado);
+      setMostrarOpcionesCorreo(true);
+      
+      // Descargar el PDF para adjuntar
+      const link = document.createElement('a');
+      link.href = resultado.pdfUrl;
+      link.download = `Boleta_${numeroBoleta}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      mostrarMensajeTemporal('Boleta descargada. Seleccione su servicio de correo preferido.', 'success');
     } catch (error) {
-      console.error('Error al enviar boleta:', error);
-      setMensaje('Error al enviar la boleta. Intente nuevamente.');
+      console.error('Error al preparar opciones de correo:', error);
+      mostrarMensajeTemporal('Error al preparar opciones de correo. Intente nuevamente.', 'error');
     } finally {
       setEnviando(false);
-      setTimeout(() => setMensaje(''), 3000);
     }
+  };
+
+  // Abrir servicio de correo seleccionado
+  const abrirServicioCorreo = (servicio) => {
+    if (!enlacesCorreo || !enlacesCorreo.servicios) {
+      mostrarMensajeTemporal('No se han generado los enlaces de correo. Intente nuevamente.', 'error');
+      return;
+    }
+    
+    const url = enlacesCorreo.servicios[servicio];
+    
+    if (!url) {
+      mostrarMensajeTemporal('Servicio de correo no disponible. Intente con otro.', 'error');
+      return;
+    }
+    
+    // Abrir en una nueva pestaña/ventana
+    window.open(url, '_blank');
+    
+    // Cerrar el panel de opciones
+    setMostrarOpcionesCorreo(false);
+    
+    mostrarMensajeTemporal(`Redirigiendo a ${servicio}. Adjunte la boleta descargada.`, 'info');
   };
 
   return (
     <div className="boleta-contenedor">
-      <h1 className="boleta-titulo">Boleta de Pago</h1>
+      <div className="boleta-header">
+        <button onClick={onVolver} className="btn-volver">
+          <FaArrowLeft /> Volver
+        </button>
+        <h1 className="boleta-titulo">Boleta de Pago</h1>
+      </div>
       
       <div className="boleta-info">
         <p><strong>Nº de Boleta:</strong> {numeroBoleta}</p>
@@ -139,22 +213,84 @@ const BoletaPago = ({ estudiante, tutores, areasSeleccionadas, numeroBoleta, onV
             value={correoDestino} 
             onChange={(e) => setCorreoDestino(e.target.value)} 
             placeholder="Correo electrónico"
+            disabled={enviando || mostrarOpcionesCorreo}
           />
-          <button onClick={enviarBoleta} disabled={enviando}>
-            {enviando ? 'Enviando...' : 'Enviar por correo'}
+          <button 
+            onClick={prepararEnvioCorreo} 
+            disabled={enviando || mostrarOpcionesCorreo}
+            className="boleta-btn-enviar"
+          >
+            {enviando ? (
+              <>
+                <FaSpinner className="icono-spinner" /> Preparando...
+              </>
+            ) : (
+              <>
+                <FaEnvelope /> Preparar correo
+              </>
+            )}
           </button>
         </div>
         
-        <button onClick={descargarBoleta} disabled={descargando} className="boleta-btn-pdf">
-          {descargando ? 'Generando PDF...' : 'Descargar PDF'}
-        </button>
+        {mostrarOpcionesCorreo && (
+          <div className="opciones-correo">
+            <h3>Seleccione su servicio de correo:</h3>
+            <div className="servicios-correo">
+              <button 
+                className="btn-servicio gmail"
+                onClick={() => abrirServicioCorreo('gmail')}
+              >
+                <FaGoogle /> Gmail
+              </button>
+              <button 
+                className="btn-servicio outlook"
+                onClick={() => abrirServicioCorreo('outlook')}
+              >
+                <FaMicrosoft /> Outlook
+              </button>
+              
+              <button 
+                className="btn-servicio predeterminado"
+                onClick={() => abrirServicioCorreo('predeterminado')}
+              >
+                <FaEnvelope /> Otro
+              </button>
+            </div>
+            <p className="nota-correo">
+              Adjunte la boleta descargada al correo antes de enviarlo.
+            </p>
+            <button 
+              className="btn-cancelar"
+              onClick={() => setMostrarOpcionesCorreo(false)}
+            >
+              Cancelar
+            </button>
+          </div>
+        )}
         
-        <button onClick={onVolver} className="boleta-btn-volver">
-          Volver
+        <button 
+          onClick={descargarBoleta} 
+          disabled={descargando}
+          className="boleta-btn-pdf"
+        >
+          {descargando ? (
+            <>
+              <FaSpinner className="icono-spinner" /> Generando PDF...
+            </>
+          ) : (
+            <>
+              <FaDownload /> Descargar PDF
+            </>
+          )}
         </button>
       </div>
       
-      {mensaje && <div className="boleta-mensaje">{mensaje}</div>}
+      {mensaje && (
+        <div className={`boleta-mensaje boleta-mensaje-${estadoMensaje}`}>
+          {estadoMensaje === 'success' && <FaCheck className="icono-mensaje" />}
+          {mensaje}
+        </div>
+      )}
     </div>
   );
 };
