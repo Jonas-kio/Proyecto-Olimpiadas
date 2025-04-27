@@ -2,15 +2,15 @@
 
 namespace Tests\Unit\Services;
 
-use App\Enums\EstadoInscripcion;
 use App\Models\RegistrationProcess;
-use App\Models\PaymentBill;
 use App\Models\Competitor;
 use App\Models\Tutor;
 use App\Models\Olimpiada;
 use App\Models\Area;
 use App\Models\CategoryLevel;
+use App\Repositories\ProcesoInscripcionRepository;
 use App\Services\InscripcionService;
+use App\Enums\EstadoInscripcion;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use PHPUnit\Framework\Attributes\Test;
@@ -20,138 +20,183 @@ class InscripcionServiceTest extends TestCase
     use RefreshDatabase;
 
     protected $inscripcionService;
+    protected $procesoRepository;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->inscripcionService = new InscripcionService();
+        $this->procesoRepository = $this->createMock(ProcesoInscripcionRepository::class);
+        $this->inscripcionService = new InscripcionService($this->procesoRepository);
     }
 
     #[Test]
-    public function it_can_create_a_registration_process()
+    public function it_can_start_registration_process()
     {
-        // Crear datos de prueba
-        $competitor = Competitor::factory()->create();
-        $tutor = Tutor::factory()->create();
-        $olimpiada = Olimpiada::factory()->create();
-        $area = Area::factory()->create();
-        $categoryLevel = CategoryLevel::factory()->create();
+        $olimpiada = Olimpiada::factory()->create([
+            'activo' => true,
+            'fecha_fin' => now()->addDays(10)
+        ]);
 
-        // Datos para la inscripción
-        $data = [
-            'competitor_id' => $competitor->id,
-            'tutor_id' => $tutor->id,
-            'olimpiada_id' => $olimpiada->id,
-            'area_id' => $area->id,
-            'category_level_id' => $categoryLevel->id,
+        $this->procesoRepository->expects($this->once())
+            ->method('crear')
+            ->willReturn(new RegistrationProcess());
+
+        $proceso = $this->inscripcionService->iniciarProceso($olimpiada, 'individual', 1);
+
+        $this->assertInstanceOf(RegistrationProcess::class, $proceso);
+    }
+
+    #[Test]
+    public function it_cannot_start_registration_for_inactive_olimpiada()
+    {
+        $olimpiada = Olimpiada::factory()->create([
+            'activo' => false
+        ]);
+
+        $this->expectException(\Exception::class);
+        $this->expectExceptionMessage('La olimpiada no está disponible para inscripciones');
+
+        $this->inscripcionService->iniciarProceso($olimpiada, 'individual', 1);
+    }
+
+    #[Test]
+    public function it_can_register_competitor()
+    {
+        $proceso = RegistrationProcess::factory()->create([
+            'active' => true,
+            'status' => EstadoInscripcion::PENDIENTE
+        ]);
+
+        $datosCompetidor = [
+            'nombres' => 'Juan',
+            'apellidos' => 'Pérez',
+            'documento_identidad' => '12345678',
+            'provincia' => 'La Paz',
+            'fecha_nacimiento' => '2000-01-01',
+            'curso' => '4to Secundaria',
+            'correo_electronico' => 'juan@mail.com',
+            'colegio' => 'San Calixto'
         ];
 
-        // Crear el proceso de inscripción
-        $registration = $this->inscripcionService->crearProcesoInscripcion($data);
+        $this->procesoRepository->expects($this->once())
+            ->method('agregarCompetidor')
+            ->willReturn(true);
 
-        // Verificar que se creó correctamente
-        $this->assertInstanceOf(RegistrationProcess::class, $registration);
-        $this->assertEquals($competitor->id, $registration->competitor_id);
-        $this->assertEquals($tutor->id, $registration->tutor_id);
-        $this->assertEquals($olimpiada->id, $registration->olimpiada_id);
-        $this->assertEquals($area->id, $registration->area_id);
-        $this->assertEquals($categoryLevel->id, $registration->category_level_id);
-        $this->assertEquals(EstadoInscripcion::PENDIENTE->value, $registration->status);
+        $competidor = $this->inscripcionService->registrarCompetidor($proceso, $datosCompetidor);
 
-        // Verificar que se creó la boleta de pago
-        $this->assertNotNull($registration->paymentBill);
-        $this->assertEquals('pending', $registration->paymentBill->status);
+        $this->assertInstanceOf(Competitor::class, $competidor);
+        $this->assertEquals('Juan', $competidor->nombres);
+        $this->assertEquals('Pérez', $competidor->apellidos);
     }
 
     #[Test]
-    public function it_can_update_payment_status()
+    public function it_can_register_tutor()
     {
-        // Crear una inscripción con boleta de pago
-        $registration = RegistrationProcess::factory()->create();
-        $paymentBill = PaymentBill::factory()->create([
-            'status' => 'pending'
+        $proceso = RegistrationProcess::factory()->create([
+            'active' => true,
+            'status' => EstadoInscripcion::PENDIENTE
         ]);
-        $registration->update(['payment_bill_id' => $paymentBill->id]);
 
-        // Datos del pago
-        $paymentData = [
-            'payment_method' => 'Transferencia Bancaria',
-            'transaction_id' => 'TRX123456',
-            'payment_details' => 'Pago realizado el 15/04/2024'
+        $competidor = Competitor::factory()->create();
+
+        $datosTutor = [
+            'nombres' => 'María',
+            'apellidos' => 'García',
+            'correo' => 'maria@mail.com',
+            'telefono' => '12345678'
         ];
 
-        // Actualizar el estado del pago
-        $result = $this->inscripcionService->actualizarEstadoPago($paymentBill->id, $paymentData);
+        $this->procesoRepository->expects($this->once())
+            ->method('competidorPerteneceAProceso')
+            ->willReturn(true);
 
-        // Verificar que se actualizó correctamente
-        $this->assertEquals('paid', $result['payment']->status);
-        $this->assertEquals(EstadoInscripcion::INSCRITO->value, $result['registration']->status);
-        $this->assertEquals('Transferencia Bancaria', $result['payment']->payment_method);
-        $this->assertEquals('TRX123456', $result['payment']->transaction_id);
-    }
-
-    #[Test]
-    public function it_can_reject_a_registration()
-    {
-        // Crear una inscripción
-        $registration = RegistrationProcess::factory()->create([
-            'status' => EstadoInscripcion::PENDIENTE->value
-        ]);
-
-        $reason = 'Documentación incompleta';
-
-        // Rechazar la inscripción
-        $updatedRegistration = $this->inscripcionService->rechazarInscripcion($registration->id, $reason);
-
-        // Verificar que se actualizó correctamente
-        $this->assertEquals(EstadoInscripcion::RECHAZADO->value, $updatedRegistration->status);
-        $this->assertEquals($reason, $updatedRegistration->rejection_reason);
-    }
-
-    #[Test]
-    public function it_can_check_for_existing_registration()
-    {
-        // Crear una inscripción activa
-        $competitor = Competitor::factory()->create();
-        $olimpiada = Olimpiada::factory()->create();
-        $registration = RegistrationProcess::factory()->create([
-            'competitor_id' => $competitor->id,
-            'olimpiada_id' => $olimpiada->id,
-            'status' => EstadoInscripcion::PENDIENTE->value
-        ]);
-
-        // Verificar que existe una inscripción activa
-        $existingRegistration = $this->inscripcionService->verificarInscripcionExistente(
-            $competitor->id,
-            $olimpiada->id
+        $tutor = $this->inscripcionService->registrarTutor(
+            $proceso,
+            $datosTutor,
+            [$competidor->id],
+            1
         );
 
-        $this->assertNotNull($existingRegistration);
-        $this->assertEquals($registration->id, $existingRegistration->id);
+        $this->assertInstanceOf(Tutor::class, $tutor);
+        $this->assertEquals('María', $tutor->nombres);
     }
 
     #[Test]
-    public function it_can_get_registration_status()
+    public function it_can_select_area()
     {
-        // Crear una inscripción con relaciones
-        $registration = RegistrationProcess::factory()
+        $proceso = RegistrationProcess::factory()->create([
+            'active' => true,
+            'status' => EstadoInscripcion::PENDIENTE
+        ]);
+
+        $area = Area::factory()->create();
+        $olimpiada = Olimpiada::factory()->create();
+        $olimpiada->areas()->attach($area->id, ['activo' => true]);
+        $proceso->olimpiada()->associate($olimpiada);
+
+        $this->procesoRepository->expects($this->once())
+            ->method('guardarSeleccionArea')
+            ->willReturn(true);
+
+        $result = $this->inscripcionService->guardarSeleccionArea($proceso, $area->id);
+
+        $this->assertTrue($result);
+    }
+
+    #[Test]
+    public function it_can_select_level_after_area()
+    {
+        $proceso = RegistrationProcess::factory()->create([
+            'active' => true,
+            'status' => EstadoInscripcion::PENDIENTE
+        ]);
+
+        $area = Area::factory()->create();
+        $nivel = CategoryLevel::factory()->create([
+            'area_id' => $area->id,
+            'activo' => true
+        ]);
+
+        $this->procesoRepository->method('obtenerAreaSeleccionada')
+            ->willReturn($area->id);
+
+        $this->procesoRepository->expects($this->once())
+            ->method('guardarSeleccionNivel')
+            ->willReturn(true);
+
+        $result = $this->inscripcionService->guardarSeleccionNivel($proceso, $nivel->id);
+
+        $this->assertTrue($result);
+    }
+
+    #[Test]
+    public function it_generates_registration_summary()
+    {
+        $proceso = RegistrationProcess::factory()
             ->has(Competitor::factory())
-            ->has(Tutor::factory())
             ->has(Olimpiada::factory())
-            ->has(Area::factory())
-            ->has(CategoryLevel::factory())
-            ->has(PaymentBill::factory())
-            ->create();
+            ->create([
+                'type' => 'individual',
+                'status' => EstadoInscripcion::PENDIENTE
+            ]);
 
-        // Obtener el estado de la inscripción
-        $result = $this->inscripcionService->obtenerEstadoInscripcion($registration->id);
+        $area = Area::factory()->create();
+        $nivel = CategoryLevel::factory()->create();
 
-        // Verificar que se obtuvieron todas las relaciones
-        $this->assertNotNull($result->competitor);
-        $this->assertNotNull($result->tutor);
-        $this->assertNotNull($result->olimpiada);
-        $this->assertNotNull($result->area);
-        $this->assertNotNull($result->categoryLevel);
-        $this->assertNotNull($result->paymentBill);
+        $this->procesoRepository->method('obtenerCompetidores')
+            ->willReturn(collect([$proceso->competitor]));
+
+        $this->procesoRepository->method('obtenerAreaSeleccionada')
+            ->willReturn($area->id);
+
+        $this->procesoRepository->method('obtenerNivelSeleccionado')
+            ->willReturn($nivel->id);
+
+        $resumen = $this->inscripcionService->generarResumen($proceso);
+
+        $this->assertArrayHasKey('proceso_id', $resumen);
+        $this->assertArrayHasKey('olimpiada', $resumen);
+        $this->assertArrayHasKey('competidores', $resumen);
+        $this->assertArrayHasKey('seleccion', $resumen);
     }
 }

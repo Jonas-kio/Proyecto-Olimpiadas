@@ -3,13 +3,13 @@
 namespace Tests\Feature\Controllers;
 
 use App\Enums\EstadoInscripcion;
-use App\Models\RegistrationProcess;
-use App\Models\PaymentBill;
-use App\Models\Competitor;
-use App\Models\Tutor;
-use App\Models\Olimpiada;
 use App\Models\Area;
 use App\Models\CategoryLevel;
+use App\Models\Competitor;
+use App\Models\Olimpiada;
+use App\Models\RegistrationProcess;
+use App\Models\Tutor;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use PHPUnit\Framework\Attributes\Test;
@@ -18,227 +18,142 @@ class InscripcionControllerTest extends TestCase
 {
     use RefreshDatabase;
 
-    #[Test]
-    public function it_can_start_registration_process()
+    protected $user;
+
+    protected function setUp(): void
     {
-        // Crear datos de prueba
-        $competitor = Competitor::factory()->create();
-        $tutor = Tutor::factory()->create();
-        $olimpiada = Olimpiada::factory()->create();
+        parent::setUp();
+        $this->user = User::factory()->create();
+        $this->actingAs($this->user);
+    }
+
+    #[Test]
+    public function test_complete_registration_flow()
+    {
+        $olimpiada = Olimpiada::factory()->create([
+            'activo' => true,
+            'fecha_fin' => now()->addDays(10)
+        ]);
+
+        $response = $this->postJson("/api/inscripcion/olimpiada/{$olimpiada->id}/iniciar", [
+            'tipo' => 'individual'
+        ]);
+
+        $response->assertStatus(200);
+        $procesoId = $response->json('proceso_id');
+
+        $datosCompetidor = [
+            'nombres' => 'Juan',
+            'apellidos' => 'Pérez',
+            'documento_identidad' => '12345678',
+            'provincia' => 'La Paz',
+            'fecha_nacimiento' => '2000-01-01',
+            'curso' => '4to Secundaria',
+            'correo_electronico' => 'juan@mail.com',
+            'colegio' => 'San Calixto'
+        ];
+
+        $response = $this->postJson("/api/inscripcion/proceso/{$procesoId}/competidor", $datosCompetidor);
+        $response->assertStatus(200);
+        $competidorId = $response->json('competidor_id');
+
+        $datosTutor = [
+            'nombres' => 'María',
+            'apellidos' => 'García',
+            'correo_electronico' => 'maria@mail.com',
+            'telefono' => '12345678',
+            'competidores_ids' => [$competidorId]
+        ];
+
+        $response = $this->postJson("/api/inscripcion/proceso/{$procesoId}/tutor", $datosTutor);
+        $response->assertStatus(200);
+
         $area = Area::factory()->create();
-        $categoryLevel = CategoryLevel::factory()->create();
+        $olimpiada->areas()->attach($area->id, ['activo' => true]);
 
-        // Datos para la solicitud
-        $data = [
-            'competitor_id' => $competitor->id,
-            'tutor_id' => $tutor->id,
-            'olimpiada_id' => $olimpiada->id,
-            'area_id' => $area->id,
-            'category_level_id' => $categoryLevel->id,
-        ];
+        $response = $this->postJson("/api/inscripcion/proceso/{$procesoId}/area", [
+            'area_id' => $area->id
+        ]);
+        $response->assertStatus(200);
 
-        // Hacer la solicitud
-        $response = $this->postJson('/api/inscripcion/iniciar', $data);
+        $nivel = CategoryLevel::factory()->create([
+            'area_id' => $area->id
+        ]);
 
-        // Verificar la respuesta
-        $response->assertStatus(201)
+        $response = $this->postJson("/api/inscripcion/proceso/{$procesoId}/nivel", [
+            'nivel_id' => $nivel->id
+        ]);
+        $response->assertStatus(200);
+
+        $response = $this->getJson("/api/inscripcion/proceso/{$procesoId}/resumen");
+        $response->assertStatus(200)
             ->assertJsonStructure([
-                'data' => [
-                    'id',
-                    'competitor_id',
-                    'tutor_id',
-                    'olimpiada_id',
-                    'area_id',
-                    'category_level_id',
-                    'status',
-                    'payment_bill' => [
-                        'id',
-                        'amount',
-                        'status',
-                        'payment_method',
-                        'transaction_id',
-                        'payment_details'
-                    ]
+                'success',
+                'resumen' => [
+                    'proceso_id',
+                    'olimpiada',
+                    'competidores',
+                    'seleccion'
                 ]
             ]);
 
-        // Verificar que se creó en la base de datos
-        $this->assertDatabaseHas('registration_process', [
-            'competitor_id' => $competitor->id,
-            'tutor_id' => $tutor->id,
-            'olimpiada_id' => $olimpiada->id,
-            'area_id' => $area->id,
-            'category_level_id' => $categoryLevel->id,
-            'status' => EstadoInscripcion::PENDIENTE->value
-        ]);
+        $response = $this->postJson("/api/inscripcion/proceso/{$procesoId}/boleta");
+        $response->assertStatus(200)
+            ->assertJsonStructure([
+                'success',
+                'boleta_id',
+                'numero_boleta'
+            ]);
     }
 
     #[Test]
-    public function it_cannot_start_registration_with_existing_active_registration()
+    public function test_invalid_area_selection()
     {
-        // Crear una inscripción activa
-        $competitor = Competitor::factory()->create();
-        $olimpiada = Olimpiada::factory()->create();
-        RegistrationProcess::factory()->create([
-            'competitor_id' => $competitor->id,
+        $olimpiada = Olimpiada::factory()->create(['activo' => true]);
+        $proceso = RegistrationProcess::factory()->create([
             'olimpiada_id' => $olimpiada->id,
-            'status' => EstadoInscripcion::PENDIENTE->value
+            'active' => true,
+            'status' => EstadoInscripcion::PENDIENTE
         ]);
 
-        // Crear datos para una nueva inscripción
-        $tutor = Tutor::factory()->create();
         $area = Area::factory()->create();
-        $categoryLevel = CategoryLevel::factory()->create();
 
-        $data = [
-            'competitor_id' => $competitor->id,
-            'tutor_id' => $tutor->id,
+        $response = $this->postJson("/api/inscripcion/proceso/{$proceso->id}/area", [
+            'area_id' => $area->id
+        ]);
+
+        $response->assertStatus(422);
+    }
+
+    #[Test]
+    public function test_invalid_level_selection()
+    {
+        $olimpiada = Olimpiada::factory()->create(['activo' => true]);
+        $proceso = RegistrationProcess::factory()->create([
             'olimpiada_id' => $olimpiada->id,
-            'area_id' => $area->id,
-            'category_level_id' => $categoryLevel->id,
-        ];
+            'active' => true,
+            'status' => EstadoInscripcion::PENDIENTE
+        ]);
 
-        // Intentar crear una nueva inscripción
-        $response = $this->postJson('/api/inscripcion/iniciar', $data);
+        $area = Area::factory()->create();
+        $nivel = CategoryLevel::factory()->create();
 
-        // Verificar que se rechaza
-        $response->assertStatus(400)
-            ->assertJson([
-                'message' => 'Ya existe una inscripción activa para este competidor en esta olimpiada'
-            ]);
+        $response = $this->postJson("/api/inscripcion/proceso/{$proceso->id}/nivel", [
+            'nivel_id' => $nivel->id
+        ]);
+
+        $response->assertStatus(422);
     }
 
     #[Test]
-    public function it_can_update_payment_status()
+    public function test_cannot_generate_boleta_without_complete_data()
     {
-        // Crear una inscripción con boleta de pago
-        $registration = RegistrationProcess::factory()->create();
-        $paymentBill = PaymentBill::factory()->create([
-            'status' => 'pending'
-        ]);
-        $registration->update(['payment_bill_id' => $paymentBill->id]);
-
-        // Datos del pago
-        $paymentData = [
-            'payment_method' => 'Transferencia Bancaria',
-            'transaction_id' => 'TRX123456',
-            'payment_details' => 'Pago realizado el 15/04/2024'
-        ];
-
-        // Actualizar el estado del pago
-        $response = $this->putJson("/api/inscripcion/pago/{$paymentBill->id}", $paymentData);
-
-        // Verificar la respuesta
-        $response->assertStatus(200)
-            ->assertJsonStructure([
-                'data' => [
-                    'id',
-                    'status',
-                    'payment_method',
-                    'transaction_id',
-                    'payment_details',
-                    'registration' => [
-                        'id',
-                        'status'
-                    ]
-                ]
-            ]);
-
-        // Verificar que se actualizó en la base de datos
-        $this->assertDatabaseHas('payment_bill', [
-            'id' => $paymentBill->id,
-            'status' => 'paid',
-            'payment_method' => 'Transferencia Bancaria',
-            'transaction_id' => 'TRX123456'
+        $proceso = RegistrationProcess::factory()->create([
+            'active' => true,
+            'status' => EstadoInscripcion::PENDIENTE
         ]);
 
-        $this->assertDatabaseHas('registration_process', [
-            'id' => $registration->id,
-            'status' => EstadoInscripcion::INSCRITO->value
-        ]);
-    }
-
-    #[Test]
-    public function it_can_get_registration_status()
-    {
-        // Crear una inscripción con relaciones
-        $registration = RegistrationProcess::factory()
-            ->has(Competitor::factory())
-            ->has(Tutor::factory())
-            ->has(Olimpiada::factory())
-            ->has(Area::factory())
-            ->has(CategoryLevel::factory())
-            ->has(PaymentBill::factory())
-            ->create();
-
-        // Obtener el estado de la inscripción
-        $response = $this->getJson("/api/inscripcion/estado/{$registration->id}");
-
-        // Verificar la respuesta
-        $response->assertStatus(200)
-            ->assertJsonStructure([
-                'data' => [
-                    'id',
-                    'status',
-                    'competitor' => [
-                        'id',
-                        'name'
-                    ],
-                    'tutor' => [
-                        'id',
-                        'name'
-                    ],
-                    'olimpiada' => [
-                        'id',
-                        'name'
-                    ],
-                    'area' => [
-                        'id',
-                        'name'
-                    ],
-                    'category_level' => [
-                        'id',
-                        'name'
-                    ],
-                    'payment_bill' => [
-                        'id',
-                        'status',
-                        'amount'
-                    ]
-                ]
-            ]);
-    }
-
-    #[Test]
-    public function it_can_reject_registration()
-    {
-        // Crear una inscripción
-        $registration = RegistrationProcess::factory()->create([
-            'status' => EstadoInscripcion::PENDIENTE->value
-        ]);
-
-        $reason = 'Documentación incompleta';
-
-        // Rechazar la inscripción
-        $response = $this->putJson("/api/inscripcion/rechazar/{$registration->id}", [
-            'rejection_reason' => $reason
-        ]);
-
-        // Verificar la respuesta
-        $response->assertStatus(200)
-            ->assertJsonStructure([
-                'data' => [
-                    'id',
-                    'status',
-                    'rejection_reason'
-                ]
-            ]);
-
-        // Verificar que se actualizó en la base de datos
-        $this->assertDatabaseHas('registration_process', [
-            'id' => $registration->id,
-            'status' => EstadoInscripcion::RECHAZADO->value,
-            'rejection_reason' => $reason
-        ]);
+        $response = $this->postJson("/api/inscripcion/proceso/{$proceso->id}/boleta");
+        $response->assertStatus(422);
     }
 }

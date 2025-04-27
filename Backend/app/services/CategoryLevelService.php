@@ -17,6 +17,20 @@ class CategoryLevelService
         // return CategoryLevel::all();
     }
 
+    public function getCategoryByIdAndAreaId(int $categoryId, int $areaId)
+    {
+        $categoryLevel = CategoryLevel::where('id', $categoryId)
+            ->where('area_id', $areaId)
+            ->first();
+
+        if (!$categoryLevel) {
+            throw new Exception('La categoría no existe o no está activa para esta área.');
+        }
+
+        return $categoryLevel;
+    }
+
+
 
     public function getCategoryLevelById($id)
     {
