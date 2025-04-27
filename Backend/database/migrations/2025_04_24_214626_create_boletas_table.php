@@ -6,27 +6,21 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('boleta', function (Blueprint $table) {
             $table->id();
-            $table->string('numero_boleta')->unique();
-            $table->unsignedBigInteger('registration_process_id');
+            $table->string('numero')->unique();
+            $table->date('fecha_emision');
+            $table->decimal('monto_total', 10, 2);
+            $table->string('correo_destino');
+            $table->string('nombre_competidor');
+            $table->enum('estado', ['enviado', 'pendiente', 'cancelado'])->default('pendiente');
+            $table->foreignId('registration_process_id')->constrained('registration_process')->onDelete('cascade');
             $table->timestamps();
-
-            $table->foreign('registration_process_id')
-                ->references('id')
-                ->on('registration_process')
-                ->onDelete('cascade');
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('boleta');

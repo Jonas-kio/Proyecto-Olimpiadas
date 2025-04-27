@@ -9,7 +9,12 @@ class Boleta extends Model
     protected $table = 'boleta';
 
     protected $fillable = [
-        'numero_boleta',
+        'numero',
+        'fecha_emision',
+        'monto_total',
+        'correo_destino',
+        'nombre_competidor',
+        'estado',
         'registration_process_id',
     ];
 
