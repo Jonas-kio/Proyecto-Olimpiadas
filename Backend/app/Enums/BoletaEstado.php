@@ -2,18 +2,17 @@
 
 namespace App\Enums;
 
-enum EstadoInscripcion: string
+enum BoletaEstado: string
 {
-    case PENDIENTE = 'pending';
-    case INSCRITO = 'approved';
-    case RECHAZADO = 'rejected';
+    case PENDIENTE = 'pendiente';
+    case PAGADO = 'pagado';
+
 
     public function label(): string
     {
         return match ($this) {
             self::PENDIENTE => 'Pendiente',
-            self::INSCRITO => 'Inscrito',
-            self::RECHAZADO => 'Rechazado',
+            self::PAGADO => 'pagado'
         };
     }
 
@@ -21,8 +20,7 @@ enum EstadoInscripcion: string
     {
         return match ($this) {
             self::PENDIENTE => 'warning',
-            self::INSCRITO => 'success',
-            self::RECHAZADO => 'danger',
+            self::PAGADO => 'success',
         };
     }
 

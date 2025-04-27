@@ -6,9 +6,6 @@ use App\Models\Competitor;
 use App\Models\Tutor;
 use App\Models\RegistrationProcess;
 use App\Models\PaymentBill;
-use App\Models\Olimpiada;
-use App\Models\Area;
-use App\Models\CategoryLevel;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 

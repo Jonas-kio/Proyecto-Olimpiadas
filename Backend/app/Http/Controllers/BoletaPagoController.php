@@ -4,11 +4,10 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Boleta;
-use App\Models\RegistrationProcess;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\BoletaMail;
-use Illuminate\Support\Facades\Storage;
+use App\Models\RegistrationProcess;
 use thiagoalessio\TesseractOCR\TesseractOCR;
 
 class BoletaPagoController extends Controller

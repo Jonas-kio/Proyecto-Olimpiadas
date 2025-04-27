@@ -16,6 +16,7 @@ class OlimpiadaArea extends Model
     protected $fillable = [
         'olimpiada_id',
         'area_id',
+        'activo'
     ];
 
 
