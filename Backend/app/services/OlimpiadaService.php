@@ -42,6 +42,7 @@ class OlimpiadaService
 
             $olimpiada = Olimpiada::create($data);
 
+
             $this->handleFileUploads($olimpiada, $pdfDetalles, $imagenPortada);
             $this->handleAreas($olimpiada, $areas);
 

@@ -10,15 +10,15 @@ class DetalleInscripcion extends Model
 {
     use HasFactory;
 
-    protected $table = 'detalle_inscripcion';
+    protected $table = 'registration_detail';
 
     protected $fillable = [
-        'proceso_inscripcion_id',
+        'register_process_id',
         'competidor_id',
         'area_id',
-        'nivel_categoria_id',
+        'categoria_id',
         'monto',
-        'estado'
+        'status'
     ];
 
     protected $casts = [
@@ -27,7 +27,7 @@ class DetalleInscripcion extends Model
 
     public function proceso_inscripcion()
     {
-        return $this->belongsTo(ProcesoInscripcion::class);
+        return $this->belongsTo(RegistrationProcess::class);
     }
 
     public function competidor()

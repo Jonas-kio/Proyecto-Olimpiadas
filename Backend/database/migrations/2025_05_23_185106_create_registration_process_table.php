@@ -17,12 +17,12 @@ return new class extends Migration
             $table->foreignId('olimpiada_id')->constrained('olimpiadas')->onDelete('cascade');
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->enum('status', [
-                'Pendiente',
-                'Inscrito',
-                'Rechazado',
-            ])->default('Pendiente');
+                'pending',
+                'approved',
+                'rejected',
+            ])->default('pending');
+            $table->dateTime('start_date');
             $table->string('type');
-            $table->boolean('status');
             $table->boolean('active');
             $table->timestamps();
         });

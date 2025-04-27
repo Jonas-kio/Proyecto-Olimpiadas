@@ -17,7 +17,7 @@ return new class extends Migration
             $table->foreignId('competidor_id')->constrained('competitor')->onDelete('cascade');
             $table->foreignId('area_id')->constrained('area')->onDelete('cascade');
             $table->foreignId('categoria_id')->constrained('category_level')->onDelete('cascade');
-            $table->Integer('monto');
+            $table->float('monto');
             $table->boolean('status');
             $table->timestamps();
         });

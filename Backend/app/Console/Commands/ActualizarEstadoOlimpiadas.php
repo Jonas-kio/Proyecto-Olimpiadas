@@ -5,7 +5,7 @@ namespace App\Console\Commands;
 use App\Services\OlimpiadaService;
 use Illuminate\Console\Command;
 
-class ActualizarEstadosOlimpiadas extends Command
+class ActualizarEstadoOlimpiadas extends Command
 {
 
     protected $signature = 'olimpiadas:actualizar-estados';

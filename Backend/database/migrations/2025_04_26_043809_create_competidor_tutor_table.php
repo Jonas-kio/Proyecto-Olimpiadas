@@ -9,19 +9,24 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up(): void
+    public function up()
     {
-        Schema::create('olimpiada_area', function (Blueprint $table) {
+        Schema::create('competidor_tutor', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('competidor_id')->constrained('competitor')->onDelete('cascade');
+            $table->foreignId('tutor_id')->constrained('tutor')->onDelete('cascade');
+            $table->boolean('es_principal')->default(false);
+            $table->string('relacion')->nullable();
+            $table->boolean('activo')->default(true);
             $table->timestamps();
+
+            // Evitar duplicados
+            $table->unique(['competidor_id', 'tutor_id']);
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
+    public function down()
     {
-        Schema::dropIfExists('olimpiada_area');
+        Schema::dropIfExists('competidor_tutor');
     }
 };

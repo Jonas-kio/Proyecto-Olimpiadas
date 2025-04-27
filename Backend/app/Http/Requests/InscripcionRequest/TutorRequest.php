@@ -18,12 +18,8 @@ class TutorRequest extends FormRequest
         return [
             'nombres' => 'required|string|max:255',
             'apellidos' => 'required|string|max:255',
-            'correo' => 'required|email|max:255',
+            'correo_electronico' => 'required|email',
             'telefono' => 'required|string|max:20',
-            'relacion' => 'required|string|max:50',
-            'es_principal' => 'sometimes|boolean',
-            'competidores_ids' => 'required|array',
-            'competidores_ids.*' => 'exists:competidors,id',
         ];
     }
 

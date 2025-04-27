@@ -6,14 +6,12 @@ use App\Http\Controllers\API\CostController;
 use App\Http\Controllers\API\AreaController;
 use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\API\CategoryLevelController;
+use App\Http\Controllers\API\Inscripcion\InscripcionController;
 use App\Http\Controllers\API\Olimpiada\OlimpiadaController;
 use App\Http\Controllers\CompetitorController;
 use App\Http\Controllers\TutorController;
-use App\Http\Controllers\CostController as ControllersCostController;
 use App\Http\Controllers\BoletaPagoController;
 use App\Http\Controllers\API\OCR\OcrController;
-use App\Http\Controllers\RegistrationController;
-use App\Http\Controllers\InscripcionController;
 use App\Http\Middleware\IsAdmin;
 use App\Http\Middleware\IsUserAuth;
 use App\Http\Middleware\VerificarProcesoInscripcion;
@@ -95,6 +93,8 @@ Route::middleware([IsUserAuth::class])->group(
 
         Route::get('/Olimpiadas', [OlimpiadaController::class, 'index'])->name('olimpiadas.index');
         Route::get('/olimpiadas/{olimpiada}', [OlimpiadaController::class, 'show']);
+
+        Route::get('/categoryLevel/{category_id}/{area_id}', [CategoryLevelController::class, 'getCategoryByIdAndAreaId']);
 
         //Ruta del competidor
         Route::post('/inscripcion/competidor', [CompetitorController::class, 'store']);

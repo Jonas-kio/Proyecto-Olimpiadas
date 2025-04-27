@@ -17,7 +17,7 @@ class SeleccionAreaRequest extends FormRequest
     public function rules()
     {
         return [
-            'area_id' => 'required|exists:areas,id',
+            'area_id' => 'required|exists:area,id',
         ];
     }
     protected function failedValidation(Validator $validator)

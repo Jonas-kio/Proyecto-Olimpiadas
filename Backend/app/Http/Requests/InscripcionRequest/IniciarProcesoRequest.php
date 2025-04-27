@@ -29,4 +29,3 @@ class IniciarProcesoRequest extends FormRequest
         ], 422));
     }
 }
-

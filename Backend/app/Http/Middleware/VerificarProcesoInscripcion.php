@@ -2,10 +2,11 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\ProcesoInscripcion;
+use App\Models\RegistrationProcess;
 use App\Models\User;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class VerificarProcesoInscripcion
 {
@@ -16,21 +17,21 @@ class VerificarProcesoInscripcion
     {
         $proceso = $request->route('proceso');
 
-        if (!$proceso instanceof ProcesoInscripcion) {
+        if (!$proceso instanceof RegistrationProcess) {
             return response()->json([
                 'success' => false,
                 'message' => 'Proceso de inscripción no encontrado'
             ], 404);
         }
-
-        if ($proceso->usuario_id !== User::id()) {
+        if (!Auth::check() || $proceso->user_id !== Auth::id()) {
             return response()->json([
                 'success' => false,
                 'message' => 'No tiene permisos para acceder a este proceso'
             ], 403);
         }
 
-        if (!$proceso->activo) {
+
+        if (!$proceso->active) {
             return response()->json([
                 'success' => false,
                 'message' => 'El proceso de inscripción no está activo'

@@ -8,6 +8,7 @@ use Exception;
 
 use App\Http\Requests\CategoryLevelRequest\CategoryLevelStoreRequest;
 use App\Http\Requests\CategoryLevelRequest\CategoryLevelUpdateRequest;
+use GuzzleHttp\Psr7\Request;
 
 class CategoryLevelController extends Controller
 {
@@ -43,6 +44,25 @@ class CategoryLevelController extends Controller
             ], 500);
         }
     }
+
+    public function getCategoryByIdAndAreaId($categoryId, $areaId)
+    {
+        try {
+
+            $category = $this->categoryLevelService->getCategoryByIdAndAreaId($categoryId, $areaId);
+
+            return response()->json([
+                'success' => true,
+                'data' => $category
+            ], 200);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
 
 
     public function store(CategoryLevelStoreRequest $request)

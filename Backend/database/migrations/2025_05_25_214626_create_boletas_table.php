@@ -6,15 +6,20 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
+
     public function up(): void
     {
         Schema::create('boleta', function (Blueprint $table) {
             $table->id();
             $table->string('numero_boleta')->unique();
             $table->unsignedBigInteger('registration_process_id');
+            $table->float('monto_total', 8, 2);
+            $table->date('fecha_emision');
+            $table->date('fecha_expiracion');
+            $table->string('estado', [
+                'pendiente',
+                'pagado'
+            ])->default('pendiente');
             $table->timestamps();
 
             $table->foreign('registration_process_id')
@@ -24,9 +29,6 @@ return new class extends Migration
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('boleta');

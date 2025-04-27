@@ -1,17 +1,18 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\API\Inscripcion;
 
+use App\Http\Controllers\Controller;
 use App\Http\Requests\InscripcionRequest\CompetidorRequest;
 use App\Http\Requests\InscripcionRequest\IniciarProcesoRequest;
 use App\Http\Requests\InscripcionRequest\SeleccionAreaRequest;
 use App\Http\Requests\InscripcionRequest\SeleccionNivelRequest;
 use App\Http\Requests\InscripcionRequest\TutorRequest;
 use App\Models\Olimpiada;
-use App\Models\ProcesoInscripcion;
+
+use App\Models\RegistrationProcess;
 use App\Services\InscripcionService;
 use App\Services\BoletaService;
-
 
 use Illuminate\Support\Facades\Auth;
 
@@ -20,20 +21,16 @@ class InscripcionController extends Controller
     protected $inscripcionService;
     protected $boletaService;
 
-    public function __construct(
-        InscripcionService $inscripcionService,
-        //BoletaService $boletaService
-    ) {
+    public function __construct(InscripcionService $inscripcionService, BoletaService $boletaService)
+    {
         $this->inscripcionService = $inscripcionService;
-        //$this->boletaService = $boletaService;
+        $this->boletaService = $boletaService;
     }
 
-    /**
-     * Inicia el proceso de inscripción para una olimpiada
-     */
     public function iniciarProceso(IniciarProcesoRequest $request, Olimpiada $olimpiada)
     {
-        $proceso = $this->inscripcionService->iniciarProceso($olimpiada, $request->tipo, Auth::id());
+        $validated = $request->validated();
+        $proceso = $this->inscripcionService->iniciarProceso($olimpiada, $validated['tipo'], Auth::id());
         return response()->json([
             'success' => true,
             'proceso_id' => $proceso->id,
@@ -41,10 +38,8 @@ class InscripcionController extends Controller
         ]);
     }
 
-    /**
-     * Registra un competidor en el proceso de inscripción
-     */
-    public function registrarCompetidor(CompetidorRequest $request, ProcesoInscripcion $proceso)
+
+    public function registrarCompetidor(CompetidorRequest $request, RegistrationProcess $proceso)
     {
         $competidor = $this->inscripcionService->registrarCompetidor($proceso, $request->validated());
         return response()->json([
@@ -54,10 +49,7 @@ class InscripcionController extends Controller
         ]);
     }
 
-    /**
-     * Registra un tutor y lo asocia con uno o varios competidores
-     */
-    public function registrarTutor(TutorRequest $request, ProcesoInscripcion $proceso)
+    public function registrarTutor(TutorRequest $request, RegistrationProcess $proceso)
     {
         $tutor = $this->inscripcionService->registrarTutor(
             $proceso,
@@ -73,10 +65,8 @@ class InscripcionController extends Controller
         ]);
     }
 
-    /**
-     * Guarda la selección de área
-     */
-    public function seleccionarArea(SeleccionAreaRequest $request, ProcesoInscripcion $proceso)
+
+    public function seleccionarArea(SeleccionAreaRequest $request, RegistrationProcess $proceso)
     {
         $this->inscripcionService->guardarSeleccionArea($proceso, $request->area_id);
 
@@ -86,10 +76,7 @@ class InscripcionController extends Controller
         ]);
     }
 
-    /**
-     * Guarda la selección de nivel/categoría
-     */
-    public function seleccionarNivel(SeleccionNivelRequest $request, ProcesoInscripcion $proceso)
+    public function seleccionarNivel(SeleccionNivelRequest $request, RegistrationProcess $proceso)
     {
         $this->inscripcionService->guardarSeleccionNivel($proceso, $request->nivel_id);
 
@@ -99,10 +86,8 @@ class InscripcionController extends Controller
         ]);
     }
 
-    /**
-     * Obtiene el resumen del proceso de inscripción
-     */
-    public function obtenerResumen(ProcesoInscripcion $proceso)
+
+    public function obtenerResumen(RegistrationProcess $proceso)
     {
         $resumen = $this->inscripcionService->generarResumen($proceso);
 
@@ -112,24 +97,20 @@ class InscripcionController extends Controller
         ]);
     }
 
-    /**
-     * Genera la boleta de pago
-     */
-    public function generarBoleta(ProcesoInscripcion $proceso)
+
+    public function generarBoleta(RegistrationProcess $proceso)
     {
         $boleta = $this->boletaService->generarBoleta($proceso);
 
         return response()->json([
             'success' => true,
             'boleta_id' => $boleta->id,
-            'codigo' => $boleta->codigo,
+            'codigo' => $boleta->numero_boleta,
             'mensaje' => 'Boleta generada correctamente'
         ]);
     }
 
-    /**
-     * Obtiene los detalles de una boleta de pago
-     */
+
     public function obtenerBoleta($boletaId)
     {
         $datosBoleta = $this->boletaService->obtenerDatosBoleta($boletaId);
