@@ -97,15 +97,11 @@ class BoletaService
         }
     }
 
-    /**
-     * Genera un código único para la boleta
-     */
     protected function generarCodigoBoleta()
     {
         $fechaActual = Carbon::now()->format('Ymd');
         $codigo = 'BOL-' . $fechaActual . '-' . strtoupper(Str::random(6));
 
-        // Verificar que el código sea único
         while (Boleta::where('numero_boleta', $codigo)->exists()) {
             $codigo = 'BOL-' . $fechaActual . '-' . strtoupper(Str::random(6));
         }
@@ -113,9 +109,6 @@ class BoletaService
         return $codigo;
     }
 
-    /**
-     * Obtiene los datos completos de una boleta de pago
-     */
     public function obtenerDatosBoleta($boletaId)
     {
         $boleta = Boleta::with([
