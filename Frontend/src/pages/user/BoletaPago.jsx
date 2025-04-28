@@ -1,5 +1,4 @@
 // components/boleta/BoletaPago.jsx
-// components/boleta/BoletaPago.jsx
 import React, { useState, useEffect } from 'react';
 import { 
   generarBoletaPDF, 
@@ -13,8 +12,7 @@ import {
   FaCheck, 
   FaArrowLeft, 
   FaGoogle, 
-  FaMicrosoft, 
-  
+  FaMicrosoft 
 } from 'react-icons/fa';
 
 const BoletaPago = ({ estudiante, tutores, areasSeleccionadas, numeroBoleta, registration_process_id, onVolver }) => {
@@ -80,8 +78,8 @@ const BoletaPago = ({ estudiante, tutores, areasSeleccionadas, numeroBoleta, reg
     }
   };
 
-  // Preparar enlace para enviar por correo
-  const prepararEnvioCorreo = async () => {
+  // Enviar correo (método manual debido al error en el backend)
+  const enviarCorreo = async () => {
     if (!correoDestino) {
       mostrarMensajeTemporal('Ingrese un correo electrónico válido', 'error');
       return;
@@ -91,7 +89,7 @@ const BoletaPago = ({ estudiante, tutores, areasSeleccionadas, numeroBoleta, reg
       setEnviando(true);
       mostrarMensajeTemporal('Preparando opciones de correo...', 'info');
       
-      // Generar enlaces para servicios de correo
+      // Generar PDF y enlaces para servicios de correo
       const resultado = await generarEnlacesCorreo(
         estudiante, 
         tutores, 
@@ -216,7 +214,7 @@ const BoletaPago = ({ estudiante, tutores, areasSeleccionadas, numeroBoleta, reg
             disabled={enviando || mostrarOpcionesCorreo}
           />
           <button 
-            onClick={prepararEnvioCorreo} 
+            onClick={enviarCorreo} 
             disabled={enviando || mostrarOpcionesCorreo}
             className="boleta-btn-enviar"
           >
@@ -226,7 +224,7 @@ const BoletaPago = ({ estudiante, tutores, areasSeleccionadas, numeroBoleta, reg
               </>
             ) : (
               <>
-                <FaEnvelope /> Preparar correo
+                <FaEnvelope /> Enviar por correo
               </>
             )}
           </button>

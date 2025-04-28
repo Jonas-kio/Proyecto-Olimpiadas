@@ -3,7 +3,8 @@ import api from './apiConfig';
 // Servicio para gestionar las olimpiadas
 export const getOlimpiadas = async () => {
   try {
-    const response = await api.get('/Olimpiadas');
+    // Usa la nueva ruta pública
+    const response = await api.get('/olimpiadas-publicas');
     return response;
   } catch (error) {
     console.error('Error al obtener las olimpiadas:', error);
@@ -13,7 +14,8 @@ export const getOlimpiadas = async () => {
 
 export const getOlimpiadaDetail = async (id) => {
   try {
-    const response = await api.get(`/olimpiadas/${id}`);
+    // Usa la ruta pública para detalles
+    const response = await api.get(`/olimpiadas-publicas/${id}`);
     return response;
   } catch (error) {
     console.error(`Error al obtener la olimpiada con ID ${id}:`, error);
@@ -23,6 +25,7 @@ export const getOlimpiadaDetail = async (id) => {
 
 export const inscribirEnOlimpiada = async (olimpiadaId, datos) => {
   try {
+    // Esta sigue siendo una ruta protegida
     const response = await api.post(`/user/olimpiadas/${olimpiadaId}/inscribir`, datos);
     return response;
   } catch (error) {
@@ -33,6 +36,7 @@ export const inscribirEnOlimpiada = async (olimpiadaId, datos) => {
 
 export const getInscripciones = async () => {
   try {
+    // Esta sigue siendo una ruta protegida
     const response = await api.get(`/user/olimpiadas/inscripciones`);
     return response;
   } catch (error) {
@@ -43,6 +47,7 @@ export const getInscripciones = async () => {
 
 export const subirComprobante = async (inscripcionId, formData) => {
   try {
+    // Esta sigue siendo una ruta protegida
     const response = await api.post(
       `/user/olimpiadas/inscripciones/${inscripcionId}/comprobante`,
       formData,

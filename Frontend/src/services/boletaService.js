@@ -16,6 +16,9 @@ export const generarNumeroBoleta = () => {
 // Genera la boleta en PDF
 export const generarBoletaPDF = async (estudiante, tutores, areasSeleccionadas, numeroBoleta) => {
   try {
+    console.log('Generando PDF con datos:', { numeroBoleta, estudiante, areasSeleccionadas });
+    
+    // Generar el PDF en el frontend
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.width;
     
@@ -75,7 +78,7 @@ export const generarBoletaPDF = async (estudiante, tutores, areasSeleccionadas, 
     doc.setFontSize(10);
     doc.setTextColor(0, 0, 0);
     doc.text(`Institución: ${estudiante.colegio}`, 15, 124);
-    const nivel = estudiante.curso.includes('Primaria') ? 'Primaria' : 'Secundaria';
+    const nivel = estudiante.curso?.includes('Primaria') ? 'Primaria' : 'Secundaria';
     doc.text(`Nivel: ${nivel}`, 15, 130);
     doc.text(`Ciudad: ${estudiante.provincia}`, 15, 136);
     
@@ -119,6 +122,26 @@ export const generarBoletaPDF = async (estudiante, tutores, areasSeleccionadas, 
     doc.text("Total a pagar", pageWidth/2 - 10, startY + 6);
     doc.text(`Bs. ${totalPago}`, pageWidth - 40, startY + 6);
     
+    // Instrucciones de pago
+    startY += 20;
+    doc.setFontSize(14);
+    doc.setTextColor(26, 78, 142);
+    doc.text("INSTRUCCIONES DE PAGO", 15, startY);
+    
+    startY += 10;
+    doc.setFontSize(10);
+    doc.setTextColor(0, 0, 0);
+    doc.text("Por favor, realice el pago mediante transferencia bancaria o depósito a la siguiente cuenta:", 15, startY);
+    
+    startY += 10;
+    doc.text("Banco: Banco Nacional de Bolivia", 15, startY);
+    startY += 6;
+    doc.text("Cuenta: 1000-456789-001", 15, startY);
+    startY += 6;
+    doc.text("Titular: Olimpiadas Oh! SanSi", 15, startY);
+    startY += 6;
+    doc.text(`Concepto: ${numeroBoleta} - ${estudiante.nombres} ${estudiante.apellidos}`, 15, startY);
+    
     // Pie de página
     doc.setFontSize(8);
     doc.setTextColor(102, 102, 102);
@@ -132,39 +155,52 @@ export const generarBoletaPDF = async (estudiante, tutores, areasSeleccionadas, 
   }
 };
 
-// Nueva función para enviar boleta por email
+// Función para enviar boleta por email usando el backend existente
 export const enviarBoletaPorEmail = async (estudiante, tutores, areasSeleccionadas, numeroBoleta, correoDestino) => {
   try {
-    // Primero generar los enlaces de correo que ya contienen la boleta
-    const enlaces = await generarEnlacesCorreo(
-      estudiante, 
-      tutores, 
-      areasSeleccionadas, 
-      numeroBoleta, 
-      correoDestino
-    );
+    // Primero generar el PDF
+    const boletaPDF = await generarBoletaPDF(estudiante, tutores, areasSeleccionadas, numeroBoleta);
     
-    // Aquí podrías implementar el envío automático del email usando tu API o servicio de email
-    console.log(`Enviando boleta por email a ${correoDestino}`);
+    // Crear FormData para enviar el archivo
+    const formData = new FormData();
+    formData.append('pdf', boletaPDF, `Boleta_${numeroBoleta}.pdf`);
+    formData.append('correo_destino', correoDestino);
+    formData.append('numero_boleta', numeroBoleta);
+    formData.append('nombre_estudiante', `${estudiante.nombres} ${estudiante.apellidos}`);
     
-    // Si tienes un endpoint específico para envío de emails, podrías llamarlo así:
-    // const response = await api.post('/enviar-email', {
-    //   destinatario: correoDestino,
-    //   asunto: `Boleta de Pago - Olimpiadas Oh! SanSi #${numeroBoleta}`,
-    //   contenido: `Estimado/a ${estudiante.nombres} ${estudiante.apellidos},\n\nAdjunto encontrará su boleta de pago...`,
-    //   adjunto: boletaPDF  // Necesitarías convertir el blob a un formato adecuado
-    // });
+    // Consumir endpoint del backend para enviar el correo - usando la ruta existente
+    const response = await api.post('/boleta/email', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
     
     return {
       success: true,
-      message: `Boleta enviada correctamente a ${correoDestino}`
+      message: response.data?.message || `Boleta enviada correctamente a ${correoDestino}`
     };
   } catch (error) {
     console.error("Error al enviar la boleta por email:", error);
-    throw new Error("No se pudo enviar la boleta por email. Intente nuevamente.");
+    // En caso de error con el backend, enviar mediante enlaces de correo como fallback
+    try {
+      console.log("Intentando método alternativo de envío...");
+      const enlaces = await generarEnlacesCorreo(estudiante, tutores, areasSeleccionadas, numeroBoleta, correoDestino);
+      
+      // Abrir el cliente de correo predeterminado
+      window.open(enlaces.servicios.predeterminado, '_blank');
+      
+      return {
+        success: true,
+        message: `Se ha preparado un correo para enviar a ${correoDestino}. Por favor adjunte el PDF descargado.`
+      };
+    } catch (fallbackError) {
+      console.error("Error en método alternativo:", fallbackError);
+      throw new Error("No se pudo enviar la boleta por email. Intente descargando el PDF y enviándolo manualmente.");
+    }
   }
 };
 
+// Función para generar enlaces para servicios de correo (plan B si no funciona el backend)
 // Función para generar enlaces para servicios de correo
 export const generarEnlacesCorreo = async (estudiante, tutores, areasSeleccionadas, numeroBoleta, correoDestino) => {
   try {
@@ -176,7 +212,34 @@ export const generarEnlacesCorreo = async (estudiante, tutores, areasSeleccionad
     
     // Generar asunto y cuerpo del correo
     const asunto = `Boleta de Pago - Olimpiadas Oh! SanSi #${numeroBoleta}`;
-    const cuerpo = `Estimado/a ${estudiante.nombres} ${estudiante.apellidos},\n\nAdjunto encontrará su boleta de pago con número ${numeroBoleta} para su participación en las Olimpiadas Oh! SanSi.\n\nPor favor, realice el pago y cargue su comprobante en nuestra plataforma.\n\nSaludos cordiales,\nEquipo Olimpiadas Oh! SanSi`;
+    
+    // Preparar un cuerpo de correo más detallado
+    const precioArea = 50;
+    const totalPago = areasSeleccionadas.length * precioArea;
+    const fechaLimite = new Date(new Date().setDate(new Date().getDate() + 7)).toLocaleDateString('es-BO');
+
+    const cuerpo = `Estimado/a ${estudiante.nombres} ${estudiante.apellidos},
+
+Adjunto encontrará su boleta de pago con número ${numeroBoleta} para su participación en las Olimpiadas Oh! SanSi.
+
+INFORMACIÓN DE LA INSCRIPCIÓN:
+- Estudiante: ${estudiante.nombres} ${estudiante.apellidos}
+- Documento: ${estudiante.documento_identidad}
+- Institución: ${estudiante.colegio}
+- Áreas seleccionadas: ${areasSeleccionadas.join(', ')}
+- Total a pagar: Bs. ${totalPago}
+
+INSTRUCCIONES DE PAGO:
+- Banco: Banco Nacional de Bolivia
+- Cuenta: 1000-456789-001
+- Titular: Olimpiadas Oh! SanSi
+- Concepto: ${numeroBoleta} - ${estudiante.nombres} ${estudiante.apellidos}
+- Fecha límite de pago: ${fechaLimite}
+
+Por favor, realice el pago y guarde su comprobante para presentarlo cuando sea requerido.
+
+Saludos cordiales,
+Equipo Olimpiadas Oh! SanSi`;
     
     // Crear enlaces para diferentes servicios de correo
     

@@ -15,12 +15,11 @@ import ErrorModal from "../../components/common/ErrorModal";
 import ProcesandoModal from "../../components/common/ProcesandoModal";
 
 // Boletas
-import BoletaPago from "../user/BoletaPago";  // Ruta corregida
+import BoletaPago from "../user/BoletaPago";
 import {
   generarNumeroBoleta,
   generarBoletaPDF,
   enviarBoletaPorEmail,
-  generarEnlacesCorreo,
 } from "../../services/boletaService";
 
 // Formularios divididos
@@ -34,8 +33,6 @@ import BarraPasos from "../../components/common/BarraPasos";
 import BotonesPaso from "../../components/common/BotonesPaso";
 
 const InscripcionIndividual = () => {
-  // El resto del código permanece igual
-  // ...
   const navigate = useNavigate();
   const [paso, setPaso] = useState(1);
 
@@ -54,8 +51,7 @@ const InscripcionIndividual = () => {
   const [mostrarBoleta, setMostrarBoleta] = useState(false);
   const [numeroBoleta, setNumeroBoleta] = useState("");
   const [inscripcionCompletada, setInscripcionCompletada] = useState(false);
-  const [inscripcionId, setInscripcionId] = useState(null);
-  
+  const [inscripcionId, setInscripcionId] = useState(null);y
   const [tutores, setTutores] = useState([
     { nombres: "", apellidos: "", correo_electronico: "", telefono: "" },
   ]);
@@ -189,6 +185,7 @@ const InscripcionIndividual = () => {
     setPaso(1);
   };
   
+  // Modo Simulación (cuando no hay conexión al backend)
   const manejarModoSimulacion = async () => {
     console.log("Simulando registro exitoso del estudiante:", estudiante);
     console.log("Simulando registro exitoso de tutores:", tutores);
@@ -197,39 +194,66 @@ const InscripcionIndividual = () => {
     // Generar número de boleta
     const nuevoBoleta = generarNumeroBoleta();
     console.log("NÚMERO DE BOLETA GENERADO:", nuevoBoleta);
-    setNumeroBoleta(nuevoBoleta);
     
-    return { success: true, nuevoBoleta };
+    // Simular una pequeña demora para dar impresión de procesamiento
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    return { 
+      success: true, 
+      nuevoBoleta,
+      estudianteId: `sim-${Date.now()}` // ID simulado
+    };
   };
   
+  // Modo Backend (cuando hay conexión al backend)
   const manejarModoBackend = async (formulario, tutoresFormulario) => {
     try {
+      // Paso 1: Registrar el estudiante (competidor)
       const respuestaEstudiante = await inscripcionCompetidor(formulario);
       console.log("Estudiante registrado exitosamente:", respuestaEstudiante.data);
       
       // Guardar el ID de inscripción
-      setInscripcionId(respuestaEstudiante.data.id);
+      const estudianteId = respuestaEstudiante.data.id;
 
+      // Paso 2: Registrar los tutores asociados al estudiante
       for (const tutor of tutoresFormulario) {
-        const respuesta = await inscripcionTutor(tutor);
+        // Añadir referencia al estudiante en cada tutor
+        const tutorData = {
+          ...tutor,
+          estudiante_id: estudianteId // Asegurarse de que este campo sea el esperado por el backend
+        };
+        
+        const respuesta = await inscripcionTutor(tutorData);
         console.log("Tutor registrado exitosamente:", respuesta.data);
       }
 
-      // Generar número de boleta
+      // Paso 3: Generar número de boleta
       const nuevoBoleta = generarNumeroBoleta();
       console.log("NÚMERO DE BOLETA GENERADO:", nuevoBoleta);
       
-      // Enviar áreas seleccionadas al backend
+      // Paso 4: Registrar las áreas seleccionadas para el estudiante
       for (const area of areasSeleccionadas) {
-        await inscripcionArea({
-          estudiante_id: respuestaEstudiante.data.id,
+        // Preparar datos para el área según la estructura esperada por el backend
+        const areaData = {
+          estudiante_id: estudianteId,
           area_nombre: area,
-        });
+        };
+        
+        await inscripcionArea(areaData);
+        console.log(`Área "${area}" registrada para el estudiante`);
       }
       
-      return { success: true, nuevoBoleta, estudianteId: respuestaEstudiante.data.id };
+      return { 
+        success: true, 
+        nuevoBoleta, 
+        estudianteId 
+      };
     } catch (error) {
-      return { success: false, error };
+      console.error("Error en el proceso de inscripción backend:", error);
+      return { 
+        success: false, 
+        error 
+      };
     }
   };
   
@@ -254,43 +278,49 @@ const InscripcionIndividual = () => {
         throw resultado.error;
       }
       
+      // Guardar el número de boleta generado
       setNumeroBoleta(resultado.nuevoBoleta);
+      setInscripcionId(resultado.estudianteId || null);
       
-      // Generar el PDF de la boleta
-      const boletaPDF = await generarBoletaPDF(
-        estudiante,
-        tutores,
-        areasSeleccionadas,
-        resultado.nuevoBoleta
-      );
-      
-      // Descargar automáticamente el PDF
-      const url = URL.createObjectURL(boletaPDF);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `Boleta_${resultado.nuevoBoleta}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      try {
+        // Generar el PDF de la boleta
+        const boletaPDF = await generarBoletaPDF(
+          estudiante,
+          tutores,
+          areasSeleccionadas,
+          resultado.nuevoBoleta
+        );
+        
+        // Descargar automáticamente el PDF
+        const url = URL.createObjectURL(boletaPDF);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `Boleta_${resultado.nuevoBoleta}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
 
-      // Envío automático de la boleta al correo del usuario
-      if (usarBackend) {
-        const correoDestino = estudiante.correo_electronico;
-        try {
-          console.log("Enviando boleta automáticamente al correo:", correoDestino);
-          await enviarBoletaPorEmail(
-            estudiante,
-            tutores,
-            areasSeleccionadas,
-            resultado.nuevoBoleta,
-            correoDestino
-          );
-          console.log("Boleta enviada automáticamente con éxito");
-        } catch (errorEnvio) {
-          console.error("Error al enviar boleta automáticamente:", errorEnvio);
-          // No impedir la continuación del flujo si falla el envío automático
+        // Envío automático de la boleta al correo del usuario (opcional)
+        if (estudiante.correo_electronico) {
+          try {
+            console.log("Enviando boleta automáticamente al correo:", estudiante.correo_electronico);
+            await enviarBoletaPorEmail(
+              estudiante,
+              tutores,
+              areasSeleccionadas,
+              resultado.nuevoBoleta,
+              estudiante.correo_electronico
+            );
+            console.log("Boleta enviada automáticamente con éxito");
+          } catch (errorEnvio) {
+            console.error("Error al enviar boleta automáticamente:", errorEnvio);
+            // No impedir la continuación del flujo si falla el envío automático
+          }
         }
+      } catch (errorPDF) {
+        console.error("Error al generar o descargar el PDF:", errorPDF);
+        // Aún así, mostramos la boleta para que el usuario pueda intentar descargar manualmente
       }
 
       // Marcar como completado y mostrar boleta
@@ -337,6 +367,7 @@ const InscripcionIndividual = () => {
           tutores={tutores}
           areasSeleccionadas={areasSeleccionadas}
           numeroBoleta={numeroBoleta}
+          registration_process_id={inscripcionId}
           onVolver={volverDesdeBoletaPago}
         />
       ) : (
