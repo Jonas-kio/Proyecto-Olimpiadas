@@ -67,12 +67,31 @@ api.interceptors.response.use(
 
 //FUNCIONES DE INSCRIPCIÓN INDIVIDUAL
 
-export const inscripcionCompetidor = async (formulario) => {
-  return await api.post("/inscripcion/competidor", formulario);
+export const iniciarProceso = async (olimpiadaId, tipo) => {
+  return await api.post(`/inscripcion/olimpiada/${olimpiadaId}/iniciar`, {
+    tipo,
+  });
 };
 
-export const inscripcionTutor = async (formularioTutor) => {
-  return await api.post("/inscripcion/tutor", formularioTutor);
+export const inscripcionCompetidor = async (procesoId, formulario) => {
+  return await api.post(
+    `/inscripcion/proceso/${procesoId}/competidor`,
+    formulario
+  );
+};
+
+export const inscripcionTutor = async (procesoId, formularioTutor) => {
+  return await api.post(
+    `/inscripcion/proceso/${procesoId}/tutor`,
+    formularioTutor
+  );
+};
+export const guardarSeleccionArea = async (procesoId, payload) => {
+  return await api.post(`/inscripcion/proceso/${procesoId}/area`, payload);
+};
+
+export const guardarSeleccionNivel = async (procesoId, payload) => {
+  return await api.post(`/inscripcion/proceso/${procesoId}/nivel`, payload);
 };
 
 export const inscripcionArea = async () => {
@@ -102,7 +121,7 @@ export const actualizarOlimpiada = async (id, newOlimpiada) => {
 };
 
 export const obtenerAreas = async () => {
-  const response = await api.get('/inscripcion/area');
+  const response = await api.get("/inscripcion/area");
   return response.data;
 };
 
@@ -121,7 +140,6 @@ export const eliminarOlimpiada = async (id) => await api.delete(`/olimpiadas/${i
 // Funciones de Áreas
 export const obtenerAreas = async () => await api.get("/inscripcion/area");
 */
-
 
 // export const obtenerCategoriasPorArea = async (areaId) => {
 //   return await api.get(`/categoryLevelUser?area_id=${areaId}`);

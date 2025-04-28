@@ -7,6 +7,7 @@ import {
   inscripcionTutor,
   inscripcionArea,
   inscripcionCategoryLevel,
+  iniciarProceso,
 } from "../../services/apiConfig";
 
 // Componentes comunes
@@ -86,6 +87,9 @@ const InscripcionIndividual = () => {
     };
     fetchData();
   }, []);
+  useEffect(() => {
+    console.log("Áreas seleccionadas:", areasSeleccionadas);
+  }, [areasSeleccionadas]);
 
   useEffect(() => {
     console.log("Áreas seleccionadas:", areasSeleccionadas);
@@ -260,10 +264,75 @@ const InscripcionIndividual = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setProcesando(true);
+
     const formulario = { ...estudiante };
     const tutoresFormulario = tutores.filter(
       (t) => t.nombres || t.apellidos || t.correo_electronico || t.telefono
     );
+    // console.log("JSON del estudiante:", formulario);
+    // console.log("JSON de tutores:", tutoresFormulario);
+    try {
+      // 1. INICIAR PROCESO
+      const olimpiadaId = 1;
+      const respuestaProceso = await iniciarProceso(olimpiadaId, "individual");
+      const procesoId = respuestaProceso.data.proceso_id;
+      console.log("Proceso iniciado con ID:", procesoId);
+      // 2. REGISTRAR COMPETIDOR
+      const formularioEstudiante = { ...estudiante };
+      const respuestaEstudiante = await inscripcionCompetidor(
+        procesoId,
+        formularioEstudiante
+      );
+      const competidorId = respuestaEstudiante.data.competidor_id;
+      console.log("Competidor registrado con ID:", competidorId);
+
+      // 3. REGISTRAR TUTORES EN PARALELO
+      const tutoresFormulario = tutores.filter(
+        (t) => t.nombres || t.apellidos || t.correo_electronico || t.telefono
+      );
+
+      const registrosTutores = tutoresFormulario.map((tutor, idx) => {
+        const payloadTutor = {
+          ...tutor,
+          competidores_ids: [competidorId],
+          es_principal: idx === tutorActivo, // Aquí marcamos si es el tutor principal
+          relacion: "Tutor",
+        };
+        console.log("Payload tutor:", payloadTutor);
+        return inscripcionTutor(procesoId, payloadTutor);
+      });
+
+      await Promise.all(registrosTutores);
+      console.log("Tutores registrados exitosamente");
+      // Generar número de boleta
+      const nuevoBoleta = generarNumeroBoleta();
+      console.log("NÚMERO DE BOLETA GENERADO:", nuevoBoleta);
+      setNumeroBoleta(nuevoBoleta);
+
+      // Enviar áreas seleccionadas al backend (si es necesario)
+      // Esto depende de tu API, podrías necesitar ajustarlo
+      for (const area of areasSeleccionadas) {
+        await inscripcionArea({
+          estudiante_id: respuestaEstudiante.data.id,
+          area_nombre: area,
+        });
+      }
+      // Generar el PDF de la boleta
+      const boletaPDF = await generarBoletaPDF(
+        estudiante,
+        tutores,
+        areasSeleccionadas,
+        nuevoBoleta
+      );
+      // Descargar automáticamente el PDF
+      const url = URL.createObjectURL(boletaPDF);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `Boleta_${nuevoBoleta}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
 
     try {
       // Determinar si usar backend o simulación
@@ -452,6 +521,13 @@ const InscripcionIndividual = () => {
         errorMessage={mensajeDeError}
         errorFields={camposConError}
       />
+      {showProcessingModal && (
+        <ProcesandoModal
+          isOpen={showProcessingModal}
+          title="Inscribiendote.. "
+          message="Por favor espere un momento..."
+        />
+      )}
       
       {procesando && <ProcesandoModal />}
     </div>

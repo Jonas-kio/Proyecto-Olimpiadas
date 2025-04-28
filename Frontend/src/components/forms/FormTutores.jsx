@@ -101,12 +101,11 @@ const FormTutores = ({
                 className={errores[`t${idx}-correo_electronico`] ? "error" : ""}
                 onFocus={() => setTutorActivo(idx)}
               />
-              {tutor.correo_electronico.length > 50 && tutorActivo === idx && (
+              {tutor.correo_electronico.length >= 50 && tutorActivo === idx && (
                 <span className="mensaje-error">
-                  Límite de 50 caracteres alcanzado
+                  Límite de caracteres alcanzado
                 </span>
               )}
-
               {!correoValido(tutor.correo_electronico) &&
                 tutor.correo_electronico &&
                 tutorActivo === idx && (
