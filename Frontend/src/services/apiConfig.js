@@ -64,6 +64,7 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
 //FUNCIONES DE INSCRIPCIÓN INDIVIDUAL
 
 export const iniciarProceso = async (olimpiadaId, tipo) => {
@@ -139,6 +140,7 @@ export const eliminarOlimpiada = async (id) => await api.delete(`/olimpiadas/${i
 // Funciones de Áreas
 export const obtenerAreas = async () => await api.get("/inscripcion/area");
 */
+
 
 // export const obtenerCategoriasPorArea = async (areaId) => {
 //   return await api.get(`/categoryLevelUser?area_id=${areaId}`);

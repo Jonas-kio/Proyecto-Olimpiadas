@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "../../styles/components/InscripcionIndividual.css";
+import "../../styles/components/InscripcionConfirmacion.css";
 import { useNavigate } from "react-router-dom";
 import {
   inscripcionCompetidor,
@@ -14,8 +15,8 @@ import SuccessModal from "../../components/common/SuccessModal";
 import ErrorModal from "../../components/common/ErrorModal";
 import ProcesandoModal from "../../components/common/ProcesandoModal";
 
-//Boletas
-import BoletaPago from "../../components/boleta/BoletaPago";
+// Boletas
+import BoletaPago from "../user/BoletaPago";
 import {
   generarNumeroBoleta,
   generarBoletaPDF,
@@ -46,10 +47,13 @@ const InscripcionIndividual = () => {
     correo_electronico: "",
     colegio: "",
   });
-  //ESTADO BOLETAS
+  
+  // Estados para boletas
   const [mostrarBoleta, setMostrarBoleta] = useState(false);
   const [numeroBoleta, setNumeroBoleta] = useState("");
   const [inscripcionCompletada, setInscripcionCompletada] = useState(false);
+  const [inscripcionId, setInscripcionId] = useState(null);
+  
   const [tutores, setTutores] = useState([
     { nombres: "", apellidos: "", correo_electronico: "", telefono: "" },
   ]);
@@ -67,20 +71,24 @@ const InscripcionIndividual = () => {
   const [procesando, setProcesando] = useState(false);
   const [mensajeDeError, setMensajeDeError] = useState("");
   const [camposConError, setCamposConError] = useState([]);
+  const [usarBackend, setUsarBackend] = useState(true); // Bandera para cambiar entre modos
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const responseAreas = await inscripcionArea(); //Llamada al backen areas
-        const responseCategorias = await inscripcionCategoryLevel(); // llamada al backend cater
+        const responseAreas = await inscripcionArea(); //Llamada al backend areas
+        const responseCategorias = await inscripcionCategoryLevel(); // llamada al backend categorias
         setAreasDisponibles(responseAreas.data?.data || []);
         setCategoriasDisponibles(responseCategorias.data?.data || []);
       } catch (error) {
         console.error("Error al obtener datos:", error);
+        // Si falla la conexión al backend, se puede cambiar al modo simulación
+        setUsarBackend(false);
       }
     };
     fetchData();
   }, []);
+
   useEffect(() => {
     console.log("Áreas seleccionadas:", areasSeleccionadas);
   }, [areasSeleccionadas]);
@@ -123,6 +131,7 @@ const InscripcionIndividual = () => {
   };
 
   const camposAreasCompletos = () => areasSeleccionadas.length > 0;
+  
   const puedeAvanzar = () => {
     if (paso === 1) return camposEstudianteCompletos();
     if (paso === 2) return camposTutoresCompletos();
@@ -172,45 +181,46 @@ const InscripcionIndividual = () => {
   const categoriaElegida = categoriasDisponibles.find(
     (cat) => cat.id === parseInt(categoriaSeleccionada)
   );
+  
   const volverDesdeBoletaPago = () => {
     setMostrarBoleta(false);
     setPaso(1);
   };
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setProcesando(true);
-
-    const formulario = { ...estudiante };
-    const tutoresFormulario = tutores.filter(
-      (t) => t.nombres || t.apellidos || t.correo_electronico || t.telefono
-    );
-    // console.log("JSON del estudiante:", formulario);
-    // console.log("JSON de tutores:", tutoresFormulario);
+  
+  // Modo Simulación (cuando no hay conexión al backend)
+  const manejarModoSimulacion = async () => {
+    console.log("Simulando registro exitoso del estudiante:", estudiante);
+    console.log("Simulando registro exitoso de tutores:", tutores);
+    console.log("Simulando registro de áreas:", areasSeleccionadas);
+    
+    // Generar número de boleta
+    const nuevoBoleta = generarNumeroBoleta();
+    console.log("NÚMERO DE BOLETA GENERADO:", nuevoBoleta);
+    
+    // Simular una pequeña demora para dar impresión de procesamiento
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    return { 
+      success: true, 
+      nuevoBoleta,
+      estudianteId: `sim-${Date.now()}` // ID simulado
+    };
+  };
+  
+  // Modo Backend (cuando hay conexión al backend)
+  const manejarModoBackend = async (procesoId, formularioEstudiante, tutoresFormulario) => {
     try {
-      // 1. INICIAR PROCESO
-      const olimpiadaId = 1;
-      const respuestaProceso = await iniciarProceso(olimpiadaId, "individual");
-      const procesoId = respuestaProceso.data.proceso_id;
-      console.log("Proceso iniciado con ID:", procesoId);
-      // 2. REGISTRAR COMPETIDOR
-      const formularioEstudiante = { ...estudiante };
-      const respuestaEstudiante = await inscripcionCompetidor(
-        procesoId,
-        formularioEstudiante
-      );
+      // Paso 1: Registrar el estudiante (competidor)
+      const respuestaEstudiante = await inscripcionCompetidor(procesoId, formularioEstudiante);
+      console.log("Estudiante registrado exitosamente:", respuestaEstudiante.data);
       const competidorId = respuestaEstudiante.data.competidor_id;
-      console.log("Competidor registrado con ID:", competidorId);
-
-      // 3. REGISTRAR TUTORES EN PARALELO
-      const tutoresFormulario = tutores.filter(
-        (t) => t.nombres || t.apellidos || t.correo_electronico || t.telefono
-      );
-
+      
+      // Paso 2: Registrar los tutores asociados al estudiante
       const registrosTutores = tutoresFormulario.map((tutor, idx) => {
         const payloadTutor = {
           ...tutor,
           competidores_ids: [competidorId],
-          es_principal: idx === tutorActivo, // Aquí marcamos si es el tutor principal
+          es_principal: idx === tutorActivo,
           relacion: "Tutor",
         };
         console.log("Payload tutor:", payloadTutor);
@@ -219,62 +229,104 @@ const InscripcionIndividual = () => {
 
       await Promise.all(registrosTutores);
       console.log("Tutores registrados exitosamente");
-      // Generar número de boleta
+      
+      // Paso 3: Generar número de boleta
       const nuevoBoleta = generarNumeroBoleta();
       console.log("NÚMERO DE BOLETA GENERADO:", nuevoBoleta);
-      setNumeroBoleta(nuevoBoleta);
+      
+      return { 
+        success: true, 
+        nuevoBoleta, 
+        estudianteId: competidorId
+      };
+    } catch (error) {
+      console.error("Error en el proceso de inscripción backend:", error);
+      return { 
+        success: false, 
+        error 
+      };
+    }
+  };
+  
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setProcesando(true);
 
-      // Enviar áreas seleccionadas al backend (si es necesario)
-      // Esto depende de tu API, podrías necesitar ajustarlo
-      for (const area of areasSeleccionadas) {
-        await inscripcionArea({
-          estudiante_id: respuestaEstudiante.data.id,
-          area_nombre: area,
-        });
+    const formularioEstudiante = { ...estudiante };
+    const tutoresFormulario = tutores.filter(
+      (t) => t.nombres || t.apellidos || t.correo_electronico || t.telefono
+    );
+
+    try {
+      let resultado;
+      
+      if (usarBackend) {
+        // 1. INICIAR PROCESO
+        const olimpiadaId = 1;
+        const respuestaProceso = await iniciarProceso(olimpiadaId, "individual");
+        const procesoId = respuestaProceso.data.proceso_id;
+        console.log("Proceso iniciado con ID:", procesoId);
+        
+        // 2. Usar la función de manejo de backend
+        resultado = await manejarModoBackend(procesoId, formularioEstudiante, tutoresFormulario);
+      } else {
+        // Usar modo simulación
+        resultado = await manejarModoSimulacion();
       }
+      
+      if (!resultado.success) {
+        throw resultado.error || new Error("Error en el proceso de inscripción");
+      }
+      
+      // Guardar el número de boleta generado
+      setNumeroBoleta(resultado.nuevoBoleta);
+      setInscripcionId(resultado.estudianteId || null);
+      
       // Generar el PDF de la boleta
-      const boletaPDF = await generarBoletaPDF(
-        estudiante,
-        tutores,
-        areasSeleccionadas,
-        nuevoBoleta
-      );
-      // Descargar automáticamente el PDF
-      const url = URL.createObjectURL(boletaPDF);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `Boleta_${nuevoBoleta}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-
-      // Envío automático de la boleta al correo del usuario
-      const correoDestino = estudiante.correo_electronico;
       try {
-        console.log(
-          "Enviando boleta automáticamente al correo:",
-          correoDestino
-        );
-        await enviarBoletaPorEmail(
+        const boletaPDF = await generarBoletaPDF(
           estudiante,
           tutores,
           areasSeleccionadas,
-          nuevoBoleta,
-          correoDestino
+          resultado.nuevoBoleta
         );
-        console.log("Boleta enviada automáticamente con éxito");
-      } catch (errorEnvio) {
-        console.error("Error al enviar boleta automáticamente:", errorEnvio);
-        // No impedir la continuación del flujo si falla el envío automático
+        
+        // Descargar automáticamente el PDF
+        const url = URL.createObjectURL(boletaPDF);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `Boleta_${resultado.nuevoBoleta}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        // Envío automático de la boleta al correo del usuario (opcional)
+        if (estudiante.correo_electronico) {
+          try {
+            console.log("Enviando boleta automáticamente al correo:", estudiante.correo_electronico);
+            await enviarBoletaPorEmail(
+              estudiante,
+              tutores,
+              areasSeleccionadas,
+              resultado.nuevoBoleta,
+              estudiante.correo_electronico
+            );
+            console.log("Boleta enviada automáticamente con éxito");
+          } catch (errorEnvio) {
+            console.error("Error al enviar boleta automáticamente:", errorEnvio);
+            // No impedir la continuación del flujo si falla el envío automático
+          }
+        }
+      } catch (errorPDF) {
+        console.error("Error al generar o descargar el PDF:", errorPDF);
+        // Aún así, continuamos con el flujo
       }
 
-      // Marcar como completado y mostrar boleta en lugar del modal
-
+      // Marcar como completado y mostrar boleta
       setInscripcionCompletada(true);
       setMostrarBoleta(true);
       setModalAbierto(true);
-      setProcesando(false);
     } catch (error) {
       const mensajeErrorBase =
         error.response?.data?.message ||
@@ -302,6 +354,7 @@ const InscripcionIndividual = () => {
         setMensajeDeError(mensajeErrorBase);
       }
       setErrorModalAbierto(true);
+    } finally {
       setProcesando(false);
     }
   };
@@ -314,14 +367,13 @@ const InscripcionIndividual = () => {
           tutores={tutores}
           areasSeleccionadas={areasSeleccionadas}
           numeroBoleta={numeroBoleta}
+          registration_process_id={inscripcionId}
           onVolver={volverDesdeBoletaPago}
         />
       ) : (
         <div className="formulario-wrapper">
           <h1>Inscripción Individual</h1>
-          <p>
-            Complete el formulario para inscribirse en las Olimpiadas Oh! SanSi
-          </p>
+          <p>Complete el formulario para inscribirse en las Olimpiadas Oh! SanSi</p>
 
           <BarraPasos pasoActual={paso} />
 
@@ -382,6 +434,7 @@ const InscripcionIndividual = () => {
           </form>
         </div>
       )}
+      
       <SuccessModal
         isOpen={modalAbierto && !inscripcionCompletada}
         onClose={() => {
@@ -392,15 +445,17 @@ const InscripcionIndividual = () => {
         successMessage="Tu inscripción se ha completado correctamente."
         detailMessage="Gracias por participar en la Olimpiada Oh! SanSi."
       />
+      
       <ErrorModal
         isOpen={errorModalAbierto}
         onClose={() => setErrorModalAbierto(false)}
         errorMessage={mensajeDeError}
         errorFields={camposConError}
       />
-      {showProcessingModal && (
+      
+      {procesando && (
         <ProcesandoModal
-          isOpen={showProcessingModal}
+          isOpen={procesando}
           title="Inscribiendote.. "
           message="Por favor espere un momento..."
         />

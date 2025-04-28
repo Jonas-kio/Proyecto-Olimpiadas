@@ -65,6 +65,30 @@ const FormResumen = ({
           </div>
         ))}
       </div>
+     <div className="seccion">
+       <h3>Datos del Tutor</h3>
+     {tutores.map((tutor, idx) => (
+       <div className="fila-resumen" key={idx}>
+       <div className="subseccion-tutor">
+        <h4 className="subtitulo-tutor">
+          {idx === 0 ? "Tutor Principal" : `Tutor ${idx + 1}`}
+        </h4>
+        <div>
+          <span className="etiqueta">Nombre completo:</span>{" "}
+          <span className="valor">
+            {tutor.nombres} {tutor.apellidos}
+          </span>
+        </div>
+        <div>
+          <span className="etiqueta">Contacto:</span>{" "}
+          <span>
+            {tutor.correo_electronico} / {tutor.telefono}
+          </span>
+        </div>
+      </div>
+     </div>
+   ))}
+    </div>
 
       {/* Sección: Áreas de Competencia */}
       <div className="seccion">
