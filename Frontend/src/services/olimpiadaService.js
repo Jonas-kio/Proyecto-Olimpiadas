@@ -1,65 +1,66 @@
 import api from './apiConfig';
 
-// Servicio para gestionar las olimpiadas
+// Servicio para obtener olimpiadas - intenta ambas rutas posibles
 export const getOlimpiadas = async () => {
   try {
-    // Usa la nueva ruta pública
-    const response = await api.get('/olimpiadas-publicas');
+    // Primero intentar con la ruta pública que parece ser la que funciona
+    const response = await api.get('/libre/olimpiadas');
     return response;
   } catch (error) {
-    console.error('Error al obtener las olimpiadas:', error);
-    throw error;
+    console.log("Error en ruta pública, intentando ruta admin...", error.message);
+    // Si falla la ruta pública, intentar con la ruta admin
+    try {
+      const adminResponse = await api.get('/olimpiadas');
+      return adminResponse;
+    } catch (secondError) {
+      console.error("Error en ambas rutas:", secondError.message);
+      throw secondError;
+    }
   }
 };
 
 export const getOlimpiadaDetail = async (id) => {
   try {
-    // Usa la ruta pública para detalles
-    const response = await api.get(`/olimpiadas-publicas/${id}`);
+    // Primero intentar con la ruta pública
+    const response = await api.get(`/libre/olimpiadas/${id}`);
     return response;
   } catch (error) {
-    console.error(`Error al obtener la olimpiada con ID ${id}:`, error);
-    throw error;
+    // Si falla, intentar con la ruta admin
+    const adminResponse = await api.get(`/olimpiadas/${id}`);
+    return adminResponse;
   }
 };
 
 export const inscribirEnOlimpiada = async (olimpiadaId, datos) => {
-  try {
-    // Esta sigue siendo una ruta protegida
-    const response = await api.post(`/user/olimpiadas/${olimpiadaId}/inscribir`, datos);
-    return response;
-  } catch (error) {
-    console.error('Error al inscribirse en la olimpiada:', error);
-    throw error;
-  }
+  const response = await api.post(`/user/olimpiadas/${olimpiadaId}/inscribir`, datos);
+  return response;
 };
 
 export const getInscripciones = async () => {
-  try {
-    // Esta sigue siendo una ruta protegida
-    const response = await api.get(`/user/olimpiadas/inscripciones`);
-    return response;
-  } catch (error) {
-    console.error('Error al obtener las inscripciones:', error);
-    throw error;
-  }
+  const response = await api.get(`/user/olimpiadas/inscripciones`);
+  return response;
 };
 
-export const subirComprobante = async (inscripcionId, formData) => {
+// Exportamos también las funciones del admin para mantener compatibilidad
+export const crearOlimpiada = async (olimpiada) => {
+  return await api.post("/olimpiadas", olimpiada);
+};
+
+export const eliminarOlimpiada = async (id) => {
+  return await api.delete(`/olimpiadas/${id}`);
+};
+
+export const actualizarOlimpiada = async (id, newOlimpiada) => {
+  return await api.put(`/olimpiadas/${id}`, newOlimpiada);
+};
+
+export const obtenerAreas = async () => {
   try {
-    // Esta sigue siendo una ruta protegida
-    const response = await api.post(
-      `/user/olimpiadas/inscripciones/${inscripcionId}/comprobante`,
-      formData,
-      { 
-        headers: { 
-          'Content-Type': 'multipart/form-data' 
-        }
-      }
-    );
-    return response;
+    const response = await api.get("/areas");
+    return response.data;
   } catch (error) {
-    console.error('Error al subir el comprobante:', error);
-    throw error;
+    // Si falla, intentar con la ruta alternativa
+    const altResponse = await api.get("/inscripcion/area");
+    return altResponse.data;
   }
 };

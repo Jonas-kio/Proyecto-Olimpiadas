@@ -2,6 +2,9 @@
 import { jsPDF } from 'jspdf';
 import api from './apiConfig';
 
+// Valor predeterminado para el costo por área
+const COSTO_POR_AREA_DEFAULT = 50;
+
 // Genera un número único de boleta
 export const generarNumeroBoleta = () => {
   const fecha = new Date();
@@ -14,9 +17,9 @@ export const generarNumeroBoleta = () => {
 };
 
 // Genera la boleta en PDF
-export const generarBoletaPDF = async (estudiante, tutores, areasSeleccionadas, numeroBoleta) => {
+export const generarBoletaPDF = async (estudiante, tutores, areasSeleccionadas, numeroBoleta, costoPorArea = COSTO_POR_AREA_DEFAULT) => {
   try {
-    console.log('Generando PDF con datos:', { numeroBoleta, estudiante, areasSeleccionadas });
+    console.log('Generando PDF con datos:', { numeroBoleta, estudiante, areasSeleccionadas, costoPorArea });
     
     // Generar el PDF en el frontend
     const doc = new jsPDF();
@@ -26,8 +29,8 @@ export const generarBoletaPDF = async (estudiante, tutores, areasSeleccionadas, 
     const fechaEmision = new Date().toLocaleDateString('es-BO');
     const fechaLimite = new Date(new Date().setDate(new Date().getDate() + 7)).toLocaleDateString('es-BO');
     
-    // Calcular total
-    const precioArea = 50;
+    // Calcular total usando el costo proporcionado
+    const precioArea = costoPorArea;
     const totalPago = areasSeleccionadas.length * precioArea;
     
     // ENCABEZADO
@@ -122,25 +125,16 @@ export const generarBoletaPDF = async (estudiante, tutores, areasSeleccionadas, 
     doc.text("Total a pagar", pageWidth/2 - 10, startY + 6);
     doc.text(`Bs. ${totalPago}`, pageWidth - 40, startY + 6);
     
-    // Instrucciones de pago
+    // Nota de cierre (en lugar de instrucciones de pago)
     startY += 20;
     doc.setFontSize(14);
     doc.setTextColor(26, 78, 142);
-    doc.text("INSTRUCCIONES DE PAGO", 15, startY);
+    doc.text("INFORMACIÓN IMPORTANTE", 15, startY);
     
     startY += 10;
     doc.setFontSize(10);
     doc.setTextColor(0, 0, 0);
-    doc.text("Por favor, realice el pago mediante transferencia bancaria o depósito a la siguiente cuenta:", 15, startY);
-    
-    startY += 10;
-    doc.text("Banco: Banco Nacional de Bolivia", 15, startY);
-    startY += 6;
-    doc.text("Cuenta: 1000-456789-001", 15, startY);
-    startY += 6;
-    doc.text("Titular: Olimpiadas Oh! SanSi", 15, startY);
-    startY += 6;
-    doc.text(`Concepto: ${numeroBoleta} - ${estudiante.nombres} ${estudiante.apellidos}`, 15, startY);
+    doc.text("Gracias por su inscripción en las Olimpiadas Oh! SanSi. Conserve esta boleta para sus registros.", 15, startY);
     
     // Pie de página
     doc.setFontSize(8);
@@ -155,11 +149,12 @@ export const generarBoletaPDF = async (estudiante, tutores, areasSeleccionadas, 
   }
 };
 
-// Función para enviar boleta por email usando el backend existente
-export const enviarBoletaPorEmail = async (estudiante, tutores, areasSeleccionadas, numeroBoleta, correoDestino) => {
+// Función para enviar boleta por email - Intenta primero usar el backend, luego fallback al cliente de correo
+export const enviarBoletaPorEmail = async (estudiante, tutores, areasSeleccionadas, numeroBoleta, correoDestino, costoPorArea = COSTO_POR_AREA_DEFAULT) => {
   try {
+    // Intento 1: Usar la ruta '/boleta/email'
     // Primero generar el PDF
-    const boletaPDF = await generarBoletaPDF(estudiante, tutores, areasSeleccionadas, numeroBoleta);
+    const boletaPDF = await generarBoletaPDF(estudiante, tutores, areasSeleccionadas, numeroBoleta, costoPorArea);
     
     // Crear FormData para enviar el archivo
     const formData = new FormData();
@@ -168,44 +163,80 @@ export const enviarBoletaPorEmail = async (estudiante, tutores, areasSeleccionad
     formData.append('numero_boleta', numeroBoleta);
     formData.append('nombre_estudiante', `${estudiante.nombres} ${estudiante.apellidos}`);
     
-    // Consumir endpoint del backend para enviar el correo - usando la ruta existente
-    const response = await api.post('/boleta/email', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    });
-    
-    return {
-      success: true,
-      message: response.data?.message || `Boleta enviada correctamente a ${correoDestino}`
-    };
-  } catch (error) {
-    console.error("Error al enviar la boleta por email:", error);
-    // En caso de error con el backend, enviar mediante enlaces de correo como fallback
     try {
-      console.log("Intentando método alternativo de envío...");
-      const enlaces = await generarEnlacesCorreo(estudiante, tutores, areasSeleccionadas, numeroBoleta, correoDestino);
+      // Intentar con la primera ruta
+      const response = await api.post('/boleta/email', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
       
-      // Abrir el cliente de correo predeterminado
-      window.open(enlaces.servicios.predeterminado, '_blank');
-      
+      console.log("Correo enviado exitosamente usando /boleta/email");
       return {
         success: true,
-        message: `Se ha preparado un correo para enviar a ${correoDestino}. Por favor adjunte el PDF descargado.`
+        message: response.data?.message || `Boleta enviada correctamente a ${correoDestino}`
       };
-    } catch (fallbackError) {
-      console.error("Error en método alternativo:", fallbackError);
-      throw new Error("No se pudo enviar la boleta por email. Intente descargando el PDF y enviándolo manualmente.");
+    } catch (error1) {
+      console.log("Primer intento fallido, probando con /boleta/enviar...");
+      
+      // Intento 2: Usar la ruta '/boleta/enviar'
+      try {
+        const response = await api.post('/boleta/enviar', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+        
+        console.log("Correo enviado exitosamente usando /boleta/enviar");
+        return {
+          success: true,
+          message: response.data?.message || `Boleta enviada correctamente a ${correoDestino}`
+        };
+      } catch (error2) {
+        // Si ambos intentos fallan, usar método alternativo
+        console.log("Ambos intentos fallidos, usando método alternativo...");
+        return usarMetodoAlternativo(estudiante, tutores, areasSeleccionadas, numeroBoleta, correoDestino, costoPorArea);
+      }
     }
+  } catch (error) {
+    console.error("Error general en enviarBoletaPorEmail:", error);
+    return usarMetodoAlternativo(estudiante, tutores, areasSeleccionadas, numeroBoleta, correoDestino, costoPorArea);
   }
 };
 
-// Función para generar enlaces para servicios de correo (plan B si no funciona el backend)
+// Método alternativo (cliente de correo)
+const usarMetodoAlternativo = async (estudiante, tutores, areasSeleccionadas, numeroBoleta, correoDestino, costoPorArea) => {
+  try {
+    console.log("Usando método alternativo de envío (cliente de correo)...");
+    
+    // Generar enlaces para servicios de correo
+    const resultado = await generarEnlacesCorreo(
+      estudiante, 
+      tutores, 
+      areasSeleccionadas, 
+      numeroBoleta, 
+      correoDestino,
+      costoPorArea
+    );
+    
+    // Abrir el cliente de correo predeterminado
+    window.open(resultado.servicios.predeterminado, '_blank');
+    
+    return {
+      success: true,
+      message: `Se ha preparado un correo para enviar a ${correoDestino}. Por favor adjunte el PDF descargado.`
+    };
+  } catch (error) {
+    console.error("Error en método alternativo:", error);
+    throw new Error("No se pudo enviar la boleta por email. Intente descargando el PDF y enviándolo manualmente.");
+  }
+};
+
 // Función para generar enlaces para servicios de correo
-export const generarEnlacesCorreo = async (estudiante, tutores, areasSeleccionadas, numeroBoleta, correoDestino) => {
+export const generarEnlacesCorreo = async (estudiante, tutores, areasSeleccionadas, numeroBoleta, correoDestino, costoPorArea = COSTO_POR_AREA_DEFAULT) => {
   try {
     // Generar el PDF
-    const boletaPDF = await generarBoletaPDF(estudiante, tutores, areasSeleccionadas, numeroBoleta);
+    const boletaPDF = await generarBoletaPDF(estudiante, tutores, areasSeleccionadas, numeroBoleta, costoPorArea);
     
     // Crear URL para el PDF
     const pdfUrl = URL.createObjectURL(boletaPDF);
@@ -213,9 +244,8 @@ export const generarEnlacesCorreo = async (estudiante, tutores, areasSeleccionad
     // Generar asunto y cuerpo del correo
     const asunto = `Boleta de Pago - Olimpiadas Oh! SanSi #${numeroBoleta}`;
     
-    // Preparar un cuerpo de correo más detallado
-    const precioArea = 50;
-    const totalPago = areasSeleccionadas.length * precioArea;
+    // Calcular el total a pagar
+    const totalPago = areasSeleccionadas.length * costoPorArea;
     const fechaLimite = new Date(new Date().setDate(new Date().getDate() + 7)).toLocaleDateString('es-BO');
 
     const cuerpo = `Estimado/a ${estudiante.nombres} ${estudiante.apellidos},
@@ -228,15 +258,9 @@ INFORMACIÓN DE LA INSCRIPCIÓN:
 - Institución: ${estudiante.colegio}
 - Áreas seleccionadas: ${areasSeleccionadas.join(', ')}
 - Total a pagar: Bs. ${totalPago}
-
-INSTRUCCIONES DE PAGO:
-- Banco: Banco Nacional de Bolivia
-- Cuenta: 1000-456789-001
-- Titular: Olimpiadas Oh! SanSi
-- Concepto: ${numeroBoleta} - ${estudiante.nombres} ${estudiante.apellidos}
 - Fecha límite de pago: ${fechaLimite}
 
-Por favor, realice el pago y guarde su comprobante para presentarlo cuando sea requerido.
+Gracias por su inscripción. Conserve esta boleta para sus registros.
 
 Saludos cordiales,
 Equipo Olimpiadas Oh! SanSi`;

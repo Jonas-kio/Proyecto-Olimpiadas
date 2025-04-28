@@ -2,8 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "../../styles/components/ListaOlimpiadas.css";
 import "../../styles/components/Table.css";
-import olimpiada14 from "../../assets/images/olimpiada14.png"; // Imagen por defecto
-import { getOlimpiadas } from "../../services/olimpiadaService"; // Importación corregida
+import { getOlimpiadas } from "../../services/olimpiadaService";
 
 const ListaOlimpiadas = () => {
   const navigate = useNavigate();
@@ -19,38 +18,30 @@ const ListaOlimpiadas = () => {
         const response = await getOlimpiadas();
         console.log("Respuesta completa del API de olimpiadas:", response);
         
-        if (response && response.data) {
-          console.log("Datos sin procesar:", response.data);
-        }
-        
         let dataFromAPI = [];
         
-        // Verificar la estructura de la respuesta para extraer los datos correctamente
+        // Extraer correctamente la estructura anidada del backend
         if (response && response.data) {
-          if (Array.isArray(response.data)) {
-            dataFromAPI = response.data;
-          } else if (response.data.data && Array.isArray(response.data.data)) {
+          // Extraer los datos de olimpiadas que están dentro de "olimpiadas.data"
+          if (response.data.olimpiadas && Array.isArray(response.data.olimpiadas.data)) {
+            dataFromAPI = response.data.olimpiadas.data;
+          }
+          // Si hay otra estructura anidada diferente
+          else if (response.data.data && response.data.data.olimpiadas && 
+                  Array.isArray(response.data.data.olimpiadas.data)) {
+            dataFromAPI = response.data.data.olimpiadas.data;
+          }
+          // Si hay un array directamente en data
+          else if (Array.isArray(response.data.data)) {
             dataFromAPI = response.data.data;
-          } else if (typeof response.data === 'object') {
-            // Si la respuesta es un objeto pero no un array, verificamos si tiene propiedades que podrían ser los datos
-            console.log("La respuesta es un objeto, intentando extraer datos...");
-            const possibleDataKeys = Object.keys(response.data).filter(key => 
-              Array.isArray(response.data[key]) || 
-              (typeof response.data[key] === 'object' && response.data[key] !== null)
-            );
-            
-            if (possibleDataKeys.length > 0) {
-              const firstKey = possibleDataKeys[0];
-              if (Array.isArray(response.data[firstKey])) {
-                dataFromAPI = response.data[firstKey];
-              } else {
-                // Convertir el objeto a un array si no es un array
-                dataFromAPI = [response.data];
-              }
-            } else {
-              // Si no encontramos un array, convertimos el objeto en un array de un elemento
-              dataFromAPI = [response.data];
-            }
+          }
+          // Si response.data es un array directamente
+          else if (Array.isArray(response.data)) {
+            dataFromAPI = response.data;
+          }
+          // Si no encontramos ninguna estructura conocida, usamos el objeto completo
+          else if (typeof response.data === 'object') {
+            dataFromAPI = [response.data];
           }
         }
         
@@ -71,7 +62,7 @@ const ListaOlimpiadas = () => {
             modalidad: olimpiada.modalidad || "Virtual",
             fechaInicio: olimpiada.fecha_inicio || olimpiada.fechaInicio,
             edicion: olimpiada.edicion || "13",
-            imagen: olimpiada.imagen || olimpiada14
+            imagen: olimpiada.imagen 
           }));
           
           console.log("Olimpiadas procesadas:", mappedOlimpiadas);
@@ -84,7 +75,7 @@ const ListaOlimpiadas = () => {
         setError(null);
       } catch (error) {
         console.error("Error al cargar olimpiadas:", error);
-        setError("No se pudieron cargar las olimpiadas. Intente nuevamente.");
+        setError("No se pudieron cargar las olimpiadas. Por favor, contacte al administrador.");
         setOlimpiadas([]);
       } finally {
         setLoading(false);
@@ -102,7 +93,7 @@ const ListaOlimpiadas = () => {
     const fechaFin = olimpiada.fecha_fin ? new Date(olimpiada.fecha_fin) : 
                     (olimpiada.fechaFin ? new Date(olimpiada.fechaFin) : null);
     
-    // Si no está activa o si no tiene campo activo pero tiene campo estado, usamos el campo estado
+    // Si el backend ya envía un estado, lo usamos
     if (olimpiada.estado) {
       return olimpiada.estado;
     }
@@ -126,9 +117,25 @@ const ListaOlimpiadas = () => {
     return "En Curso";
   };
 
-  // FUNCIÓN ACTUALIZADA: Dejamos la redirección original
+  // Función para convertir el estado a una clase CSS válida
+  const getEstadoClass = (estado) => {
+    // Mapear los estados del backend a las clases CSS
+    switch (estado) {
+      case "En Proceso":
+      case "En Curso":
+        return "en-curso";
+      case "Pendiente":
+        return "pendiente";
+      case "Terminado":
+        return "terminado";
+      default:
+        // Para cualquier otro estado, convertir a minúsculas y reemplazar espacios
+        return estado.toLowerCase().replace(/ /g, "-");
+    }
+  };
+
+  // Función para el botón de registro
   const handleRegistrarse = (id) => {
-    // Usamos la ruta original que funcionaba
     navigate("/user/inscripcion/opciones");
   };
 
@@ -143,6 +150,7 @@ const ListaOlimpiadas = () => {
           {error}
         </div>
       )}
+      
       <div className="olimpiadas-grid">
         {olimpiadas.length === 0 ? (
           <div className="no-olimpiadas">
@@ -153,7 +161,7 @@ const ListaOlimpiadas = () => {
             <div key={olimpiada.id} className="olimpiada-card">
               <div className="olimpiada-header">
                 <h2>{olimpiada.nombre}</h2>
-                <span className={`estado-badge ${olimpiada.estado.toLowerCase().replace(" ", "-")}`}>
+                <span className={`estado-badge ${getEstadoClass(olimpiada.estado)}`}>
                   {olimpiada.estado}
                 </span>
               </div>
@@ -194,23 +202,21 @@ const ListaOlimpiadas = () => {
               </div>
               
               <div className="olimpiada-acciones">
-                {olimpiada.estado === "En Curso" && (
+                {olimpiada.estado === "En Curso" || olimpiada.estado === "En Proceso" ? (
                   <button 
                     className="btn-registrarse"
                     onClick={() => handleRegistrarse(olimpiada.id)}
                   >
                     Registrarse
                   </button>
-                )}
-                {olimpiada.estado === "Pendiente" && (
+                ) : olimpiada.estado === "Pendiente" ? (
                   <button 
                     className="btn-proximamente"
                     disabled
                   >
                     Próximamente
                   </button>
-                )}
-                {olimpiada.estado === "Terminado" && (
+                ) : (
                   <button 
                     className="btn-terminado"
                     disabled

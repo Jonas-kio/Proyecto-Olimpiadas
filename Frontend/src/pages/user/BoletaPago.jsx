@@ -2,7 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { 
   generarBoletaPDF, 
-  generarEnlacesCorreo
+  generarEnlacesCorreo,
+  enviarBoletaPorEmail
 } from '../../services/boletaService';
 import "../../styles/components/BoletaPago.css";
 import { 
@@ -15,6 +16,9 @@ import {
   FaMicrosoft 
 } from 'react-icons/fa';
 
+// Costo predeterminado por área
+const COSTO_POR_AREA = 50;
+
 const BoletaPago = ({ estudiante, tutores, areasSeleccionadas, numeroBoleta, registration_process_id, onVolver }) => {
   const [correoDestino, setCorreoDestino] = useState('');
   const [enviando, setEnviando] = useState(false);
@@ -24,8 +28,8 @@ const BoletaPago = ({ estudiante, tutores, areasSeleccionadas, numeroBoleta, reg
   const [mostrarOpcionesCorreo, setMostrarOpcionesCorreo] = useState(false);
   const [enlacesCorreo, setEnlacesCorreo] = useState(null);
   
-  // Calcular precio por áreas (50 Bs. por área)
-  const precioArea = 50;
+  // Calcular precio por áreas usando el costo predeterminado
+  const precioArea = COSTO_POR_AREA;
   const totalPago = areasSeleccionadas.length * precioArea;
   
   // Obtener el tutor principal
@@ -56,7 +60,13 @@ const BoletaPago = ({ estudiante, tutores, areasSeleccionadas, numeroBoleta, reg
       mostrarMensajeTemporal('Generando PDF...', 'info');
       
       // Generar PDF en el frontend
-      const boletaPDF = await generarBoletaPDF(estudiante, tutores, areasSeleccionadas, numeroBoleta);
+      const boletaPDF = await generarBoletaPDF(
+        estudiante, 
+        tutores, 
+        areasSeleccionadas, 
+        numeroBoleta,
+        precioArea
+      );
       
       // Crear URL para descargar el PDF
       const url = URL.createObjectURL(boletaPDF);
@@ -78,7 +88,7 @@ const BoletaPago = ({ estudiante, tutores, areasSeleccionadas, numeroBoleta, reg
     }
   };
 
-  // Enviar correo (método manual debido al error en el backend)
+  // Enviar por correo
   const enviarCorreo = async () => {
     if (!correoDestino) {
       mostrarMensajeTemporal('Ingrese un correo electrónico válido', 'error');
@@ -87,33 +97,47 @@ const BoletaPago = ({ estudiante, tutores, areasSeleccionadas, numeroBoleta, reg
     
     try {
       setEnviando(true);
-      mostrarMensajeTemporal('Preparando opciones de correo...', 'info');
+      mostrarMensajeTemporal('Enviando correo...', 'info');
       
-      // Generar PDF y enlaces para servicios de correo
-      const resultado = await generarEnlacesCorreo(
+      // Intenta enviar usando el backend primero, luego fallback al método alternativo
+      const resultado = await enviarBoletaPorEmail(
         estudiante, 
         tutores, 
         areasSeleccionadas, 
         numeroBoleta, 
-        correoDestino
+        correoDestino,
+        precioArea
       );
       
-      // Guardar los enlaces y mostrar opciones
-      setEnlacesCorreo(resultado);
-      setMostrarOpcionesCorreo(true);
+      // Si llegamos aquí, el envío tuvo éxito (ya sea por backend o método alternativo)
+      mostrarMensajeTemporal(resultado.message || 'Boleta enviada correctamente', 'success');
       
-      // Descargar el PDF para adjuntar
-      const link = document.createElement('a');
-      link.href = resultado.pdfUrl;
-      link.download = `Boleta_${numeroBoleta}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      mostrarMensajeTemporal('Boleta descargada. Seleccione su servicio de correo preferido.', 'success');
+      // Si hay opciones de correo para mostrar (en caso de método alternativo)
+      if (resultado.opciones) {
+        setEnlacesCorreo(resultado.opciones);
+        setMostrarOpcionesCorreo(true);
+      }
     } catch (error) {
-      console.error('Error al preparar opciones de correo:', error);
-      mostrarMensajeTemporal('Error al preparar opciones de correo. Intente nuevamente.', 'error');
+      console.error('Error al enviar correo:', error);
+      mostrarMensajeTemporal('Error al enviar el correo. Intente nuevamente.', 'error');
+      
+      // En caso de error, mostrar opciones de correo alternativas
+      try {
+        const resultado = await generarEnlacesCorreo(
+          estudiante, 
+          tutores, 
+          areasSeleccionadas, 
+          numeroBoleta, 
+          correoDestino,
+          precioArea
+        );
+        
+        setEnlacesCorreo(resultado);
+        setMostrarOpcionesCorreo(true);
+        mostrarMensajeTemporal('Use las opciones de correo alternativas', 'info');
+      } catch (error2) {
+        console.error('Error al generar opciones alternativas:', error2);
+      }
     } finally {
       setEnviando(false);
     }
@@ -220,7 +244,7 @@ const BoletaPago = ({ estudiante, tutores, areasSeleccionadas, numeroBoleta, reg
           >
             {enviando ? (
               <>
-                <FaSpinner className="icono-spinner" /> Preparando...
+                <FaSpinner className="icono-spinner" /> Enviando...
               </>
             ) : (
               <>
