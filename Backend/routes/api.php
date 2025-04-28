@@ -99,7 +99,6 @@ Route::middleware([IsUserAuth::class])->group(
         //TODO: Rutas Para Usuario que no es administrador
         Route::prefix('user')->group(function () {
 
-
             Route::post('/olimpiadas/{olimpiada}/inscribir', [OlimpiadaController::class, 'inscribir']);
             Route::get('/olimpiadas/inscripciones', [OlimpiadaController::class, 'misInscripciones']);
             Route::post('/olimpiadas/inscripciones/{inscripcion}/comprobante', [OlimpiadaController::class, 'subirComprobante']);
@@ -112,8 +111,11 @@ Route::middleware([IsUserAuth::class])->group(
 
             Route::post('/inscripcion/competidor', [CompetitorController::class, 'store']);
 
-            // FLUJO DE INSCRIPCIÓN COMPLETO
-            Route::prefix('inscripcion')->name('inscripcion.')->group(function () {
+            
+           
+        });
+        // FLUJO DE INSCRIPCIÓN COMPLETO
+         Route::prefix('inscripcion')->name('inscripcion.')->group(function () {
                 // Iniciar proceso
                 Route::post('/olimpiada/{olimpiada}/iniciar', [InscripcionController::class, 'iniciarProceso'])
                     ->name('iniciar');
@@ -149,7 +151,6 @@ Route::middleware([IsUserAuth::class])->group(
                 Route::get('/boleta/{boleta}', [InscripcionController::class, 'obtenerBoleta'])
                     ->name('boleta.ver');
             });
-        });
     }
 );
 
