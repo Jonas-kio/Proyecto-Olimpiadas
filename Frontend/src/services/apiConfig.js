@@ -141,6 +141,7 @@ export const eliminarOlimpiada = async (id) => await api.delete(`/olimpiadas/${i
 export const obtenerAreas = async () => await api.get("/inscripcion/area");
 */
 
+
 // export const obtenerCategoriasPorArea = async (areaId) => {
 //   return await api.get(`/categoryLevelUser?area_id=${areaId}`);
 // };
