@@ -61,9 +61,6 @@ class AreaController extends Controller
         }
     }
 
-    /**
-     * Mostrar un área de competencia específica.
-     */
     public function show($id)
     {
         try {
