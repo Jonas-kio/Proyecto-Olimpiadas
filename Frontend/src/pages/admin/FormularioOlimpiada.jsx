@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { CheckIcon, UploadIcon, XIcon, ChevronDownIcon } from "lucide-react";
+import { CheckIcon, UploadIcon, XIcon, ChevronDownIcon, Loader2 } from "lucide-react"; 
 import {
   crearOlimpiada,
   actualizarOlimpiada,
@@ -16,7 +16,9 @@ import "../../styles/components/FormularioOlimpiada.css";
 function FormularioOlimpiada() {
   const navigate = useNavigate();
   const { id } = useParams();
-  //Modals
+  const dropdownRef = useRef(null);
+
+  // Modals
   const [isLoading, setIsLoading] = useState(false);
   const [showProcessingModal, setShowProcessingModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -42,7 +44,7 @@ function FormularioOlimpiada() {
   const [imagePreview, setImagePreview] = useState("");
   const [isAreasOpen, setIsAreasOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  //const [pdfFilename, setPdfFilename] = useState('');
+
   const modalities = ["Presencial", "Virtual", "Híbrida"];
 
   useEffect(() => {
@@ -58,9 +60,23 @@ function FormularioOlimpiada() {
   }, []);
 
   useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsAreasOpen(false);
+      }
+    };
+  
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+  
+
+  useEffect(() => {
     if (id) {
       const fetchOlimpiada = async () => {
-        setIsLoading(true); // <--- Abrimos el LoadingModal
+        setIsLoading(true);
         try {
           const res = await obtenerOlimpiadaPorId(id);
           const data = res.data?.olimpiada;
@@ -71,24 +87,20 @@ function FormularioOlimpiada() {
             description: data.descripcion || "",
             startDate: data.fecha_inicio?.split("T")[0] || "",
             endDate: data.fecha_fin?.split("T")[0] || "",
-            selectedAreas: Array.isArray(data.areas)
-              ? data.areas.map((a) => a.id)
-              : [],
+            selectedAreas: Array.isArray(data.areas) ? data.areas.map((a) => a.id) : [],
             minParticipants: data.cupo_minimo || "",
             modality: data.modalidad || "",
-            pdfFile: null,
+            pdfFile: null, // PDF no obligatorio al editar
             coverImage: null,
           });
 
           if (data.ruta_imagen_portada) {
-            setImagePreview(
-              `http://localhost:8000/storage/${data.ruta_imagen_portada}`
-            );
+            setImagePreview(`http://localhost:8000/storage/${data.ruta_imagen_portada}`);
           }
         } catch (error) {
           console.error("Error al obtener la olimpiada:", error);
         } finally {
-          setIsLoading(false); // <--- Cerramos el LoadingModal
+          setIsLoading(false);
         }
       };
       fetchOlimpiada();
@@ -113,35 +125,43 @@ function FormularioOlimpiada() {
       reader.readAsDataURL(file);
     }
   };
+
   const handleCloseSuccessModal = () => {
     setShowSuccessModal(false);
-    navigate("/app/dasboardOlimpiada"); // Redireccionar después de aceptar
+    navigate("/app/dasboardOlimpiada");
   };
+
   const handleCloseErrorModal = () => {
     setShowErrorModal(false);
     setErrorMessage("");
     setErrorFields([]);
   };
-  const isFechaValida = () => {
-    if (!formData.startDate || !formData.endDate) return true; // Si no eligió todavía
 
+  const isFechaValida = () => {
+    if (!formData.startDate || !formData.endDate) return true;
     const startDate = new Date(formData.startDate);
     const endDate = new Date(formData.endDate);
-
     const diferenciaDias = (endDate - startDate) / (1000 * 60 * 60 * 24);
-
     return diferenciaDias >= 10;
   };
+
   const esFechaNoPasada = (fecha) => {
     if (!fecha) return true;
     const today = new Date();
     const selected = new Date(fecha);
-    today.setHours(0, 0, 0, 0); // quitar horas
-    selected.setHours(0, 0, 0, 0); // quitar horas
+    today.setHours(0, 0, 0, 0);
+    selected.setHours(0, 0, 0, 0);
     return selected >= today;
   };
 
   const isFormValid = () => {
+    const fechaInicioValida = esFechaNoPasada(formData.startDate);
+    const fechaFinValida = esFechaNoPasada(formData.endDate);
+    const fechasConDiferenciaValida = isFechaValida();
+    const pdfObligatorio = !id ? formData.pdfFile !== null : true;
+    const imagenObligatoria = !id ? formData.coverImage !== null : !!imagePreview || formData.coverImage !== null;
+
+  
     return (
       formData.name.trim() !== "" &&
       formData.name.length <= 100 &&
@@ -149,34 +169,26 @@ function FormularioOlimpiada() {
       formData.description.length <= 300 &&
       formData.startDate !== "" &&
       formData.endDate !== "" &&
-      esFechaNoPasada(formData.startDate) && //  validar inicio no pasado
-      esFechaNoPasada(formData.endDate) && //  validar fin no pasado
-      isFechaValida() && // mínimo 10 días
+      fechaInicioValida &&
+      fechaFinValida &&
+      fechasConDiferenciaValida &&
       formData.selectedAreas.length > 0 &&
       formData.minParticipants !== "" &&
-      parseInt(formData.minParticipants) >= 20 &&
       formData.modality !== "" &&
-      formData.coverImage !== null &&
-      formData.pdfFile !== null
+      imagenObligatoria &&
+      pdfObligatorio
     );
-  };
+  };  
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
     setShowProcessingModal(true);
 
-    const isValid =
-      formData.name &&
-      formData.description &&
-      formData.startDate &&
-      formData.endDate &&
-      formData.selectedAreas.length > 0 &&
-      formData.minParticipants &&
-      formData.modality;
-
-    if (!isValid) {
-      alert("Completa todos los campos");
+    if (!isFormValid()) {
+      alert("Completa todos los campos correctamente antes de guardar.");
       setIsSubmitting(false);
+      setShowProcessingModal(false);
       return;
     }
 
@@ -196,27 +208,20 @@ function FormularioOlimpiada() {
     try {
       if (id) {
         await actualizarOlimpiada(id, data);
-        // alert("✅ Olimpiada actualizada exitosamente");
         setSuccessTitle("¡Olimpiada actualizada exitosamente!");
         setSuccessMessage("Los cambios fueron guardados correctamente.");
-        setSuccessDetailMessage(
-          "Puedes ver la olimpiada actualizada en el Dashboard."
-        );
-        setShowSuccessModal(true);
+        setSuccessDetailMessage("Puedes ver la olimpiada actualizada en el Dashboard.");
       } else {
         await crearOlimpiada(data);
         setSuccessTitle("¡Olimpiada creada exitosamente!");
         setSuccessMessage("La nueva olimpiada fue registrada correctamente.");
         setSuccessDetailMessage("Puedes verla en el Dashboard.");
-        setShowSuccessModal(true);
       }
-      // navigate("/app/dasboardOlimpiada");
+      setShowSuccessModal(true);
     } catch (error) {
       console.error("❌ Error al guardar olimpiada:", error);
-
-      // Mostrar modal de error
-      setErrorMessage("No se pudo guardar la olimpiada. Intenta nuevamente.");
-      setErrorFields(["Nombre", "Descripción", "Fechas", "Áreas", "Modalidad"]); // Puedes personalizar según donde falla
+      setErrorMessage(error?.response?.data?.message || "No se pudo guardar la olimpiada. Intenta nuevamente.");
+      setErrorFields(["Nombre", "Descripción", "Fechas", "Áreas", "Modalidad"]);
       setShowErrorModal(true);
     } finally {
       setIsSubmitting(false);
@@ -359,43 +364,41 @@ function FormularioOlimpiada() {
             </div>
 
             {/* Áreas */}
-            <div className="dropdown-container">
-              <label className="dropdown-label">Áreas</label>
-              <div className="dropdown-wrapper">
-                <button
-                  type="button"
-                  onClick={() => setIsAreasOpen(!isAreasOpen)}
-                  className={`dropdown-button ${isAreasOpen ? "open" : ""}`}
-                >
-                  <span className="dropdown-selected">
-                    {formData.selectedAreas.length
-                      ? `${formData.selectedAreas.length} áreas seleccionadas`
-                      : "Seleccionar áreas"}
-                  </span>
-                  <ChevronDownIcon
-                    className={`chevron-icon ${isAreasOpen ? "rotate" : ""}`}
-                  />
-                </button>
-                {isAreasOpen && (
-                  <div className="dropdown-options">
-                    {areasDisponibles.map((area) => (
-                      <div
-                        key={area.id}
-                        className="dropdown-option"
-                        onClick={() => handleAreaToggle(area.id)}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={formData.selectedAreas.includes(area.id)}
-                          readOnly
-                          className="checkbox"
-                        />
-                        <span>{area.nombre}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+            <div className="dropdown-wrapper" ref={dropdownRef}>
+              <button
+                type="button"
+                onClick={() => setIsAreasOpen(!isAreasOpen)}
+                className={`dropdown-button ${isAreasOpen ? "open" : ""}`}
+              >
+                <span className="dropdown-selected">
+                  {formData.selectedAreas.length
+                    ? `${formData.selectedAreas.length} áreas seleccionadas`
+                    : "Seleccionar áreas"}
+                </span>
+                <ChevronDownIcon
+                  className={`chevron-icon ${isAreasOpen ? "rotate" : ""}`}
+                />
+              </button>
+
+              {isAreasOpen && (
+                <div className="dropdown-options">
+                  {areasDisponibles.map((area) => (
+                    <div
+                      key={area.id}
+                      className="dropdown-option"
+                      onClick={() => handleAreaToggle(area.id)}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={formData.selectedAreas.includes(area.id)}
+                        readOnly
+                        className="checkbox"
+                      />
+                      <span>{area.nombre}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="input-group">
@@ -410,14 +413,7 @@ function FormularioOlimpiada() {
                 min="1"
                 required
               />
-              {formData.minParticipants !== "" &&
-                parseInt(formData.minParticipants) < 20 && (
-                  <p
-                    style={{ color: "red", marginTop: "5px", fontSize: "14px" }}
-                  >
-                    El cupo mínimo es de 20 estudiantes.
-                  </p>
-                )}
+              {formData.minParticipants !== "" }
             </div>
 
             <div className="input-group">
@@ -469,18 +465,22 @@ function FormularioOlimpiada() {
               className="submit-btn"
               disabled={!isFormValid() || isSubmitting}
             >
-              <CheckIcon size={20} />{" "}
-              {isSubmitting
-                ? id
-                  ? "Actualizando..."
-                  : "Guardando..."
-                : id
-                ? "Actualizar Olimpiada"
-                : "Guardar Olimpiada"}
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="animate-spin" size={20} />{" "}
+                  {id ? "Actualizando..." : "Guardando..."}
+                </>
+              ) : (
+                <>
+                  <CheckIcon size={20} />{" "}
+                  {id ? "Actualizar Olimpiada" : "Guardar Olimpiada"}
+                </>
+              )}
             </button>
           </form>
         </div>
       </div>
+
       <LoadingModal
         isOpen={isLoading}
         message={
@@ -492,7 +492,7 @@ function FormularioOlimpiada() {
       {showProcessingModal && (
         <ProcesandoModal
           isOpen={showProcessingModal}
-          title="Actualizando Campos"
+          title="Guardando..."
           message="Por favor espere un momento..."
         />
       )}
@@ -514,14 +514,3 @@ function FormularioOlimpiada() {
 }
 
 export default FormularioOlimpiada;
-
-/*if (data.ruta_pdf_detalles) {
-  const parts = data.ruta_pdf_detalles.split('/');
-  const fileName = parts[parts.length - 1];
-  setPdfFilename(fileName);
-}
-{(formData.pdfFile || pdfFilename) && (
-  <p className="pdf-upload-filename">
-    Archivo seleccionado: <span>{formData.pdfFile ? formData.pdfFile.name : pdfFilename}</span>
-  </p>
-)} */

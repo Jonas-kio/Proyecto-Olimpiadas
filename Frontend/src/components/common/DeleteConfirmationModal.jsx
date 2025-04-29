@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import '../../styles/components/DeleteModal.css';
 
-const DeleteConfirmationModal = ({ isOpen, onClose, onConfirm, itemName, itemType = "registro" }) => {
+const DeleteConfirmationModal = ({ isOpen, onClose, onConfirm, itemName, isDeleting, itemType = "registro" }) => {
   if (!isOpen) return null;
 
   return (
@@ -30,11 +30,13 @@ const DeleteConfirmationModal = ({ isOpen, onClose, onConfirm, itemName, itemTyp
           >
             Cancelar
           </button>
+          
           <button
             onClick={onConfirm}
             className="delete-modal__button-delete"
+            disabled={isDeleting}
           >
-            Eliminar
+            {isDeleting ? "Eliminando..." : "Eliminar"}
           </button>
         </div>
       </div>
@@ -47,7 +49,8 @@ DeleteConfirmationModal.propTypes = {
   onClose: PropTypes.func.isRequired,
   onConfirm: PropTypes.func.isRequired,
   itemName: PropTypes.string.isRequired,
-  itemType: PropTypes.string
+  itemType: PropTypes.string,
+  isDeleting: PropTypes.bool.isRequired
 };
 
 export default DeleteConfirmationModal;
