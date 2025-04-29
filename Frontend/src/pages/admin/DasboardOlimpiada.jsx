@@ -16,6 +16,8 @@ function DasboardOlimpiada() {
   const [selectedOlimpiadaName, setSelectedOlimpiadaName] = useState("");
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
 
   useEffect(() => {
     fetchData();
@@ -57,6 +59,7 @@ function DasboardOlimpiada() {
 
   const confirmarEliminacion = async () => {
     if (!selectedOlimpiadaId) return;
+    setIsDeleting(true); // Activar bloqueo del botón
     try {
       await eliminarOlimpiada(selectedOlimpiadaId);
       setShowSuccessModal(true);
@@ -67,8 +70,9 @@ function DasboardOlimpiada() {
       setIsModalOpen(false);
       setSelectedOlimpiadaId(null);
       setSelectedOlimpiadaName("");
+      setIsDeleting(false); // Desactivar bloqueo
     }
-  };
+  };  
 
   const cancelarEliminacion = () => {
     setIsModalOpen(false);
@@ -120,8 +124,9 @@ function DasboardOlimpiada() {
         onConfirm={confirmarEliminacion}
         itemName={selectedOlimpiadaName}
         itemType="olimpiada"
+        isDeleting={isDeleting} 
       />
-
+      
       {/* Modal de éxito */}
       <SuccessModal
         isOpen={showSuccessModal}
