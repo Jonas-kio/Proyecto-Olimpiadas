@@ -6,15 +6,17 @@ use App\Http\Controllers\API\CostController;
 use App\Http\Controllers\API\AreaController;
 use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\API\CategoryLevelController;
+use App\Http\Controllers\API\Inscripcion\InscripcionController;
 use App\Http\Controllers\API\Olimpiada\OlimpiadaController;
+use App\Http\Controllers\CompetitorController;
+use App\Http\Controllers\TutorController;
+use App\Http\Controllers\BoletaPagoController;
+use App\Http\Controllers\API\OCR\OcrController;
 use App\Http\Middleware\IsAdmin;
 use App\Http\Middleware\IsUserAuth;
+use App\Http\Middleware\VerificarProcesoInscripcion;
 
-use App\Http\Controllers\CompetitorController;
-
-use App\Http\Controllers\TutorController;
-use App\Http\Controllers\CostController as ControllersCostController;
-
+//TODO: Rutas Publicas
 
 
 
@@ -26,15 +28,16 @@ Route::post('/inscripcion/tutor', [TutorController::class, 'store']);
 
 //Ruta de area
 Route::get('/inscripcion/area', [AreaController::class, 'index']);
-
-
 //Ruta para obetener niveles inscripcion
-    Route::get('/categoryLevelUser', [CategoryLevelController::class, 'index']); //Prueba
+Route::get('/categoryLevelUser', [CategoryLevelController::class, 'index']);
+Route::get('/categoryLevelUser', [CategoryLevelController::class, 'index']); //Prueba
 
 
 // Rutas públicas de olimpiadas (visibles sin autenticación)
-Route::get('/Olimpiadas', [OlimpiadaController::class, 'index'])->name('olimpiadas.index');
-Route::get('/olimpiadas/{olimpiada}', [OlimpiadaController::class, 'show']);
+Route::get('/libre/olimpiadas/', [OlimpiadaController::class, 'index'])->name('olimpiadas.index');
+
+Route::get('crear-admin', [AuthController::class, 'crearAdmin']);
+Route::get('/libre/olimpiadas/{olimpiada}', [OlimpiadaController::class, 'show']);
 
 
 
@@ -89,20 +92,78 @@ Route::middleware([IsUserAuth::class])->group(
                     Route::delete('/{olimpiada}/areas/{area}', [OlimpiadaController::class, 'detachArea']);
                 });
 
-
                 // Mas Rutas de Admin ........
             }
         );
 
         //TODO: Rutas Para Usuario que no es administrador
-        //....... AQUI!!!
         Route::prefix('user')->group(function () {
+
             Route::post('/olimpiadas/{olimpiada}/inscribir', [OlimpiadaController::class, 'inscribir']);
             Route::get('/olimpiadas/inscripciones', [OlimpiadaController::class, 'misInscripciones']);
             Route::post('/olimpiadas/inscripciones/{inscripcion}/comprobante', [OlimpiadaController::class, 'subirComprobante']);
-        });
 
-        //Ruta del competidor
-        Route::post('/inscripcion/competidor', [CompetitorController::class, 'store']);
+            // Rutas para obtener información de olimpiadas
+            Route::get('/olimpiadas', [OlimpiadaController::class, 'index'])->name('olimpiadas.index');
+            Route::get('/olimpiadas/{olimpiada}', [OlimpiadaController::class, 'show']);
+
+            Route::get('/categoryLevel/{category_id}/{area_id}', [CategoryLevelController::class, 'getCategoryByIdAndAreaId']);
+
+            Route::post('/inscripcion/competidor', [CompetitorController::class, 'store']);
+
+            
+           
+        });
+        // FLUJO DE INSCRIPCIÓN COMPLETO
+         Route::prefix('inscripcion')->name('inscripcion.')->group(function () {
+                // Iniciar proceso
+                Route::post('/olimpiada/{olimpiada}/iniciar', [InscripcionController::class, 'iniciarProceso'])
+                    ->name('iniciar');
+
+                // Rutas que requieren un proceso de inscripción activo
+                Route::middleware([VerificarProcesoInscripcion::class])->group(function () {
+                    // Competidores
+                    Route::post('/proceso/{proceso}/competidor', [InscripcionController::class, 'registrarCompetidor'])
+                        ->name('competidor.registrar');
+
+                    // Tutores
+                    Route::post('/proceso/{proceso}/tutor', [InscripcionController::class, 'registrarTutor'])
+                        ->name('tutor.registrar');
+
+                    // Selección de área
+                    Route::post('/proceso/{proceso}/area', [InscripcionController::class, 'seleccionarArea'])
+                        ->name('area.seleccionar');
+
+                    // Selección de nivel
+                    Route::post('/proceso/{proceso}/nivel', [InscripcionController::class, 'seleccionarNivel'])
+                        ->name('nivel.seleccionar');
+
+                    // Obtener resumen de inscripción
+                    Route::get('/proceso/{proceso}/resumen', [InscripcionController::class, 'obtenerResumen'])
+                        ->name('resumen');
+
+                    // Generar boleta
+                    Route::post('/proceso/{proceso}/boleta', [InscripcionController::class, 'generarBoleta'])
+                        ->name('boleta.generar');
+                });
+
+                // Obtener detalles de boleta (no requiere verificar proceso)
+                Route::get('/boleta/{boleta}', [InscripcionController::class, 'obtenerBoleta'])
+                    ->name('boleta.ver');
+            });
     }
 );
+
+// Ruta de boleta
+Route::get('/boleta/{registro}', [BoletaPagoController::class, 'generarPDF']);
+Route::post('/boleta/enviar', [BoletaPagoController::class, 'enviarPorCorreo']);
+
+Route::post('/boleta/pdf', [BoletaPagoController::class, 'generarBoletaPDF']);
+Route::post('/boleta/email', [BoletaPagoController::class, 'enviarBoletaPorCorreo']);
+Route::post('/boleta/ocr', [BoletaPagoController::class, 'extraerNumeroDesdeOCR']);
+Route::post('/boleta/ocr-imagen', [BoletaPagoController::class, 'procesarImagenOCR']);
+Route::post('/ocr/comprobante', [OcrController::class, 'extraerYValidarComprobante']);
+
+
+// Ruta ocrcontroller
+Route::post('/validar-comprobante', [OcrController::class, 'validarComprobante']);

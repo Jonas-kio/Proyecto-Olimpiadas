@@ -13,6 +13,12 @@ return new class extends Migration
     {
         Schema::create('registration_detail', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('register_process_id')->constrained('registration_process')->onDelete('cascade');
+            $table->foreignId('competidor_id')->constrained('competitor')->onDelete('cascade');
+            $table->foreignId('area_id')->constrained('area')->onDelete('cascade');
+            $table->foreignId('categoria_id')->constrained('category_level')->onDelete('cascade');
+            $table->float('monto');
+            $table->boolean('status');
             $table->timestamps();
         });
     }

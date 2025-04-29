@@ -1,0 +1,62 @@
+.dashboard-olimpiada {
+  padding: 1rem;
+}
+
+.card-style {
+  background-color: white;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dashboard-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1e3a8a; 
+  margin:0%;
+}
+
+.dashboard-subtitle {
+  font-size: 0.875rem;
+  color: #6b7280; /* text-gray-500 */
+}
+
+.create-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  background-color: #1d4ed8; /* bg-blue-700 */
+  color: white;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.create-btn:hover {
+  background-color: #1e40af; /* bg-blue-800 */
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .dashboard-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .dashboard-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}

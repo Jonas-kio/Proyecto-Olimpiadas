@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\OlimpiadaEstado;
 use App\Enums\OlimpiadaModalidades;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -22,12 +23,15 @@ class Olimpiada extends Model
         'modalidad',
         'ruta_pdf_detalles',
         'ruta_imagen_portada',
+        'estado',
         'activo'
     ];
 
     public function areas(): BelongsToMany
     {
-        return $this->belongsToMany(Area::class, 'olimpiada_area', 'olimpiada_id', 'area_id')->withTimestamps();
+        return $this->belongsToMany(Area::class, 'olimpiada_area', 'olimpiada_id', 'area_id')
+            ->withPivot('activo')
+            ->withTimestamps();
     }
 
     public function getAreasAttribute()
@@ -35,13 +39,13 @@ class Olimpiada extends Model
         return $this->areas()->get();
     }
 
-
     protected $casts = [
         'fecha_inicio' => 'date',
         'fecha_fin' => 'date',
         'cupo_minimo' => 'integer',
         'activo' => 'boolean',
         'modalidad' => OlimpiadaModalidades::class,
+        'estado' => OlimpiadaEstado::class,
     ];
 
     public function getFormattedAreasAttribute()

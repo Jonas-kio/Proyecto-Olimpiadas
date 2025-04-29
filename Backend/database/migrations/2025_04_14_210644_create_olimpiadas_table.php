@@ -25,6 +25,11 @@ return new class extends Migration
             ]);
             $table->string('ruta_pdf_detalles')->nullable();
             $table->string('ruta_imagen_portada')->nullable();
+            $table -> enum('estado', [
+                'Pendiente',
+                'En Proceso',
+                'Terminado'
+            ]);
             $table->boolean('activo')->default(true);
             $table->timestamps();
         });
