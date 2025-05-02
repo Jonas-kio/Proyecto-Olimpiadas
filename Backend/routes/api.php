@@ -11,7 +11,7 @@ use App\Http\Controllers\API\Olimpiada\OlimpiadaController;
 use App\Http\Controllers\CompetitorController;
 use App\Http\Controllers\TutorController;
 use App\Http\Controllers\BoletaPagoController;
-use App\Http\Controllers\API\OCR\OcrController;
+use App\Http\Controllers\OcrController;
 use App\Http\Middleware\IsAdmin;
 use App\Http\Middleware\IsUserAuth;
 use App\Http\Middleware\VerificarProcesoInscripcion;
@@ -112,10 +112,9 @@ Route::middleware([IsUserAuth::class])->group(
             Route::post('/inscripcion/competidor', [CompetitorController::class, 'store']);
 
             
-           
         });
         // FLUJO DE INSCRIPCIÓN COMPLETO
-         Route::prefix('inscripcion')->name('inscripcion.')->group(function () {
+        Route::prefix('inscripcion')->name('inscripcion.')->group(function () {
                 // Iniciar proceso
                 Route::post('/olimpiada/{olimpiada}/iniciar', [InscripcionController::class, 'iniciarProceso'])
                     ->name('iniciar');
@@ -162,8 +161,7 @@ Route::post('/boleta/pdf', [BoletaPagoController::class, 'generarBoletaPDF']);
 Route::post('/boleta/email', [BoletaPagoController::class, 'enviarBoletaPorCorreo']);
 Route::post('/boleta/ocr', [BoletaPagoController::class, 'extraerNumeroDesdeOCR']);
 Route::post('/boleta/ocr-imagen', [BoletaPagoController::class, 'procesarImagenOCR']);
-Route::post('/ocr/comprobante', [OcrController::class, 'extraerYValidarComprobante']);
 
-
-// Ruta ocrcontroller
-Route::post('/validar-comprobante', [OcrController::class, 'validarComprobante']);
+// Ruta de OCR
+Route::post('/ocr/imagen', [OcrController::class, 'procesarImagen']);
+Route::post('/ocr/texto', [OcrController::class, 'extraerNumeroDesdeTexto']);
