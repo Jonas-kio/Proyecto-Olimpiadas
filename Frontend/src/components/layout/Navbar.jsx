@@ -123,7 +123,7 @@ const Navbar = () => {
             <a
               href="#"
               onClick={() => {
-                navigate("/user/detalle-inscripcion");
+                navigate("/user/mis-inscripciones");
                 cerrarMenu();
               }}
             >

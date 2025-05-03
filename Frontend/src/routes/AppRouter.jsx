@@ -14,7 +14,9 @@ import DetalleInscripcion from "../pages/user/DetalleInscripcion";
 const AppRouter = () => {
   return (
     <Routes>
+    
       {/* Rutas para el área de usuario autenticado */}
+      
       <Route path="" element={<Inicio />} />
       <Route path="inicio" element={<Inicio />} />
       <Route path="ListaOlimpiadas" element={<Inicio />} />
@@ -30,6 +32,7 @@ const AppRouter = () => {
       <Route path="/inscripcion/inscripcion-individual" element={<InscripcionIndividual />} />
       
       {/* Puedes agregar más rutas específicas para usuarios aquí */}
+      
     </Routes>
   );
 };
