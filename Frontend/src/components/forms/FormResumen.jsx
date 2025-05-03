@@ -42,60 +42,38 @@ const FormResumen = ({
       </div>
 
       {/* Sección: Tutores */}
+
       <div className="seccion">
         <h3>Datos del Tutor</h3>
         {tutores.map((tutor, idx) => (
           <div className="fila-resumen" key={idx}>
             <div className="subseccion-tutor">
-              <p>{idx === 0 ? "Tutor Principal" : `Tutor ${idx + 1}`}</p>
-              <p>
+              <h4 className="subtitulo-tutor">
+                {idx === 0 ? "Tutor Principal" : `Tutor ${idx + 1}`}
+              </h4>
+              <div>
                 <span className="etiqueta">Nombre completo:</span>{" "}
                 <span className="valor">
-                  {" "}
                   {tutor.nombres} {tutor.apellidos}
                 </span>
-              </p>
-              <p>
+              </div>
+              <div>
                 <span className="etiqueta">Contacto:</span>{" "}
                 <span>
                   {tutor.correo_electronico} / {tutor.telefono}
                 </span>
-              </p>
+              </div>
             </div>
           </div>
         ))}
       </div>
-     <div className="seccion">
-       <h3>Datos del Tutor</h3>
-     {tutores.map((tutor, idx) => (
-       <div className="fila-resumen" key={idx}>
-       <div className="subseccion-tutor">
-        <h4 className="subtitulo-tutor">
-          {idx === 0 ? "Tutor Principal" : `Tutor ${idx + 1}`}
-        </h4>
-        <div>
-          <span className="etiqueta">Nombre completo:</span>{" "}
-          <span className="valor">
-            {tutor.nombres} {tutor.apellidos}
-          </span>
-        </div>
-        <div>
-          <span className="etiqueta">Contacto:</span>{" "}
-          <span>
-            {tutor.correo_electronico} / {tutor.telefono}
-          </span>
-        </div>
-      </div>
-     </div>
-   ))}
-    </div>
 
       {/* Sección: Áreas de Competencia */}
       <div className="seccion">
         <h3>Áreas de Competencia</h3>
         <ul className="areas-lista">
           {areasSeleccionadas.map((area, index) => (
-            <li key={index}>{area}</li>
+            <li key={index}>{typeof area === "object" ? area.nombre : area}</li>
           ))}
         </ul>
       </div>
@@ -140,7 +118,9 @@ const FormResumen = ({
         <h3>Costo de Inscripción</h3>
         {areasSeleccionadas.map((area, i) => (
           <div className="fila-resumen" key={i}>
-            <span className="etiqueta">{area}:</span>
+            <span className="etiqueta">
+              {typeof area === "object" ? area.nombre : area}:
+            </span>
             <span className="valor">Bs. {precioPorArea}</span>
           </div>
         ))}

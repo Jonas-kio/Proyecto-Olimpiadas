@@ -86,6 +86,19 @@ export const inscripcionTutor = async (procesoId, formularioTutor) => {
     formularioTutor
   );
 };
+export const obtenerAreasPorOlimpiada = async (id) => {
+  const response = await api.get(`/libre/olimpiadas/${id}`);
+
+  // Depura la estructura real
+  console.log("Respuesta cruda del backend:", response.data);
+
+  // Extrae correctamente desde la estructura que viste en Postman
+  const areas = response.data?.data?.olimpiada?.areas || [];
+
+  console.log("Áreas extraídas correctamente:", areas);
+
+  return areas; 
+};
 export const guardarSeleccionArea = async (procesoId, payload) => {
   return await api.post(`/inscripcion/proceso/${procesoId}/area`, payload);
 };
@@ -140,7 +153,6 @@ export const eliminarOlimpiada = async (id) => await api.delete(`/olimpiadas/${i
 // Funciones de Áreas
 export const obtenerAreas = async () => await api.get("/inscripcion/area");
 */
-
 
 // export const obtenerCategoriasPorArea = async (areaId) => {
 //   return await api.get(`/categoryLevelUser?area_id=${areaId}`);

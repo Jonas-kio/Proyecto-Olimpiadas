@@ -213,7 +213,7 @@ const BoletaPago = ({ estudiante, tutores, areasSeleccionadas, numeroBoleta, reg
           <tbody>
             {areasSeleccionadas.map((area, index) => (
               <tr key={index}>
-                <td>{area}</td>
+                <td>{area.nombre}</td>
                 <td>Bs. {precioArea}</td>
                 <td>Bs. {precioArea}</td>
               </tr>
