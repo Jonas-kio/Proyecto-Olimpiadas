@@ -109,7 +109,8 @@ export const generarBoletaPDF = async (estudiante, tutores, areasSeleccionadas, 
     doc.setTextColor(0, 0, 0);
     
     areasSeleccionadas.forEach(area => {
-      doc.text(area, 20, startY + 6);
+      const nombre = typeof area === "object" ? area.nombre : String(area); // por si acaso viene como string
+      doc.text(nombre, 20, startY + 6);
       doc.text(`Bs. ${precioArea}`, pageWidth/2 - 10, startY + 6);
       doc.text(`Bs. ${precioArea}`, pageWidth - 40, startY + 6);
       doc.setDrawColor(220, 220, 220);
@@ -256,7 +257,7 @@ INFORMACIÓN DE LA INSCRIPCIÓN:
 - Estudiante: ${estudiante.nombres} ${estudiante.apellidos}
 - Documento: ${estudiante.documento_identidad}
 - Institución: ${estudiante.colegio}
-- Áreas seleccionadas: ${areasSeleccionadas.join(', ')}
+- Áreas seleccionadas: ${areasSeleccionadas.map(area => area.nombre).join(', ')}
 - Total a pagar: Bs. ${totalPago}
 - Fecha límite de pago: ${fechaLimite}
 

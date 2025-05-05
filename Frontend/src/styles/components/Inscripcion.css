@@ -114,11 +114,19 @@
   color: #444;
 }
 
-/*NIEVO DE MIS INSCRIPCIONES*/
+/*NIEVO DE MIS INSCRIPCIONES
 .contenedor-inscripciones {
   background-color: #f3f4f6;
   min-height: 100vh;
-  padding: 60px 20px 40px 20px; /* más espacio arriba */
+  padding: 60px 20px 40px 20px; /* más espacio arriba 
+}
+*/
+
+.contenedor-inscripciones {
+  background-color: #f3f4f6;
+  padding: 60px 20px 40px 20px;
+  position: relative;
+  top: 0;
 }
 
 .titulo-inscripciones {

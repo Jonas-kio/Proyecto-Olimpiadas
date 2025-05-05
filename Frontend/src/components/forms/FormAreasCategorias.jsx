@@ -10,15 +10,57 @@ const FormAreasCategorias = ({
   setCategoriaSeleccionada,
   categoriasDisponibles,
 }) => {
+  console.log("Áreas disponibles recibidas:", areasDisponibles);
+
+  // const handleAreaChange = (e) => {
+  //   const valor = parseInt(e.target.value);
+  //   if (valor) {
+  //     setAreasSeleccionadas([valor]);
+  //     setCategoriaSeleccionada("");
+  //   }
+  //   e.target.value = "";
+  // };
+  // const handleAreaChange = (e) => {
+  //   const idSeleccionado = parseInt(e.target.value);
+  //   const areaSeleccionada = areasDisponibles.find(
+  //     (a) => a.id === idSeleccionado
+  //   );
+  //   if (
+  //     areaSeleccionada &&
+  //     !areasSeleccionadas.some((a) => a.id === idSeleccionado)
+  //   ) {
+  //     setAreasSeleccionadas([...areasSeleccionadas, areaSeleccionada]); //para multiples areas
+  //     // setAreasSeleccionadas([areaSeleccionada]);
+  //     setCategoriaSeleccionada(""); // Resetear categoría al seleccionar nueva área
+  //   }
+  //   e.target.value = "";
+  // };
   const handleAreaChange = (e) => {
-    const valor = e.target.value;
-    if (valor) {
-      setAreasSeleccionadas([valor]); // solo se permite una por ahora
-      setCategoriaSeleccionada(""); // resetear categoría
+    const idSeleccionado = parseInt(e.target.value);
+    const areaSeleccionada = areasDisponibles.find(
+      (a) => a.id === idSeleccionado
+    );
+
+    if (!areaSeleccionada) {
+      e.target.value = "";
+      return;
     }
+
+    const yaSeleccionada = areasSeleccionadas.some(
+      (a) => a.id === idSeleccionado
+    );
+
+    if (yaSeleccionada) {
+      alert("Esta área ya ha sido seleccionada.");
+    } else if (areasSeleccionadas.length >= 2) {
+      alert("Solo puedes inscribirte en un máximo de 2 áreas.");
+    } else {
+      setAreasSeleccionadas([...areasSeleccionadas, areaSeleccionada]);
+      setCategoriaSeleccionada(""); // Resetear categoría al cambiar de área
+    }
+
     e.target.value = "";
   };
-
   return (
     <>
       <h2>Selección de Áreas</h2>
@@ -31,38 +73,41 @@ const FormAreasCategorias = ({
           <label>
             Áreas de Competencia <span className="asterisco rojo">*</span>
           </label>
-          <select name="area" onChange={handleAreaChange} defaultValue="">
+          <select
+            name="area"
+            onChange={handleAreaChange}
+            defaultValue=""
+            // disabled={areasSeleccionadas.length >= 2}
+          >
             <option value="" disabled>
               Selecciona un área
             </option>
             {areasDisponibles
-              .filter((area) => !areasSeleccionadas.includes(area.nombre))
+              .filter(
+                (area) => !areasSeleccionadas.some((a) => a.id === area.id)
+              )
               .map((area) => (
-                <option key={area.id} value={area.nombre}>
+                <option key={area.id} value={area.id}>
                   {area.nombre}
                 </option>
               ))}
           </select>
 
-          {areasSeleccionadas.length > 0 && (
-            <div className="etiquetas-contenedor">
-              {areasSeleccionadas.map((area) => (
-                <span className="etiqueta-area" key={area}>
-                  {area}
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setAreasSeleccionadas(
-                        areasSeleccionadas.filter((a) => a !== area)
-                      )
-                    }
-                  >
-                    ×
-                  </button>
-                </span>
-              ))}
-            </div>
-          )}
+          {areasSeleccionadas.map((area) => (
+            <span className="etiqueta-area" key={area.id}>
+              {area.nombre}
+              <button
+                type="button"
+                onClick={() =>
+                  setAreasSeleccionadas(
+                    areasSeleccionadas.filter((a) => a.id !== area.id)
+                  )
+                }
+              >
+                ×
+              </button>
+            </span>
+          ))}
         </div>
 
         <div className="campo">
@@ -77,8 +122,8 @@ const FormAreasCategorias = ({
             <option value="">Selecciona una categoría</option>
             {categoriasFiltradas.map((cat) => (
               <option key={cat.id} value={cat.id}>
-                {cat.name} - {cat.grade_name} ({cat.grade_min} a {cat.grade_max}
-                )
+                {cat.name} - {cat.grade_name} (minimo: {cat.grade_min} a maximo:{" "}
+                {cat.grade_max})
               </option>
             ))}
           </select>

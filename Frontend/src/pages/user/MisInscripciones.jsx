@@ -1,10 +1,24 @@
 
-import React, { useEffect, useState } from "react";
+//import React, { useEffect, useState } from "react";
 import "../../styles/components/Inscripcion.css";
 import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState, useRef } from "react";
 
 const MisInscripciones = () => {
   const navigate = useNavigate();
+  const headerRef = useRef(null);
+/*
+  useEffect(() => {
+    setTimeout(() => {
+      window.scrollTo({ top: - 20000, behavior: 'smooth' });
+    }, 0);
+  }, []);
+*/
+useEffect(() => {
+  setTimeout(() => {
+    headerRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, 0);
+}, []);
 
   const [inscripciones, setInscripciones] = useState([
     { id: "#IN20250317-001", areas: "Matemáticas, Física", fecha: "17/03/2025", monto: "Bs. 150.00", estado: "PENDIENTE" },
@@ -13,6 +27,7 @@ const MisInscripciones = () => {
     { id: "#IN20250314-004", areas: "Informática", fecha: "14/03/2025", monto: "Bs. 100.00", estado: "PENDIENTE" },
     { id: "#IN20250313-005", areas: "Astronomía", fecha: "13/03/2025", monto: "Bs. 120.00", estado: "INSCRITO" },
   ]);
+  
 
   useEffect(() => {
     const data = localStorage.getItem("actualizarEstado");
@@ -46,7 +61,7 @@ const MisInscripciones = () => {
 
   return (
     <div className="contenedor-inscripciones">
-      <h1 className="titulo-inscripciones">Mis Inscripciones</h1>
+      <h1 ref={headerRef} className="titulo-inscripciones">Mis Inscripciones</h1>
       <div className="tabla-contenedor">
         <table className="tabla-inscripciones">
           <thead>

@@ -31,7 +31,11 @@ const Inscripcion = () => {
           </ul>
           <button
             className="btn-primario"
-            onClick={() => navigate("/user/inscripcion/inscripcion-individual")}
+            onClick={() => {
+              const id = localStorage.getItem("idOlimpiada");
+              // const tipo = localStorage.getItem("tipoInscripcion");
+              navigate(`/user/inscripcion/inscripcion-individual/${id}`);
+            }}
           >
             Inscripción Individual
           </button>

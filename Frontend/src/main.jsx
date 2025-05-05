@@ -15,6 +15,8 @@ import Inicio from "./pages/user/Inicio.jsx";
 import { PrivateRoute, AdminRoute } from "./components/PrivateRoute";
 import AppUsuario from "./AppUsuario.jsx";
 import Footer from "./components/layout/Footer.jsx";
+import ScrollToTop from "./components/common/ScrollToTop";
+
 
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -91,6 +93,7 @@ const Layout = () => {
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <BrowserRouter>
+    <ScrollToTop />
       <MainRouter />
     </BrowserRouter>
   </React.StrictMode>
