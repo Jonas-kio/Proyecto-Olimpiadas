@@ -73,7 +73,7 @@ Route::middleware([IsUserAuth::class])->group(
                     Route::get('/', [OlimpiadaController::class, 'index'])->name('olimpiadas.index');
                     Route::post('/', [OlimpiadaController::class, 'store'])->name('olimpiadas.store');
                     Route::get('/{olimpiada}', [OlimpiadaController::class, 'show'])->name('olimpiadas.show');
-                    Route::put('/{olimpiada}', [OlimpiadaController::class, 'update'])->name('olimpiadas.update');
+                    Route::match(['put', 'patch'], '/{olimpiada}', [OlimpiadaController::class, 'update'])->name('olimpiadas.update');
                     Route::delete('/{olimpiada}', [OlimpiadaController::class, 'destroy'])->name('olimpiadas.destroy');
                     Route::patch('/{olimpiada}/status', [OlimpiadaController::class, 'changeStatus']);
 
@@ -117,37 +117,37 @@ Route::middleware([IsUserAuth::class])->group(
                 Route::post('/olimpiada/{olimpiada}/iniciar', [InscripcionController::class, 'iniciarProceso'])
                     ->name('iniciar');
 
-                // Rutas que requieren un proceso de inscripción activo
-                Route::middleware([VerificarProcesoInscripcion::class])->group(function () {
-                    // Competidores
-                    Route::post('/proceso/{proceso}/competidor', [InscripcionController::class, 'registrarCompetidor'])
-                        ->name('competidor.registrar');
+            // Rutas que requieren un proceso de inscripción activo
+            Route::middleware([VerificarProcesoInscripcion::class])->group(function () {
+                // Competidores
+                Route::post('/proceso/{proceso}/competidor', [InscripcionController::class, 'registrarCompetidor'])
+                    ->name('competidor.registrar');
 
-                    // Tutores
-                    Route::post('/proceso/{proceso}/tutor', [InscripcionController::class, 'registrarTutor'])
-                        ->name('tutor.registrar');
+                // Tutores
+                Route::post('/proceso/{proceso}/tutor', [InscripcionController::class, 'registrarTutor'])
+                    ->name('tutor.registrar');
 
-                    // Selección de área
-                    Route::post('/proceso/{proceso}/area', [InscripcionController::class, 'seleccionarArea'])
-                        ->name('area.seleccionar');
+                // Selección de área
+                Route::post('/proceso/{proceso}/area', [InscripcionController::class, 'seleccionarArea'])
+                    ->name('area.seleccionar');
 
                     // Selección de nivel
                     Route::post('/proceso/{proceso}/nivel/', [InscripcionController::class, 'seleccionarNivel'])
                         ->name('nivel.seleccionar');
 
-                    // Obtener resumen de inscripción
-                    Route::get('/proceso/{proceso}/resumen', [InscripcionController::class, 'obtenerResumen'])
-                        ->name('resumen');
+                // Obtener resumen de inscripción
+                Route::get('/proceso/{proceso}/resumen', [InscripcionController::class, 'obtenerResumen'])
+                    ->name('resumen');
 
-                    // Generar boleta
-                    Route::post('/proceso/{proceso}/boleta', [InscripcionController::class, 'generarBoleta'])
-                        ->name('boleta.generar');
-                });
-
-                // Obtener detalles de boleta (no requiere verificar proceso)
-                Route::get('/boleta/{boleta}', [InscripcionController::class, 'obtenerBoleta'])
-                    ->name('boleta.ver');
+                // Generar boleta
+                Route::post('/proceso/{proceso}/boleta', [InscripcionController::class, 'generarBoleta'])
+                    ->name('boleta.generar');
             });
+
+            // Obtener detalles de boleta (no requiere verificar proceso)
+            Route::get('/boleta/{boleta}', [InscripcionController::class, 'obtenerBoleta'])
+                ->name('boleta.ver');
+        });
     }
 );
 
