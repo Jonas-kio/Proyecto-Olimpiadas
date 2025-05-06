@@ -20,23 +20,14 @@ use App\Http\Middleware\VerificarProcesoInscripcion;
 
 
 
-//Ruta del competidor
-Route::post('/inscripcion/competidor', [CompetitorController::class, 'store']);
-
-//Ruta del tutor
-Route::post('/inscripcion/tutor', [TutorController::class, 'store']);
-
-//Ruta de area
-Route::get('/inscripcion/area', [AreaController::class, 'index']);
 //Ruta para obetener niveles inscripcion
-Route::get('/categoryLevelUser', [CategoryLevelController::class, 'index']);
-Route::get('/categoryLevelUser', [CategoryLevelController::class, 'index']); //Prueba
+Route::get('/categoryLevelUser', [CategoryLevelController::class, 'indexUser']); //Prueba
 
 
 // Rutas públicas de olimpiadas (visibles sin autenticación)
-Route::get('/libre/olimpiadas/', [OlimpiadaController::class, 'index'])->name('olimpiadas.index');
 
 Route::get('crear-admin', [AuthController::class, 'crearAdmin']);
+Route::get('/libre/olimpiadas/', [OlimpiadaController::class, 'index'])->name('olimpiadas.index');
 Route::get('/libre/olimpiadas/{olimpiada}', [OlimpiadaController::class, 'show']);
 
 
@@ -104,18 +95,24 @@ Route::middleware([IsUserAuth::class])->group(
             Route::post('/olimpiadas/inscripciones/{inscripcion}/comprobante', [OlimpiadaController::class, 'subirComprobante']);
 
             // Rutas para obtener información de olimpiadas
-            Route::get('/olimpiadas', [OlimpiadaController::class, 'index'])->name('olimpiadas.index');
+            Route::get('/olimpiadas', [OlimpiadaController::class, 'indexUser'])->name('olimpiadas.indexUser');
             Route::get('/olimpiadas/{olimpiada}', [OlimpiadaController::class, 'show']);
 
+            // Rutas para obtener información de areas por el ususario
+            Route::get('/areas', [AreaController::class, 'index'])->name('areas.indexUser');
+            Route::get('/areas/{area}', [AreaController::class, 'show'])->name('areas.showUser');
+
+            // Rutas para obtener información de las categorias
+            Route::get('/categoryLevel', [CategoryLevelController::class, 'indexUser'])->name('categoryLevel.indexUser');
+            Route::get('/categoryLevel/area/{area_id}', [CategoryLevelController::class, 'getCategoryByAreaId'])->name('categoryLevel.area');
             Route::get('/categoryLevel/{category_id}/{area_id}', [CategoryLevelController::class, 'getCategoryByIdAndAreaId']);
 
             Route::post('/inscripcion/competidor', [CompetitorController::class, 'store']);
 
-            
-           
         });
+
         // FLUJO DE INSCRIPCIÓN COMPLETO
-         Route::prefix('inscripcion')->name('inscripcion.')->group(function () {
+        Route::prefix('inscripcion')->name('inscripcion.')->group(function () {
                 // Iniciar proceso
                 Route::post('/olimpiada/{olimpiada}/iniciar', [InscripcionController::class, 'iniciarProceso'])
                     ->name('iniciar');
@@ -135,7 +132,7 @@ Route::middleware([IsUserAuth::class])->group(
                         ->name('area.seleccionar');
 
                     // Selección de nivel
-                    Route::post('/proceso/{proceso}/nivel', [InscripcionController::class, 'seleccionarNivel'])
+                    Route::post('/proceso/{proceso}/nivel/', [InscripcionController::class, 'seleccionarNivel'])
                         ->name('nivel.seleccionar');
 
                     // Obtener resumen de inscripción
