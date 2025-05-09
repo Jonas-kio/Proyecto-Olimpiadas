@@ -12,6 +12,19 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 
+/**
+ * @OA\Tag(
+ *     name="Olimpiadas",
+ *     description="API Endpoints para gestión de olimpiadas"
+ * )
+ */
+
+/**
+ * @OA\Tag(
+ *     name="Olimpiadas - Usuario",
+ *     description="API Endpoints para gestión de olimpiadas (usuarios normales)"
+ * )
+ */
 class OlimpiadaController extends Controller
 {
     private OlimpiadaService $olimpiadaService;
@@ -21,6 +34,30 @@ class OlimpiadaController extends Controller
         $this->olimpiadaService = $olimpiadaService;
     }
 
+    /**
+     * @OA\Get(
+     *     path="/api/olimpiadas",
+     *     tags={"Olimpiadas"},
+     *     summary="Obtener lista de olimpiadas",
+     *     @OA\Response(
+     *         response=200,
+     *         description="Lista de olimpiadas obtenida exitosamente",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="status", type="string", example="success"),
+     *             @OA\Property(property="message", type="string", example="Operación exitosa"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(
+     *                     property="olimpiadas",
+     *                     type="array",
+     *                     @OA\Items(ref="#/components/schemas/Olimpiada")
+     *                 )
+     *             )
+     *         )
+     *     )
+     * )
+     */
     public function index(): JsonResponse
     {
         try {
@@ -34,6 +71,83 @@ class OlimpiadaController extends Controller
         }
     }
 
+    /**
+     * @OA\Get(
+     *     path="/api/user/olimpiadas",
+     *     tags={"Olimpiadas - Usuario"},
+     *     summary="Listar olimpiadas disponibles para usuario",
+     *     description="Obtiene la lista de olimpiadas disponibles para usuarios normales",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Lista de olimpiadas disponibles",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="status", type="string", example="success"),
+     *             @OA\Property(property="message", type="string", example="Operación exitosa"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(
+     *                     property="olimpiadas",
+     *                     type="array",
+     *                     @OA\Items(ref="#/components/schemas/Olimpiada")
+     *                 )
+     *             )
+     *         )
+     *     )
+     * )
+     */
+    public function indexUser(): JsonResponse
+    {
+        try {
+            $olimpiadas = $this->olimpiadaService->getPaginatedOlimpiadas();
+
+            return $this->successResponse([
+                'olimpiadas' => $olimpiadas
+            ]);
+        } catch (\Exception $e) {
+            return $this->errorResponse('Error al obtener las olimpiadas', $e);
+        }
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/api/olimpiadas",
+     *     tags={"Olimpiadas"},
+     *     summary="Crear nueva olimpiada",
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\MediaType(
+     *             mediaType="multipart/form-data",
+     *             @OA\Schema(
+     *                 required={"nombre","descripcion","fecha_inicio","fecha_fin","cupo_minimo","modalidad"},
+     *                 @OA\Property(property="nombre", type="string", example="Olimpiada de Matemáticas 2025"),
+     *                 @OA\Property(property="descripcion", type="string", example="Competencia nacional de matemáticas"),
+     *                 @OA\Property(property="fecha_inicio", type="string", format="date", example="2025-06-01"),
+     *                 @OA\Property(property="fecha_fin", type="string", format="date", example="2025-06-30"),
+     *                 @OA\Property(property="cupo_minimo", type="integer", example=50),
+     *                 @OA\Property(property="modalidad", type="string", example="Presencial"),
+     *                 @OA\Property(property="pdf_detalles", type="string", format="binary"),
+     *                 @OA\Property(property="imagen_portada", type="string", format="binary"),
+     *                 @OA\Property(property="areas", type="array", @OA\Items(type="integer"))
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="Olimpiada creada exitosamente",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="status", type="string", example="success"),
+     *             @OA\Property(property="message", type="string", example="Olimpiada creada exitosamente"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(property="olimpiada", ref="#/components/schemas/Olimpiada")
+     *             )
+     *         )
+     *     )
+     * )
+     */
     public function store(StoreOlimpiadaRequest $request): JsonResponse
     {
         try {
@@ -59,7 +173,83 @@ class OlimpiadaController extends Controller
         }
     }
 
+    /**
+     * @OA\Get(
+     *     path="/api/olimpiadas/{olimpiada}",
+     *     tags={"Olimpiadas"},
+     *     summary="Obtener detalles de una olimpiada",
+     *     @OA\Parameter(
+     *         name="olimpiada",
+     *         in="path",
+     *         required=true,
+     *         description="ID de la olimpiada",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Detalles de la olimpiada obtenidos exitosamente",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="status", type="string", example="success"),
+     *             @OA\Property(property="message", type="string", example="Operación exitosa"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(property="olimpiada", ref="#/components/schemas/Olimpiada")
+     *             )
+     *         )
+     *     )
+     * )
+     */
     public function show(Olimpiada $olimpiada): JsonResponse
+    {
+        try {
+            $olimpiada->load('areas');
+            return $this->successResponse([
+                'olimpiada' => $olimpiada
+            ]);
+        } catch (\Exception $e) {
+            return $this->errorResponse('Error al obtener la olimpiada', $e);
+        }
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/user/olimpiadas/{olimpiada}",
+     *     tags={"Olimpiadas - Usuario"},
+     *     summary="Ver detalles de una olimpiada como usuario",
+     *     description="Obtiene los detalles de una olimpiada específica para usuarios normales",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="olimpiada",
+     *         in="path",
+     *         required=true,
+     *         description="ID de la olimpiada",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Detalles de la olimpiada obtenidos exitosamente",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="status", type="string", example="success"),
+     *             @OA\Property(property="message", type="string", example="Operación exitosa"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(property="olimpiada", ref="#/components/schemas/Olimpiada")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="No autorizado para ver esta olimpiada",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="status", type="string", example="error"),
+     *             @OA\Property(property="message", type="string", example="No tienes acceso a esta olimpiada")
+     *         )
+     *     )
+     * )
+     */
+    public function showUser(Olimpiada $olimpiada): JsonResponse
     {
         try {
             $olimpiada->load('areas');
@@ -117,6 +307,37 @@ class OlimpiadaController extends Controller
         }
     }
 
+    /**
+     * @OA\Delete(
+     *     path="/api/olimpiadas/{olimpiada}",
+     *     tags={"Olimpiadas"},
+     *     summary="Eliminar una olimpiada",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="olimpiada",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="integer"),
+     *         description="ID de la olimpiada a eliminar"
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Olimpiada eliminada exitosamente",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Olimpiada eliminada exitosamente")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Olimpiada no encontrada"
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="No autorizado para eliminar olimpiadas"
+     *     )
+     * )
+     */
     public function destroy(Olimpiada $olimpiada): JsonResponse
     {
         try {

@@ -106,6 +106,24 @@ class CategoryLevelService
     }
 
 
+    /**
+     * Obtiene todas las categorías pertenecientes a un área específica
+     * @param int $areaId ID del área
+     * @return \Illuminate\Database\Eloquent\Collection
+     * @throws Exception si no hay categorías para el área
+     */
+    public function getCategoryByAreaId($areaId)
+    {
+        $categories = CategoryLevel::where('area_id', $areaId)->get();
+
+        if ($categories->isEmpty()) {
+            throw new Exception('No existen categorías relacionadas a esta área');
+        }
+
+        return $categories;
+    }
+
+
     public function deleteCategoryLevel($id)
     {
         $categoryLevel = $this->getCategoryLevelById($id);
