@@ -4,12 +4,15 @@ import "../../styles/components/InscripcionConfirmacion.css";
 import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import {
+  iniciarProceso,
   inscripcionCompetidor,
   inscripcionTutor,
   obtenerAreasPorOlimpiada,
   // inscripcionArea,
   inscripcionCategoryLevel,
-  iniciarProceso,
+  guardarSeleccionArea,
+  guardarSeleccionNivel,
+  obtenerResumenInscripcion,
 } from "../../services/apiConfig";
 
 // Componentes comunes
@@ -301,7 +304,22 @@ const InscripcionIndividual = () => {
       await Promise.all(registrosTutores);
       console.log("Tutores registrados exitosamente");
 
-      // Paso 3: Generar número de boleta
+      // Paso 3: Guardar área seleccionada
+      const areaSeleccionada = areasSeleccionadas[0]; // Solo se permite una por ahora
+      await guardarSeleccionArea(procesoId, { area_id: areaSeleccionada.id });
+      console.log("Área seleccionada guardada:", areaSeleccionada);
+
+      // Paso 4: Guardar nivel seleccionado
+      await guardarSeleccionNivel(procesoId, {
+        nivel_id: categoriaSeleccionada,
+      });
+      console.log("Nivel seleccionado guardado:", categoriaSeleccionada);
+
+      // Paso 5: Obtener resumen de inscripcion
+      const resumen = await obtenerResumenInscripcion(procesoId);
+      console.log("Resumen de inscripción:", resumen.data);
+
+      // Paso 5: Generar número de boleta
       const nuevoBoleta = generarNumeroBoleta();
       console.log("NÚMERO DE BOLETA GENERADO:", nuevoBoleta);
 
