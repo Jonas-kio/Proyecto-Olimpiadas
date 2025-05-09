@@ -9,6 +9,8 @@ const FormAreasCategorias = ({
   categoriaSeleccionada,
   setCategoriaSeleccionada,
   categoriasDisponibles,
+  setCategoriasFiltradas,
+  obtenerCategoriasPorArea,
 }) => {
   console.log("Áreas disponibles recibidas:", areasDisponibles);
 
@@ -35,7 +37,7 @@ const FormAreasCategorias = ({
   //   }
   //   e.target.value = "";
   // };
-  const handleAreaChange = (e) => {
+  const handleAreaChange = async (e) => {
     const idSeleccionado = parseInt(e.target.value);
     const areaSeleccionada = areasDisponibles.find(
       (a) => a.id === idSeleccionado
@@ -57,6 +59,30 @@ const FormAreasCategorias = ({
     } else {
       setAreasSeleccionadas([...areasSeleccionadas, areaSeleccionada]);
       setCategoriaSeleccionada(""); // Resetear categoría al cambiar de área
+
+      try {
+        const response = await obtenerCategoriasPorArea(idSeleccionado);
+        console.log("Respuesta completa de categorías:", response);
+        // setCategoriasFiltradas(
+        //   Array.isArray(response.data.data) ? response.data.data : []
+        // );
+        // Asegúrate de que `.data` esté correcto según tu backend
+        const cursoSeleccionado = parseInt(
+          localStorage.getItem("cursoSeleccionado")
+        );
+
+        const categoriasFiltradasPorCurso = Array.isArray(response.data.data)
+          ? response.data.data.filter((cat) => {
+              const min = parseInt(cat.grade_min);
+              const max = cat.grade_max ? parseInt(cat.grade_max) : 12;
+              return cursoSeleccionado >= min && cursoSeleccionado <= max;
+            })
+          : [];
+
+        setCategoriasFiltradas(categoriasFiltradasPorCurso);
+      } catch (error) {
+        console.error("Error al obtener categorías para el área:", error);
+      }
     }
 
     e.target.value = "";
@@ -120,12 +146,13 @@ const FormAreasCategorias = ({
             onChange={(e) => setCategoriaSeleccionada(e.target.value)}
           >
             <option value="">Selecciona una categoría</option>
-            {categoriasFiltradas.map((cat) => (
-              <option key={cat.id} value={cat.id}>
-                {cat.name} - {cat.grade_name} (minimo: {cat.grade_min} a maximo:{" "}
-                {cat.grade_max})
-              </option>
-            ))}
+            {Array.isArray(categoriasFiltradas) &&
+              categoriasFiltradas.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.name} - {cat.grade_name} (mínimo: {cat.grade_min} a
+                  máximo: {cat.grade_max})
+                </option>
+              ))}
           </select>
 
           {categoriaSeleccionada && (

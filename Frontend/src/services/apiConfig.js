@@ -98,6 +98,10 @@ export const obtenerAreasPorOlimpiada = async (id) => {
   return areas;
 };
 
+export const obtenerCategoriasPorArea = async (areaId) => {
+  return await api.get(`/user/categoryLevel/area/${areaId}`);
+};
+
 export const guardarSeleccionArea = async (procesoId, payload) => {
   return await api.post(`/inscripcion/proceso/${procesoId}/area`, payload);
 };

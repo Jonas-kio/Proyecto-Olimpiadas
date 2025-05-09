@@ -9,10 +9,10 @@ import {
   inscripcionTutor,
   obtenerAreasPorOlimpiada,
   // inscripcionArea,
-  inscripcionCategoryLevel,
   guardarSeleccionArea,
   guardarSeleccionNivel,
   obtenerResumenInscripcion,
+  obtenerCategoriasPorArea,
 } from "../../services/apiConfig";
 
 // Componentes comunes
@@ -90,7 +90,7 @@ const InscripcionIndividual = () => {
         const responseAreas = await obtenerAreasPorOlimpiada(idOlimpiada); //Llamada al backend areas
         console.log("Id de la olimpiada:", idOlimpiada);
         console.log("Respuesta completa de áreas:", responseAreas);
-        const responseCategorias = await inscripcionCategoryLevel(); // llamada al backend categorias
+        // const responseCategorias = await inscripcionCategoryLevel(); // llamada al backend categorias
 
         const areasLimpias = responseAreas.map((area) => ({
           id: area.id,
@@ -105,7 +105,7 @@ const InscripcionIndividual = () => {
 
         setAreasDisponibles(areasLimpias);
         console.log("Áreas disponibles recibidas en el estado:", areasLimpias);
-        setCategoriasDisponibles(responseCategorias.data?.data || []);
+        // setCategoriasDisponibles(responseCategorias.data?.data || []);
       } catch (error) {
         console.error("Error al obtener datos:", error);
         // Si falla la conexión al backend, se puede cambiar al modo simulación
@@ -139,26 +139,26 @@ const InscripcionIndividual = () => {
   //   );
   //   setCategoriasFiltradas(relacionadas);
   // }, [areasSeleccionadas, categoriasDisponibles]);
-  useEffect(() => {
-    const cursoSeleccionado = parseInt(
-      localStorage.getItem("cursoSeleccionado")
-    );
+  // useEffect(() => {
+  //   const cursoSeleccionado = parseInt(
+  //     localStorage.getItem("cursoSeleccionado")
+  //   );
 
-    const relacionadas = categoriasDisponibles.filter((cat) => {
-      const perteneceArea = areasSeleccionadas.some(
-        (area) => area.id === cat.area_id
-      );
-      const min = parseInt(cat.grade_min);
-      const max = cat.grade_max ? parseInt(cat.grade_max) : 12; // Si no hay max, asumimos hasta 6to secundaria
-      const dentroDelRango =
-        cursoSeleccionado >= min && cursoSeleccionado <= max;
+  //   const relacionadas = categoriasDisponibles.filter((cat) => {
+  //     const perteneceArea = areasSeleccionadas.some(
+  //       (area) => area.id === cat.area_id
+  //     );
+  //     const min = parseInt(cat.grade_min);
+  //     const max = cat.grade_max ? parseInt(cat.grade_max) : 12; // Si no hay max, asumimos hasta 6to secundaria
+  //     const dentroDelRango =
+  //       cursoSeleccionado >= min && cursoSeleccionado <= max;
 
-      return perteneceArea && dentroDelRango;
-    });
+  //     return perteneceArea && dentroDelRango;
+  //   });
 
-    console.log("Categorías filtradas por área y curso:", relacionadas);
-    setCategoriasFiltradas(relacionadas);
-  }, [areasSeleccionadas, categoriasDisponibles]);
+  //   console.log("Categorías filtradas por área y curso:", relacionadas);
+  //   setCategoriasFiltradas(relacionadas);
+  // }, [areasSeleccionadas, categoriasDisponibles]);
 
   const textoValido = (texto) => /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$/.test(texto);
   const correoValido = (correo) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo);
@@ -319,7 +319,7 @@ const InscripcionIndividual = () => {
       const resumen = await obtenerResumenInscripcion(procesoId);
       console.log("Resumen de inscripción:", resumen.data);
 
-      // Paso 5: Generar número de boleta
+      // Paso 6: Generar número de boleta
       const nuevoBoleta = generarNumeroBoleta();
       console.log("NÚMERO DE BOLETA GENERADO:", nuevoBoleta);
 
@@ -523,8 +523,10 @@ const InscripcionIndividual = () => {
                 areasSeleccionadas={areasSeleccionadas}
                 setAreasSeleccionadas={setAreasSeleccionadas}
                 categoriasFiltradas={categoriasFiltradas}
+                setCategoriasFiltradas={setCategoriasFiltradas} // 👈 NUEVO
                 categoriaSeleccionada={categoriaSeleccionada}
                 setCategoriaSeleccionada={setCategoriaSeleccionada}
+                obtenerCategoriasPorArea={obtenerCategoriasPorArea} // 👈 NUEVO
                 categoriasDisponibles={categoriasDisponibles}
               />
             )}
