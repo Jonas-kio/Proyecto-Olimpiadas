@@ -72,6 +72,7 @@ useEffect(() => {
               <th>Monto</th>
               <th>Estado</th>
               <th>Validar</th>
+              <th>Estudiantes</th>
             </tr>
           </thead>
           <tbody>
@@ -111,6 +112,13 @@ useEffect(() => {
                     →
                   </button>
                 </td>
+
+                <td>
+                  <button className="btn-descargar" onClick={() => navigate("/user/ocr")}>
+                    VER
+                  </button>
+                </td>
+
               </tr>
             ))}
           </tbody>

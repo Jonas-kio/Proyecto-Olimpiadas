@@ -143,6 +143,27 @@ export const obtenerOlimpiadaPorId = async (id) => {
   return response.data;
 };
 
+//FUNCIONES OCR
+
+// Procesar imagen OCR
+export const procesarComprobanteOCR = async (file) => {
+  const formData = new FormData();
+  formData.append("comprobante", file);
+
+  return await api.post("/ocr/procesar", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+};
+
+// Asociar manualmente
+export const asociarManualOCR = async (nombre) => {
+  return await api.post("/ocr/asociar-manual", {
+    nombre_manual: nombre,
+  });
+};
+
+
+
 /* Funciones de Olimpiadas
 export const obtenerOlimpiadas = async () => await api.get("/olimpiadas");
 export const obtenerOlimpiadaPorId = async (id) => await api.get(`/olimpiadas/${id}`);

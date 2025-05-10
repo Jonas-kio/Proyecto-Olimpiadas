@@ -6,6 +6,7 @@ import Inscripcion from "../pages/user/Inscripcion";
 import InscripcionIndividual from "../pages/user/InscripcionIndividual";
 import MisInscripciones from "../pages/user/MisInscripciones";
 import DetalleInscripcion from "../pages/user/DetalleInscripcion";
+import OcrPaymentFlow from "../pages/user/ocr/OcrPaymentFlow";
 
 const AppRouter = () => {
   return (
@@ -28,6 +29,8 @@ const AppRouter = () => {
       <Route path="/inscripcion" element={<ListaOlimpiadas />} />
       <Route path="/ListaOlimpiadas" element={<Inscripcion />} />
       <Route path="/inscripcion/opciones" element={<Inscripcion />} />
+      <Route path="/ocr" element={<OcrPaymentFlow />} />
+
       <Route
         path="/inscripcion/inscripcion-individual/:idOlimpiada"
         element={<InscripcionIndividual />}
