@@ -1,0 +1,79 @@
+.studentlist-empty {
+    text-align: center;
+    padding: 1rem;
+    background-color: #f9fafb;
+    border-radius: 0.5rem;
+  }
+  
+  .studentlist-empty-text {
+    color: #6b7280;
+    font-size: 0.875rem;
+  }
+  
+  .studentlist-container {
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .studentlist-item {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    background-color: white;
+    transition: background-color 0.2s ease;
+  }
+  
+  .studentlist-item:hover {
+    background-color: #f9fafb;
+  }
+  
+  .studentlist-icon-circle {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 9999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #dbeafe;
+    flex-shrink: 0;
+  }
+  
+  .studentlist-user-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    color: #2563eb;
+  }
+  
+  .studentlist-info {
+    margin-left: 0.75rem;
+    flex-grow: 1;
+  }
+  
+  .studentlist-name {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #111827;
+  }
+  
+  .studentlist-grade {
+    display: flex;
+    align-items: center;
+    margin-top: 0.25rem;
+  }
+  
+  .studentlist-book-icon {
+    width: 1rem;
+    height: 1rem;
+    color: #9ca3af;
+    margin-right: 0.25rem;
+  }
+  
+  .studentlist-grade-text {
+    font-size: 0.875rem;
+    color: #6b7280;
+  }
+  
