@@ -271,6 +271,9 @@ const DetalleInscripcion = () => {
                 <FaPrint className="icono" /> IMPRIMIR
               </button>
 
+              <button className="btn-descargar" onClick={() => navigate('/user/ocr')}>
+                VER ESTUDIANTES ASOCIADOS
+              </button>
             </div>
 
             <div style={{

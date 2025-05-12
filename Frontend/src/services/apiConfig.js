@@ -91,14 +91,17 @@ export const obtenerAreasPorOlimpiada = async (id) => {
 
   // Depura la estructura real
   console.log("Respuesta cruda del backend:", response.data);
-
-  // Extrae correctamente desde la estructura que viste en Postman
   const areas = response.data?.data?.olimpiada?.areas || [];
 
   console.log("Áreas extraídas correctamente:", areas);
 
-  return areas; 
+  return areas;
 };
+
+export const obtenerCategoriasPorArea = async (areaId) => {
+  return await api.get(`/user/categoryLevel/area/${areaId}`);
+};
+
 export const guardarSeleccionArea = async (procesoId, payload) => {
   return await api.post(`/inscripcion/proceso/${procesoId}/area`, payload);
 };
@@ -107,9 +110,13 @@ export const guardarSeleccionNivel = async (procesoId, payload) => {
   return await api.post(`/inscripcion/proceso/${procesoId}/nivel`, payload);
 };
 
-export const inscripcionArea = async () => {
-  return await api.get("/inscripcion/area");
+export const obtenerResumenInscripcion = async (procesoId) => {
+  return await api.get(`/inscripcion/proceso/${procesoId}/resumen`);
 };
+
+// export const inscripcionArea = async () => {
+//   return await api.get("/inscripcion/area");
+// };
 
 export const inscripcionCategoryLevel = async () => {
   return await api.get("/categoryLevelUser");
@@ -142,6 +149,27 @@ export const obtenerOlimpiadaPorId = async (id) => {
   const response = await api.get(`/olimpiadas/${id}`);
   return response.data;
 };
+
+//FUNCIONES OCR
+
+// Procesar imagen OCR
+export const procesarComprobanteOCR = async (file) => {
+  const formData = new FormData();
+  formData.append("comprobante", file);
+
+  return await api.post("/ocr/procesar", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+};
+
+// Asociar manualmente
+export const asociarManualOCR = async (nombre) => {
+  return await api.post("/ocr/asociar-manual", {
+    nombre_manual: nombre,
+  });
+};
+
+
 
 /* Funciones de Olimpiadas
 export const obtenerOlimpiadas = async () => await api.get("/olimpiadas");

@@ -3,18 +3,13 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Services\OcrService;
+use App\Models\Boleta;
+use Illuminate\Support\Facades\Storage;
+use thiagoalessio\TesseractOCR\TesseractOCR;
 
 class OcrController extends Controller
 {
-    protected $ocrService;
-
-    public function __construct(OcrService $ocrService)
-    {
-        $this->ocrService = $ocrService;
-    }
-
-    public function procesarImagenOCR(Request $request)
+    public function extraerYValidarComprobante(Request $request)
     {
         $request->validate([
             'imagen' => 'required|image|mimes:jpeg,png,jpg',

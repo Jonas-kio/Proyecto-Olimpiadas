@@ -246,6 +246,12 @@ class OlimpiadaService
         $fechaInicio = $fechaInicio instanceof Carbon ? $fechaInicio : Carbon::parse($fechaInicio);
         $fechaFin = $fechaFin instanceof Carbon ? $fechaFin : Carbon::parse($fechaFin);
 
+        Log::info('Determinando estado de la olimpiada', [
+            'fecha_inicio' => $fechaInicio->toDateString(),
+            'fecha_fin' => $fechaFin->toDateString(),
+            'hoy' => $today->toDateString()
+        ]);
+
         $estado = OlimpiadaEstado::TERMINADO->value;
         $activo = false;
 
