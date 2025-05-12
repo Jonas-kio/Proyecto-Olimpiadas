@@ -3,11 +3,18 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use thiagoalessio\TesseractOCR\TesseractOCR;
+use App\Services\OcrService;
 
 class OcrController extends Controller
 {
-    public function procesarImagen(Request $request, TesseractOCR $ocr)
+    protected $ocrService;
+
+    public function __construct(OcrService $ocrService)
+    {
+        $this->ocrService = $ocrService;
+    }
+
+    public function procesarImagenOCR(Request $request)
     {
         $request->validate([
             'imagen' => 'required|image|mimes:jpeg,png,jpg',
@@ -16,37 +23,15 @@ class OcrController extends Controller
         $imagen = $request->file('imagen');
         $path = $imagen->storeAs('ocr-temp', $imagen->getClientOriginalName());
 
-        $texto = $ocr->image(storage_path('app/' . $path))
-                    ->lang('spa')
-                    ->run();
+        $resultado = $this->ocrService->procesarImagen(storage_path('app/' . $path));
 
-        preg_match('/\b\d{5,}\b/', $texto, $matches);
-
-        if ($matches) {
-            return response()->json([
-                'numero_detectado' => $matches[0],
-                'texto_completo' => $texto
-            ]);
+        if ($resultado['numero_detectado']) {
+            return response()->json($resultado);
         } else {
             return response()->json([
                 'error' => 'No se encontró número de comprobante',
-                'texto_completo' => $texto
+                'texto_completo' => $resultado['texto_completo']
             ], 422);
-        }
-    }
-
-    public function extraerNumeroDesdeTexto(Request $request)
-    {
-        $request->validate([
-            'texto' => 'required|string',
-        ]);
-
-        preg_match('/\b\d{5,}\b/', $request->input('texto'), $matches);
-
-        if ($matches) {
-            return response()->json(['numero' => $matches[0]]);
-        } else {
-            return response()->json(['error' => 'No se encontró un número válido'], 422);
         }
     }
 }
