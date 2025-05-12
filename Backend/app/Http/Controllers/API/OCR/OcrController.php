@@ -3,13 +3,19 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Boleta;
-use Illuminate\Support\Facades\Storage;
-use thiagoalessio\TesseractOCR\TesseractOCR;
+use App\Models\Tutor;
+use App\Services\OcrService;
 
 class OcrController extends Controller
 {
-    public function extraerYValidarComprobante(Request $request)
+    protected $ocrService;
+
+    public function __construct(OcrService $ocrService)
+    {
+        $this->ocrService = $ocrService;
+    }
+
+    public function procesarComprobante(Request $request)
     {
         $request->validate([
             'imagen' => 'required|image|mimes:jpeg,png,jpg',
@@ -18,15 +24,24 @@ class OcrController extends Controller
         $imagen = $request->file('imagen');
         $path = $imagen->storeAs('ocr-temp', $imagen->getClientOriginalName());
 
-        $resultado = $this->ocrService->procesarImagen(storage_path('app/' . $path));
+        $texto = $this->ocrService->extraerTexto(storage_path('app/' . $path));
+        $nombrePagador = $this->ocrService->extraerNombrePagador($texto);
 
-        if ($resultado['numero_detectado']) {
-            return response()->json($resultado);
-        } else {
-            return response()->json([
-                'error' => 'No se encontró número de comprobante',
-                'texto_completo' => $resultado['texto_completo']
-            ], 422);
+        if (!$nombrePagador) {
+            return response()->json(['error' => 'No se encontró el nombre del pagador.'], 422);
         }
+
+        $tutor = Tutor::whereRaw("CONCAT(nombres, ' ', apellidos) = ?", [$nombrePagador])->first();
+
+        if (!$tutor) {
+            return response()->json(['error' => 'No se encontró un tutor con ese nombre.'], 404);
+        }
+
+        return response()->json([
+            'tutor_id' => $tutor->id,
+            'nombres' => $tutor->nombres,
+            'apellidos' => $tutor->apellidos,
+            'texto_completo' => $texto
+        ]);
     }
 }

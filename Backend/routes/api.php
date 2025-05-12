@@ -148,6 +148,12 @@ Route::middleware([IsUserAuth::class])->group(
                 Route::get('/boleta/{boleta}', [InscripcionController::class, 'obtenerBoleta'])
                     ->name('boleta.ver');
             });
+        //TODO: Rutas para Servicios Auxiliares (OCR)
+        Route::prefix('ocr')->group(function () {
+        Route::post('/procesar-imagen', [OcrController::class, 'procesarImagenOCR']);
+        Route::post('/extraer-numero', [OcrController::class, 'extraerNumeroDesdeTexto']);
+        Route::post('/ocr/procesar-comprobante', [OcrController::class, 'procesarComprobante']);
+    });
     }
 );
 
@@ -157,5 +163,3 @@ Route::post('/boleta/enviar', [BoletaPagoController::class, 'enviarPorCorreo']);
 
 Route::post('/boleta/pdf', [BoletaPagoController::class, 'generarBoletaPDF']);
 Route::post('/boleta/email', [BoletaPagoController::class, 'enviarBoletaPorCorreo']);
-Route::post('/boleta/ocr', [BoletaPagoController::class, 'extraerNumeroDesdeOCR']);
-Route::post('/boleta/ocr-imagen', [BoletaPagoController::class, 'procesarImagenOCR']);
