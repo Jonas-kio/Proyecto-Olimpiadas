@@ -97,7 +97,7 @@ class BoletaPagoController extends Controller
             $nombreCompleto = $competitor->nombres . ' ' . $competitor->apellidos;
             
             // Enviar el correo
-            Mail::to($correoDestino)->send(new BoletaMail($pdf->get(), $numeroBoleta));
+            Mail::to($correoDestino)->send(new BoletaMail($pdf->get(), $numeroBoleta, $nombreEstudiante));
             
             // Registrar la boleta en la base de datos
             Boleta::create([
