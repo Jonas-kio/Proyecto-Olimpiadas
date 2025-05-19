@@ -153,8 +153,7 @@ export const generarBoletaPDF = async (estudiante, tutores, areasSeleccionadas, 
 // Función para enviar boleta por email - Intenta primero usar el backend, luego fallback al cliente de correo
 export const enviarBoletaPorEmail = async (estudiante, tutores, areasSeleccionadas, numeroBoleta, correoDestino, costoPorArea = COSTO_POR_AREA_DEFAULT) => {
   try {
-    // Intento 1: Usar la ruta '/boleta/email'
-    // Primero generar el PDF
+    // Generar el PDF
     const boletaPDF = await generarBoletaPDF(estudiante, tutores, areasSeleccionadas, numeroBoleta, costoPorArea);
     
     // Crear FormData para enviar el archivo
@@ -165,39 +164,22 @@ export const enviarBoletaPorEmail = async (estudiante, tutores, areasSeleccionad
     formData.append('nombre_estudiante', `${estudiante.nombres} ${estudiante.apellidos}`);
     
     try {
-      // Intentar con la primera ruta
-      const response = await api.post('/boleta/email', formData, {
+      // Intentar enviar usando la ruta /boleta/enviar
+      const response = await api.post('/boleta/enviar', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
       });
       
-      console.log("Correo enviado exitosamente usando /boleta/email");
+      console.log("Correo enviado exitosamente");
       return {
         success: true,
         message: response.data?.message || `Boleta enviada correctamente a ${correoDestino}`
       };
-    } catch (error1) {
-      console.log("Primer intento fallido, probando con /boleta/enviar...");
-      
-      // Intento 2: Usar la ruta '/boleta/enviar'
-      try {
-        const response = await api.post('/boleta/enviar', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
-        });
-        
-        console.log("Correo enviado exitosamente usando /boleta/enviar");
-        return {
-          success: true,
-          message: response.data?.message || `Boleta enviada correctamente a ${correoDestino}`
-        };
-      } catch (error2) {
-        // Si ambos intentos fallan, usar método alternativo
-        console.log("Ambos intentos fallidos, usando método alternativo...");
-        return usarMetodoAlternativo(estudiante, tutores, areasSeleccionadas, numeroBoleta, correoDestino, costoPorArea);
-      }
+    } catch (error) {
+      console.error("Error al enviar boleta:", error);
+      // Si falla el envío por el backend, usar método alternativo
+      return usarMetodoAlternativo(estudiante, tutores, areasSeleccionadas, numeroBoleta, correoDestino, costoPorArea);
     }
   } catch (error) {
     console.error("Error general en enviarBoletaPorEmail:", error);
@@ -265,7 +247,7 @@ Gracias por su inscripción. Conserve esta boleta para sus registros.
 
 Saludos cordiales,
 Equipo Olimpiadas Oh! SanSi`;
-    
+
     // Crear enlaces para diferentes servicios de correo
     
     // Gmail
