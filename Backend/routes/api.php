@@ -153,7 +153,7 @@ Route::middleware([IsUserAuth::class])->group(
 
 // Ruta de boleta
 Route::get('/boleta/{registro}', [BoletaPagoController::class, 'generarPDF']);
-Route::post('/boleta/enviar', [BoletaPagoController::class, 'enviarPorCorreo']);
+Route::post('/boleta/enviar', [BoletaPagoController::class, 'enviarBoletaPorCorreo']);
 
 Route::post('/boleta/pdf', [BoletaPagoController::class, 'generarBoletaPDF']);
 Route::post('/boleta/email', [BoletaPagoController::class, 'enviarBoletaPorCorreo']);
