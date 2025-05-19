@@ -247,7 +247,7 @@ Gracias por su inscripción. Conserve esta boleta para sus registros.
 
 Saludos cordiales,
 Equipo Olimpiadas Oh! SanSi`;
-    
+
     // Crear enlaces para diferentes servicios de correo
     
     // Gmail

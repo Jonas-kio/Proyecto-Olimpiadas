@@ -67,58 +67,30 @@ class BoletaPagoController extends Controller
     public function enviarBoletaPorCorreo(Request $request)
     {
         try {
-            // Validar datos recibidos
             $request->validate([
                 'pdf' => 'required|file|mimes:pdf',
                 'correo_destino' => 'required|email',
                 'numero_boleta' => 'required',
-                'nombre_estudiante' => 'required',
-                'registration_process_id' => 'required|integer',
-                'monto_total' => 'required|numeric',
+                'nombre_estudiante' => 'required'
             ]);
-            
+
             $pdf = $request->file('pdf');
             $correoDestino = $request->input('correo_destino');
             $numeroBoleta = $request->input('numero_boleta');
             $nombreEstudiante = $request->input('nombre_estudiante');
-            $registrationProcessId = $request->input('registration_process_id');
-            $montoTotal = $request->input('monto_total');
-            
-            // Buscar el proceso de registro y obtener el competidor
-            $registrationProcess = RegistrationProcess::find($registrationProcessId);
-            if (!$registrationProcess) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Proceso de registro no encontrado.'
-                ], 404);
-            }
-            
-            $competitor = $registrationProcess->competitor;
-            $nombreCompleto = $competitor->nombres . ' ' . $competitor->apellidos;
-            
+
             // Enviar el correo
-            Mail::to($correoDestino)->send(new BoletaMail($pdf->get(), $numeroBoleta, $nombreEstudiante));
-            
-            // Registrar la boleta en la base de datos
-            Boleta::create([
-                'numero' => $numeroBoleta,
-                'fecha_emision' => now(),
-                'monto_total' => $montoTotal,
-                'correo_destino' => $correoDestino,
-                'estado' => 'enviado',
-                'registration_process_id' => $registrationProcessId,
-                'nombre_competidor' => $nombreCompleto,
-            ]);
-            
+            Mail::to($correoDestino)->send(new BoletaMail($pdf->get(), $numeroBoleta));
+
             return response()->json([
                 'success' => true,
-                'message' => 'Boleta enviada y registrada con éxito.'
+                'message' => 'Boleta enviada con éxito.'
             ]);
         } catch (\Exception $e) {
-            \Log::error('Error al enviar/registrar boleta: ' . $e->getMessage());
+            \Log::error('Error al enviar boleta por correo: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Error al enviar o registrar la boleta: ' . $e->getMessage()
+                'message' => 'Error al enviar la boleta: ' . $e->getMessage()
             ], 500);
         }
     }
