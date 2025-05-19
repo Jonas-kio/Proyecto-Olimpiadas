@@ -13,6 +13,8 @@ import SuccessModal from "../../components/common/SuccessModal";
 import ErrorModal from "../../components/common/ErrorModal";
 import "../../styles/components/FormularioOlimpiada.css";
 
+import { getAllAreas } from "../../services/areasService";
+
 function FormularioOlimpiada() {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -50,8 +52,10 @@ function FormularioOlimpiada() {
   useEffect(() => {
     const fetchAreas = async () => {
       try {
-        const res = await obtenerAreas();
-        setAreasDisponibles(res.data || []);
+        const areasData = await getAllAreas();
+        const validAreas = Array.isArray(areasData) ? areasData : [];
+        setAreasDisponibles(validAreas);
+        console.log("Áreas disponibles:", validAreas);
       } catch (error) {
         console.error("Error al obtener áreas:", error);
       }
@@ -394,7 +398,7 @@ function FormularioOlimpiada() {
                         readOnly
                         className="checkbox"
                       />
-                      <span>{area.nombre}</span>
+                      <span>{area.name}</span>
                     </div>
                   ))}
                 </div>
