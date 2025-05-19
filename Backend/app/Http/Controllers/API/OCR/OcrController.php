@@ -8,49 +8,9 @@ use App\Models\Boleta;
 use Illuminate\Support\Facades\Storage;
 use thiagoalessio\TesseractOCR\TesseractOCR;
 
-/**
- * @OA\Tag(
- *     name="OCR",
- *     description="API Endpoints para procesamiento de comprobantes con OCR"
- * )
- */
+
 class OcrController extends Controller
 {
-    /**
-     * @OA\Post(
-     *     path="/api/ocr/comprobante",
-     *     tags={"OCR"},
-     *     summary="Extraer y validar comprobante",
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\MediaType(
-     *             mediaType="multipart/form-data",
-     *             @OA\Schema(
-     *                 @OA\Property(
-     *                     property="imagen",
-     *                     type="string",
-     *                     format="binary",
-     *                     description="Imagen del comprobante"
-     *                 ),
-     *                 @OA\Property(
-     *                     property="boleta_id",
-     *                     type="integer",
-     *                     description="ID de la boleta a validar"
-     *                 )
-     *             )
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Comprobante extraído y validado exitosamente",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(property="message", type="string", example="Comprobante validado correctamente"),
-     *             @OA\Property(property="datos", type="object")
-     *         )
-     *     )
-     * )
-     */
     public function extraerYValidarComprobante(Request $request)
     {
         // Validar que venga la imagen

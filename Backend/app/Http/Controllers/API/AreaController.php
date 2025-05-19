@@ -10,12 +10,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Exception;
 
-/**
- * @OA\Tag(
- *     name="Áreas",
- *     description="API Endpoints para gestión de áreas de competencia"
- * )
- */
 class AreaController extends Controller
 {
     protected $areaService;
@@ -24,59 +18,7 @@ class AreaController extends Controller
     {
         $this->areaService = $areaService;
     }
-    /**
-     * @OA\Get(
-     *     path="/api/area",
-     *     tags={"Áreas"},
-     *     summary="Obtener lista de áreas",
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(
-     *         name="activo",
-     *         in="query",
-     *         required=false,
-     *         @OA\Schema(type="boolean"),
-     *         description="Filtrar áreas por estado activo/inactivo"
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Lista de áreas obtenida exitosamente",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(
-     *                 property="data",
-     *                 type="array",
-     *                 @OA\Items(ref="#/components/schemas/Area")
-     *             )
-     *         )
-     *     )
-     * )
-     *
-     * @OA\Get(
-     *     path="/api/user/areas",
-     *     tags={"Áreas"},
-     *     summary="Obtener lista de áreas (ruta alternativa para usuarios)",
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(
-     *         name="activo",
-     *         in="query",
-     *         required=false,
-     *         @OA\Schema(type="boolean"),
-     *         description="Filtrar áreas por estado activo/inactivo"
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Lista de áreas obtenida exitosamente",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(
-     *                 property="data",
-     *                 type="array",
-     *                 @OA\Items(ref="#/components/schemas/Area")
-     *             )
-     *         )
-     *     )
-     * )
-     */
+
     public function index(Request $request)
     {
         try {
@@ -99,27 +41,6 @@ class AreaController extends Controller
         }
     }
 
-    /**
-     * @OA\Post(
-     *     path="/api/area",
-     *     tags={"Áreas"},
-     *     summary="Crear nueva área",
-     *     security={{"bearerAuth":{}}},
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             required={"nombre"},
-     *             @OA\Property(property="nombre", type="string", example="Matemáticas"),
-     *             @OA\Property(property="descripcion", type="string", example="Área de matemáticas y lógica")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=201,
-     *         description="Área creada exitosamente",
-     *         @OA\JsonContent(ref="#/components/schemas/Area")
-     *     )
-     * )
-     */
     public function store(AreaStoreRequest $request)
     {
         try {
@@ -137,25 +58,6 @@ class AreaController extends Controller
         }
     }
 
-    /**
-     * @OA\Get(
-     *     path="/api/area/{id}",
-     *     tags={"Áreas"},
-     *     summary="Obtener área específica",
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(
-     *         name="id",
-     *         in="path",
-     *         required=true,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Área encontrada",
-     *         @OA\JsonContent(ref="#/components/schemas/Area")
-     *     )
-     * )
-     */
     public function show($id)
     {
         try {
@@ -180,29 +82,6 @@ class AreaController extends Controller
         }
     }
 
-    /**
-     * @OA\Put(
-     *     path="/api/area/{id}",
-     *     tags={"Áreas"},
-     *     summary="Actualizar área",
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(
-     *         name="id",
-     *         in="path",
-     *         required=true,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(ref="#/components/schemas/Area")
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Área actualizada exitosamente",
-     *         @OA\JsonContent(ref="#/components/schemas/Area")
-     *     )
-     * )
-     */
     public function update(AreaUpdateRequest $request, $id)
     {
         try {
@@ -227,24 +106,6 @@ class AreaController extends Controller
         }
     }
 
-    /**
-     * @OA\Patch(
-     *     path="/api/area/{id}/status",
-     *     tags={"Áreas"},
-     *     summary="Cambiar estado de un área",
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(
-     *         name="id",
-     *         in="path",
-     *         required=true,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Estado del área actualizado exitosamente"
-     *     )
-     * )
-     */
     public function changeStatus(Request $request, $id)
     {
         $validator = Validator::make($request->all(), [
@@ -284,9 +145,6 @@ class AreaController extends Controller
         }
     }
 
-    /**
-     * Eliminar físicamente un área de competencia.
-     */
     public function destroy($id)
     {
         try {
