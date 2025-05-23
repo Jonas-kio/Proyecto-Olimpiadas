@@ -13,7 +13,7 @@ import {
   guardarSeleccionNivel,
   obtenerResumenInscripcion,
   obtenerCategoriasPorArea,
-} from "../../services/apiConfig";
+} from "../../services/inscripcionService";
 
 // Componentes comunes
 import SuccessModal from "../../components/common/SuccessModal";

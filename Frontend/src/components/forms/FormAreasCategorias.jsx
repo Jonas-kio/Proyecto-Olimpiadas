@@ -128,21 +128,23 @@ const FormAreasCategorias = ({
               ))}
           </select>
 
-          {areasSeleccionadas.map((area) => (
-            <span className="etiqueta-area" key={area.id}>
-              {area.nombre}
-              <button
-                type="button"
-                onClick={() =>
-                  setAreasSeleccionadas(
-                    areasSeleccionadas.filter((a) => a.id !== area.id)
-                  )
-                }
-              >
-                ×
-              </button>
-            </span>
-          ))}
+          <div className="etiquetas-contenedor">
+            {areasSeleccionadas.map((area) => (
+              <span className="etiqueta-area" key={area.id}>
+                {area.nombre}
+                <button
+                  type="button"
+                  onClick={() =>
+                    setAreasSeleccionadas(
+                      areasSeleccionadas.filter((a) => a.id !== area.id)
+                    )
+                  }
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+          </div>
         </div>
 
         <div className="campo">
