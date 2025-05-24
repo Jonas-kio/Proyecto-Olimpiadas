@@ -33,6 +33,13 @@ class StoreOlimpiadaRequest extends FormRequest
             $inputs['areas'] = $decoded ?: [];
         }
 
+        // Procesamiento de condiciones
+        if ($this->has('condiciones') && is_string($this->input('condiciones'))) {
+            $condiciones = $this->input('condiciones');
+            $decoded = json_decode($condiciones, true);
+            $inputs['condiciones'] = $decoded ?: [];
+        }
+
         if ($this->has('cupo_minimo') && is_string($this->input('cupo_minimo'))) {
             $inputs['cupo_minimo'] = (int) $this->input('cupo_minimo');
         }
@@ -58,9 +65,14 @@ class StoreOlimpiadaRequest extends FormRequest
                     }
                 }
             ],
-            'areas' => 'required',
             'pdf_detalles' => 'required|file|mimes:pdf|max:10240',
             'imagen_portada' => 'required|file|mimes:jpeg,jpg,png|max:10240',
+            'areas' => 'required|array|min:1',
+            'areas.*' => 'required|exists:area,id',
+            'condiciones' => 'nullable|array',
+            'condiciones.*.area_id' => 'required_with:condiciones|exists:area,id',
+            'condiciones.*.nivel_unico' => 'boolean',
+            'condiciones.*.area_exclusiva' => 'boolean',
         ];
     }
 
@@ -83,6 +95,9 @@ class StoreOlimpiadaRequest extends FormRequest
             'imagen_portada.image' => 'El archivo debe ser una imagen.',
             'imagen_portada.mimes' => 'La imagen debe ser de tipo: jpeg, png, jpg.',
             'imagen_portada.max' => 'La imagen no debe ser mayor a 10MB.',
+            'condiciones.*.area_id.in' => 'El área de la condición debe estar incluida en las áreas seleccionadas',
+            'condiciones.*.nivel_unico.boolean' => 'El valor de nivel único debe ser verdadero o falso',
+            'condiciones.*.area_exclusiva.boolean' => 'El valor de área exclusiva debe ser verdadero o falso',
         ];
     }
 }

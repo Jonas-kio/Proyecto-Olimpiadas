@@ -74,8 +74,6 @@ class BoletaService
                 $montoTotal += $costo->price;
             }
 
-            //$proceso->update(['status' => EstadoInscripcion::INSCRITO]);
-
             $diasExpiracion = config('app.boleta_dias_expiracion', 15);
             $boleta = Boleta::create([
                 'registration_process_id' => $proceso->id,
@@ -145,7 +143,6 @@ class BoletaService
             })->toArray();
         }
 
-        // Construir datos de competidores con sus detalles
         $competidoresData = [];
         foreach ($detalles as $detalle) {
             $competidorId = $detalle->competidor->id;
@@ -176,7 +173,6 @@ class BoletaService
             ];
         }
 
-        // Construir respuesta
         return [
             'boleta' => [
                 'id' => $boleta->id,

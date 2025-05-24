@@ -52,6 +52,10 @@ class InscripcionService
             throw new Exception('El proceso de inscripción no está activo');
         }
 
+        $cursoNivel = explode(' ', $datos['curso']);
+        $datos['curso'] = $cursoNivel[0];
+        $datos['nivel'] = $cursoNivel[1];
+
         $competidor = Competitor::create($datos);
         $this->procesoRepository->agregarCompetidor($proceso->id, $competidor->id);
 
@@ -228,5 +232,15 @@ class InscripcionService
             'unitario' => $costoUnitario,
             'total' => $costoUnitario * $cantidadCompetidores
         ];
+    }
+
+    public function obtenerProcesoPorId($procesoId)
+    {
+        return 0;
+    }
+
+    public function obtenerProcesoPorOlimpiada($olimpiadaId)
+    {
+        return 0;
     }
 }

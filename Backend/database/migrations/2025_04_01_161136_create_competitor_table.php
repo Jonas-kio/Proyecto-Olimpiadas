@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('provincia');
             $table->date('fecha_nacimiento');
             $table->string('curso');
+            $table->string('nivel');
             $table->string('correo_electronico')->unique();
             $table->string('colegio');
             $table->timestamps();

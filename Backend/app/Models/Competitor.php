@@ -15,6 +15,7 @@ class Competitor extends Model
         'provincia',
         'fecha_nacimiento',
         'curso',
+        'nivel',
         'correo_electronico',
         'colegio',
     ];

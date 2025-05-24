@@ -7,6 +7,7 @@ use App\Enums\OlimpiadaModalidades;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Olimpiada extends Model
 {
@@ -34,6 +35,19 @@ class Olimpiada extends Model
             ->withTimestamps();
     }
 
+    public function areasWithConditions(): BelongsToMany
+    {
+        return $this->belongsToMany(Area::class, 'olimpiada_area', 'olimpiada_id', 'area_id')
+            ->withPivot('activo')
+            ->with('conditions')
+            ->withTimestamps();
+    }
+
+    public function conditions(): HasMany
+    {
+        return $this->hasMany(Condition::class)->where('activo', true);
+    }
+
     public function getAreasAttribute()
     {
         return $this->areas()->get();
@@ -51,11 +65,30 @@ class Olimpiada extends Model
     public function getFormattedAreasAttribute()
     {
         return $this->areas->map(function ($area) {
+            $condition = $this->getAreaConditions($area->id);
             return [
                 'id' => $area->id,
                 'nombre' => $area->nombre,
-                'descripcion' => $area->descripcion ?? null
+                'descripcion' => $area->descripcion ?? null,
+                'conditions' => [
+                    'nivel_unico' => $condition ? $condition->nivel_unico : false,
+                    'area_exclusiva' => $condition ? $condition->area_exclusiva : false
+                ]
             ];
         });
+    }
+
+    public function hasConditionForArea(int $areaId): bool
+    {
+        return $this->conditions()
+            ->where('area_id', $areaId)
+            ->exists();
+    }
+
+    public function getAreaConditions(int $areaId)
+    {
+        return $this->conditions()
+            ->where('area_id', $areaId)
+            ->first();
     }
 }

@@ -38,7 +38,6 @@ class AuthController extends Controller
     public function register(AuthStoreRequest $request)
     {
         [$user, $token] = $this->authService->registerUser($request->validated());
-
         return response()->json([
             'success' => true,
             'message' => 'Usuario registrado exitosamente',

@@ -27,9 +27,10 @@ class OlimpiadaService
         array $data,
         ?UploadedFile $pdfDetalles = null,
         ?UploadedFile $imagenPortada = null,
-        ?array $areas = []
+        ?array $areas = [],
+        ?array $condiciones = []
     ): Olimpiada {
-        return DB::transaction(function () use ($data, $pdfDetalles, $imagenPortada, $areas) {
+        return DB::transaction(function () use ($data, $pdfDetalles, $imagenPortada, $areas, $condiciones) {
             $dataEstado = $this->determinarEstado($data['fecha_inicio'], $data['fecha_fin']);
             $data['estado'] = $dataEstado['estado'];
             $data['activo'] = $dataEstado['activo'];
@@ -37,7 +38,9 @@ class OlimpiadaService
 
             Log::info('Creando olimpiada con datos', [
                 'estado' => $data['estado'],
-                'activo' => $data['activo']
+                'activo' => $data['activo'],
+                'areas' => $areas,
+                'condiciones' => $condiciones // Logging de condiciones
             ]);
 
             $olimpiada = Olimpiada::create($data);
@@ -45,6 +48,7 @@ class OlimpiadaService
 
             $this->handleFileUploads($olimpiada, $pdfDetalles, $imagenPortada);
             $this->handleAreas($olimpiada, $areas);
+            $this->handleConditions($olimpiada, $areas, $condiciones);
 
             $olimpiada->refresh();
             $this->logOlimpiadaOperation($olimpiada, 'creada');
@@ -53,14 +57,48 @@ class OlimpiadaService
         });
     }
 
+    private function handleConditions(Olimpiada $olimpiada, array $areas, ?array $condiciones): void
+    {
+        if (empty($areas)) {
+            return;
+        }
+
+        Log::info('Procesando condiciones para olimpiada', [
+            'olimpiada_id' => $olimpiada->id,
+            'areas' => $areas,
+            'condiciones' => $condiciones
+        ]);
+
+        foreach ($areas as $areaId) {
+            $condicionArea = null;
+            if (!empty($condiciones)) {
+                $condicionArea = collect($condiciones)->first(function ($condicion) use ($areaId) {
+                    return $condicion['area_id'] == $areaId;
+                });
+            }
+            $olimpiada->conditions()->create([
+                'area_id' => $areaId,
+                'nivel_unico' => $condicionArea['nivel_unico'] ?? false,
+                'area_exclusiva' => $condicionArea['area_exclusiva'] ?? false,
+            ]);
+
+            Log::info('Condición creada para área', [
+                'olimpiada_id' => $olimpiada->id,
+                'area_id' => $areaId,
+                'tiene_condiciones_especificas' => !is_null($condicionArea)
+            ]);
+        }
+    }
+
     public function updateOlimpiada(
         Olimpiada $olimpiada,
         array $data,
         ?UploadedFile $pdfDetalles = null,
         ?UploadedFile $imagenPortada = null,
-        ?array $areas = null
+        ?array $areas = null,
+        ?array $condiciones = null
     ): Olimpiada {
-        return DB::transaction(function () use ($olimpiada, $data, $pdfDetalles, $imagenPortada, $areas) {
+        return DB::transaction(function () use ($olimpiada, $data, $pdfDetalles, $imagenPortada, $areas,$condiciones) {
             $this->logUpdateStart($olimpiada, $data, $areas, $pdfDetalles, $imagenPortada);
 
             $this->processModalidad($data);
@@ -84,11 +122,42 @@ class OlimpiadaService
             $this->handleFileUploads($olimpiada, $pdfDetalles, $imagenPortada);
             $this->handleAreas($olimpiada, $areas);
 
+            if ($areas !== null && $condiciones !== null) {
+                $this->updateConditions($olimpiada, $areas, $condiciones);
+            }
+
             $olimpiada->refresh();
             $this->logOlimpiadaOperation($olimpiada, 'actualizada');
 
             return $olimpiada;
         });
+    }
+
+    private function updateConditions(Olimpiada $olimpiada, array $areas, array $condiciones): void
+    {
+        $olimpiada->conditions()->update(['activo' => false]);
+
+        foreach ($areas as $areaId) {
+            $condicionArea = collect($condiciones)->first(function ($condicion) use ($areaId) {
+                return $condicion['area_id'] == $areaId;
+            });
+
+            $olimpiada->conditions()->updateOrCreate(
+                [
+                    'area_id' => $areaId,
+                ],
+                [
+                    'nivel_unico' => $condicionArea['nivel_unico'] ?? false,
+                    'area_exclusiva' => $condicionArea['area_exclusiva'] ?? false,
+                ]
+            );
+        }
+
+        Log::info('Condiciones actualizadas', [
+            'olimpiada_id' => $olimpiada->id,
+            'areas' => $areas,
+            'condiciones' => $condiciones
+        ]);
     }
 
     public function deleteOlimpiada(Olimpiada $olimpiada): void

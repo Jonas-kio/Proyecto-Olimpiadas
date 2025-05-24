@@ -57,12 +57,15 @@ class OlimpiadaController extends Controller
             $this->validarFechas($fechaInicio, $fechaFin);
 
             $data = $this->prepareStoreData($request);
+            $areas = $this->parseAreas($request->input('areas'));
+            $condiciones = $this->parseCondiciones($request->input('condiciones'));
 
             $olimpiada = $this->olimpiadaService->createOlimpiada(
                 $data,
                 $request->file('pdf_detalles'),
                 $request->file('imagen_portada'),
-                $request->input('areas', [])
+                $areas,
+                $condiciones
             );
 
             return $this->successResponse([
@@ -102,20 +105,19 @@ class OlimpiadaController extends Controller
         try {
             $parsedData = $this->parseMultipartFormData($request);
             $updateData = $this->prepareUpdateData($parsedData['data']);
-
             $hoy = Carbon::today();
             $fechaInicio = Carbon::parse($updateData['fecha_inicio'] ?? $olimpiada->fecha_inicio);
             $fechaFin = Carbon::parse($updateData['fecha_fin'] ?? $olimpiada->fecha_fin);
 
             $this->validarFechas($fechaInicio, $fechaFin);
 
-
             $olimpiadaActualizada = $this->olimpiadaService->updateOlimpiada(
                 $olimpiada,
                 $updateData,
                 $this->getUploadedFile($parsedData['files'], 'pdf_detalles'),
                 $this->getUploadedFile($parsedData['files'], 'imagen_portada'),
-                $this->parseAreas($parsedData['data']['areas'] ?? null)
+                $this->parseAreas($parsedData['data']['areas'] ?? null),
+                $this->parseCondiciones($parsedData['data']['condiciones'] ?? null)
             );
 
             return $this->successResponse([
@@ -273,6 +275,26 @@ class OlimpiadaController extends Controller
             $areas = array_map('trim', explode(',', str_replace(['[', ']'], '', $areasInput)));
         }
         return array_map('intval', array_filter($areas));
+    }
+
+    private function parseCondiciones(?string $condicionesInput): ?array
+    {
+        if (!$condicionesInput) {
+            return null;
+        }
+
+        $condiciones = json_decode($condicionesInput, true);
+        if ($condiciones === null) {
+            return null;
+        }
+
+        return collect($condiciones)->map(function ($condicion) {
+            return [
+                'area_id' => (int)$condicion['area_id'],
+                'nivel_unico' => (bool)($condicion['nivel_unico'] ?? false),
+                'area_exclusiva' => (bool)($condicion['area_exclusiva'] ?? false)
+            ];
+        })->all();
     }
 
     private function successResponse(array $data, string $message = 'Operación exitosa', int $status = 200): JsonResponse
