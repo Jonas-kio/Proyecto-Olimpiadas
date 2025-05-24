@@ -71,9 +71,20 @@ class ProcesoInscripcionRepository
 
     public function guardarSeleccionArea(int $procesoId, int $areaId)
     {
+        // Guardar el área individual seleccionada
         $cacheKey = "proceso_{$procesoId}_area";
         Cache::put($cacheKey, $areaId, now()->addHours(24));
         Log::info("Área guardada en caché para el proceso {$procesoId}: {$areaId}");
+
+        // También guardar en la colección de áreas seleccionadas
+        $areasKey = "proceso_{$procesoId}_areas";
+        $areas = Cache::get($areasKey, []);
+
+        if (!in_array($areaId, $areas)) {
+            $areas[] = $areaId;
+            Cache::put($areasKey, $areas, now()->addHours(24));
+            Log::info("Área agregada a la lista de seleccionadas para el proceso {$procesoId}: {$areaId}");
+        }
 
         if (Session::has('area_id')) {
             Session::put('area_id', $areaId);
@@ -99,8 +110,26 @@ class ProcesoInscripcionRepository
     {
         $cacheKey = "proceso_{$procesoId}_area";
         $area_id = Cache::get($cacheKey);
-        Log::info("Área recuperada de la  caché para el proceso areaID: {$area_id}");
+        Log::info("Área recuperada de la caché para el proceso areaID: {$area_id}");
         return $area_id;
+    }
+
+    public function obtenerAreasSeleccionadas(int $procesoId)
+    {
+        $cacheKey = "proceso_{$procesoId}_areas";
+        $areas = Cache::get($cacheKey, []);
+
+        // Si no hay áreas en caché bajo la clave 'areas', verificar si hay un área individual seleccionada
+        if (empty($areas)) {
+            $areaId = $this->obtenerAreaSeleccionada($procesoId);
+            if ($areaId) {
+                $areas = [$areaId];
+                // Almacenar en caché para futuras consultas
+                Cache::put($cacheKey, $areas, now()->addHours(24));
+            }
+        }
+
+        return $areas;
     }
 
     public function obtenerNivelSeleccionado(int $procesoId)

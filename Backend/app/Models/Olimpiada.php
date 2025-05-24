@@ -25,6 +25,7 @@ class Olimpiada extends Model
         'ruta_pdf_detalles',
         'ruta_imagen_portada',
         'estado',
+        'maximo_areas',
         'activo'
     ];
 
@@ -45,7 +46,7 @@ class Olimpiada extends Model
 
     public function conditions(): HasMany
     {
-        return $this->hasMany(Condition::class)->where('activo', true);
+        return $this->hasMany(Condition::class);
     }
 
     public function getAreasAttribute()

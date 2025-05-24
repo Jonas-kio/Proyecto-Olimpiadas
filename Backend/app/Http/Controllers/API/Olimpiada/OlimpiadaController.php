@@ -51,14 +51,36 @@ class OlimpiadaController extends Controller
     public function store(StoreOlimpiadaRequest $request): JsonResponse
     {
         try {
+            Log::info('store: Iniciando creación de olimpiada', [
+                'all_data' => $request->all(),
+                'validated' => $request->validated()
+            ]);
+
             $fechaInicio = Carbon::parse($request->input('fecha_inicio'));
             $fechaFin = Carbon::parse($request->input('fecha_fin'));
 
             $this->validarFechas($fechaInicio, $fechaFin);
 
             $data = $this->prepareStoreData($request);
-            $areas = $this->parseAreas($request->input('areas'));
-            $condiciones = $this->parseCondiciones($request->input('condiciones'));
+            Log::info('store: data preparada', ['data' => $data]);
+
+            // Obtener las áreas directamente de la validación para evitar problemas de parseo
+            $areas = $request->validated()['areas'];
+            Log::info('store: areas obtenidas de validación', ['areas' => $areas]);
+
+            // Verificar cómo vienen las condiciones en la solicitud
+            Log::info('store: examinando condiciones antes de procesar', [
+                'condiciones_raw' => $request->input('condiciones'),
+                'condiciones_tipo' => gettype($request->input('condiciones')),
+                'condiciones_en_validated' => array_key_exists('condiciones', $request->validated()) ? $request->validated()['condiciones'] : 'no existe'
+            ]);
+
+            // Usar condiciones de la validación si existen, o procesarlas directamente
+            $condiciones = array_key_exists('condiciones', $request->validated())
+                ? $this->parseCondiciones($request->validated()['condiciones'])
+                : $this->parseCondiciones($request->input('condiciones'));
+
+            Log::info('store: condiciones parseadas', ['condiciones' => $condiciones]);
 
             $olimpiada = $this->olimpiadaService->createOlimpiada(
                 $data,
@@ -79,9 +101,34 @@ class OlimpiadaController extends Controller
     public function show(Olimpiada $olimpiada): JsonResponse
     {
         try {
-            $olimpiada->load('areas');
+            $olimpiada->load('areas', 'conditions.area');
+            
+            // Agregar datos formateados con las áreas y sus condiciones
+            $areasConCondiciones = $olimpiada->areas->map(function ($area) use ($olimpiada) {
+                $condicion = $olimpiada->conditions->where('area_id', $area->id)->first();
+                
+                return [
+                    'id' => $area->id,
+                    'nombre' => $area->nombre,
+                    'descripcion' => $area->descripcion,
+                    'pivot' => $area->pivot,
+                    'condicion' => $condicion ? [
+                        'id' => $condicion->id,
+                        'nivel_unico' => $condicion->nivel_unico,
+                        'area_exclusiva' => $condicion->area_exclusiva
+                    ] : null
+                ];
+            });
+            
+            Log::info('show: Áreas con condiciones', [
+                'olimpiada_id' => $olimpiada->id, 
+                'areas_count' => $areasConCondiciones->count(),
+                'conditions_count' => $olimpiada->conditions->count()
+            ]);
+            
             return $this->successResponse([
-                'olimpiada' => $olimpiada
+                'olimpiada' => $olimpiada,
+                'areas_con_condiciones' => $areasConCondiciones
             ]);
         } catch (\Exception $e) {
             return $this->errorResponse('Error al obtener la olimpiada', $e);
@@ -91,9 +138,34 @@ class OlimpiadaController extends Controller
     public function showUser(Olimpiada $olimpiada): JsonResponse
     {
         try {
-            $olimpiada->load('areas');
+            $olimpiada->load('areas', 'conditions.area');
+            
+            // Agregar datos formateados con las áreas y sus condiciones
+            $areasConCondiciones = $olimpiada->areas->map(function ($area) use ($olimpiada) {
+                $condicion = $olimpiada->conditions->where('area_id', $area->id)->first();
+                
+                return [
+                    'id' => $area->id,
+                    'nombre' => $area->nombre,
+                    'descripcion' => $area->descripcion,
+                    'pivot' => $area->pivot,
+                    'condicion' => $condicion ? [
+                        'id' => $condicion->id,
+                        'nivel_unico' => $condicion->nivel_unico,
+                        'area_exclusiva' => $condicion->area_exclusiva
+                    ] : null
+                ];
+            });
+            
+            Log::info('showUser: Áreas con condiciones', [
+                'olimpiada_id' => $olimpiada->id, 
+                'areas_count' => $areasConCondiciones->count(),
+                'conditions_count' => $olimpiada->conditions->count()
+            ]);
+            
             return $this->successResponse([
-                'olimpiada' => $olimpiada
+                'olimpiada' => $olimpiada,
+                'areas_con_condiciones' => $areasConCondiciones
             ]);
         } catch (\Exception $e) {
             return $this->errorResponse('Error al obtener la olimpiada', $e);
@@ -241,7 +313,13 @@ class OlimpiadaController extends Controller
 
     private function prepareStoreData(StoreOlimpiadaRequest $request): array
     {
-        return $request->safe()->except(['pdf_detalles', 'imagen_portada', 'areas']);
+        // Agregamos logs para ver los datos validados
+        Log::info('prepareStoreData: datos validados', [
+            'validated' => $request->validated(),
+            'safe' => $request->safe()->all()
+        ]);
+
+        return $request->safe()->except(['pdf_detalles', 'imagen_portada', 'areas', 'condiciones']);
     }
 
     private function prepareUpdateData(array $data): array
@@ -267,34 +345,80 @@ class OlimpiadaController extends Controller
     private function parseAreas(?string $areasInput): ?array
     {
         if (!$areasInput) {
-            return null;
+            Log::info('parseAreas: areasInput es nulo o vacío');
+            return [];
         }
+
+        Log::info('parseAreas: procesando entrada', ['areasInput' => $areasInput]);
 
         $areas = json_decode($areasInput, true);
         if ($areas === null) {
+            // Si no es JSON, intentamos procesar como string separado por comas
             $areas = array_map('trim', explode(',', str_replace(['[', ']'], '', $areasInput)));
+            Log::info('parseAreas: procesado como string separado por comas', ['areas' => $areas]);
+        } else {
+            Log::info('parseAreas: procesado como JSON', ['areas' => $areas]);
         }
-        return array_map('intval', array_filter($areas));
+
+        $result = array_map('intval', array_filter($areas));
+        Log::info('parseAreas: resultado final', ['result' => $result]);
+
+        return $result;
     }
 
-    private function parseCondiciones(?string $condicionesInput): ?array
+    private function parseCondiciones($condicionesInput): ?array
     {
+        Log::info('parseCondiciones: iniciando procesamiento', [
+            'condicionesInput' => $condicionesInput,
+            'tipo' => gettype($condicionesInput)
+        ]);
+
         if (!$condicionesInput) {
+            Log::info('parseCondiciones: input vacío o nulo, retornando null');
             return null;
         }
 
-        $condiciones = json_decode($condicionesInput, true);
-        if ($condiciones === null) {
+        $condiciones = $condicionesInput;
+
+        // Si es un string, intentar parsearlo como JSON
+        if (is_string($condicionesInput)) {
+            Log::info('parseCondiciones: procesando input como string');
+            $condiciones = json_decode($condicionesInput, true);
+
+            if ($condiciones === null) {
+                Log::warning('parseCondiciones: error al decodificar JSON', [
+                    'json_error' => json_last_error_msg()
+                ]);
+                return null;
+            }
+
+            Log::info('parseCondiciones: JSON decodificado exitosamente', [
+                'condiciones_decodificadas' => $condiciones
+            ]);
+        } else if (!is_array($condicionesInput)) {
+            Log::warning('parseCondiciones: tipo de input no soportado', [
+                'tipo' => gettype($condicionesInput)
+            ]);
             return null;
+        } else {
+            Log::info('parseCondiciones: input ya es un array', [
+                'condiciones' => $condiciones
+            ]);
         }
 
-        return collect($condiciones)->map(function ($condicion) {
+        $resultado = collect($condiciones)->map(function ($condicion) {
             return [
                 'area_id' => (int)$condicion['area_id'],
                 'nivel_unico' => (bool)($condicion['nivel_unico'] ?? false),
                 'area_exclusiva' => (bool)($condicion['area_exclusiva'] ?? false)
             ];
         })->all();
+
+        Log::info('parseCondiciones: procesamiento completado', [
+            'resultado' => $resultado
+        ]);
+
+        return $resultado;
     }
 
     private function successResponse(array $data, string $message = 'Operación exitosa', int $status = 200): JsonResponse
