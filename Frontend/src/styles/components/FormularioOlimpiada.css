@@ -339,3 +339,9 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+.asterisco {
+  color: red;
+  font-weight: bold;
+  margin-left: 2px;
+}

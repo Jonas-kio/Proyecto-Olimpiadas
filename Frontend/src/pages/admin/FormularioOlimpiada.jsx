@@ -1,6 +1,12 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { CheckIcon, UploadIcon, XIcon, ChevronDownIcon, Loader2 } from "lucide-react"; 
+import {
+  CheckIcon,
+  UploadIcon,
+  XIcon,
+  ChevronDownIcon,
+  Loader2,
+} from "lucide-react";
 import {
   crearOlimpiada,
   actualizarOlimpiada,
@@ -69,13 +75,12 @@ function FormularioOlimpiada() {
         setIsAreasOpen(false);
       }
     };
-  
+
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
-  
 
   useEffect(() => {
     if (id) {
@@ -91,7 +96,9 @@ function FormularioOlimpiada() {
             description: data.descripcion || "",
             startDate: data.fecha_inicio?.split("T")[0] || "",
             endDate: data.fecha_fin?.split("T")[0] || "",
-            selectedAreas: Array.isArray(data.areas) ? data.areas.map((a) => a.id) : [],
+            selectedAreas: Array.isArray(data.areas)
+              ? data.areas.map((a) => a.id)
+              : [],
             minParticipants: data.cupo_minimo || "",
             modality: data.modalidad || "",
             pdfFile: null, // PDF no obligatorio al editar
@@ -99,7 +106,9 @@ function FormularioOlimpiada() {
           });
 
           if (data.ruta_imagen_portada) {
-            setImagePreview(`http://localhost:8000/storage/${data.ruta_imagen_portada}`);
+            setImagePreview(
+              `http://localhost:8000/storage/${data.ruta_imagen_portada}`
+            );
           }
         } catch (error) {
           console.error("Error al obtener la olimpiada:", error);
@@ -151,10 +160,15 @@ function FormularioOlimpiada() {
 
   const esFechaNoPasada = (fecha) => {
     if (!fecha) return true;
+
+    // Convertimos fecha manualmente a local (ignorar zona horaria)
+    const [year, month, day] = fecha.split("-").map(Number);
+    const selected = new Date(year, month - 1, day);
+
     const today = new Date();
-    const selected = new Date(fecha);
-    today.setHours(0, 0, 0, 0);
-    selected.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0); // limpiar hora
+    selected.setHours(0, 0, 0, 0); // limpiar hora
+
     return selected >= today;
   };
 
@@ -163,9 +177,10 @@ function FormularioOlimpiada() {
     const fechaFinValida = esFechaNoPasada(formData.endDate);
     const fechasConDiferenciaValida = isFechaValida();
     const pdfObligatorio = !id ? formData.pdfFile !== null : true;
-    const imagenObligatoria = !id ? formData.coverImage !== null : !!imagePreview || formData.coverImage !== null;
+    const imagenObligatoria = !id
+      ? formData.coverImage !== null
+      : !!imagePreview || formData.coverImage !== null;
 
-  
     return (
       formData.name.trim() !== "" &&
       formData.name.length <= 100 &&
@@ -182,7 +197,7 @@ function FormularioOlimpiada() {
       imagenObligatoria &&
       pdfObligatorio
     );
-  };  
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -214,7 +229,9 @@ function FormularioOlimpiada() {
         await actualizarOlimpiada(id, data);
         setSuccessTitle("¡Olimpiada actualizada exitosamente!");
         setSuccessMessage("Los cambios fueron guardados correctamente.");
-        setSuccessDetailMessage("Puedes ver la olimpiada actualizada en el Dashboard.");
+        setSuccessDetailMessage(
+          "Puedes ver la olimpiada actualizada en el Dashboard."
+        );
       } else {
         await crearOlimpiada(data);
         setSuccessTitle("¡Olimpiada creada exitosamente!");
@@ -224,7 +241,10 @@ function FormularioOlimpiada() {
       setShowSuccessModal(true);
     } catch (error) {
       console.error("❌ Error al guardar olimpiada:", error);
-      setErrorMessage(error?.response?.data?.message || "No se pudo guardar la olimpiada. Intenta nuevamente.");
+      setErrorMessage(
+        error?.response?.data?.message ||
+          "No se pudo guardar la olimpiada. Intenta nuevamente."
+      );
       setErrorFields(["Nombre", "Descripción", "Fechas", "Áreas", "Modalidad"]);
       setShowErrorModal(true);
     } finally {
@@ -243,7 +263,9 @@ function FormularioOlimpiada() {
           <form onSubmit={handleSubmit} className="form-content">
             {/* Imagen */}
             <div className="input-group">
-              <label className="label">Imagen de Portada</label>
+              <label className="label">
+                Imagen de Portada <span className="asterisco">*</span>
+              </label>
               <div className="image-upload">
                 {imagePreview ? (
                   <div className="image-preview-wrapper">
@@ -282,7 +304,9 @@ function FormularioOlimpiada() {
 
             {/* Nombre, descripción, fechas, modalidad, etc. */}
             <div className="input-group">
-              <label className="label">Nombre de la Olimpiada</label>
+              <label className="label">
+                Nombre de la Olimpiada <span className="asterisco">*</span>
+              </label>
               <input
                 type="text"
                 value={formData.name}
@@ -300,7 +324,9 @@ function FormularioOlimpiada() {
             </div>
 
             <div className="input-group">
-              <label className="label">Descripción</label>
+              <label className="label">
+                Descripción <span className="asterisco">*</span>
+              </label>
               <textarea
                 value={formData.description}
                 onChange={(e) => {
@@ -321,7 +347,9 @@ function FormularioOlimpiada() {
 
             <div className="date-grid">
               <div>
-                <label className="label">Fecha de inicio</label>
+                <label className="label">
+                  Fecha de inicio <span className="asterisco">*</span>
+                </label>
                 <input
                   type="date"
                   value={formData.startDate}
@@ -340,7 +368,9 @@ function FormularioOlimpiada() {
                 )}
               </div>
               <div>
-                <label className="label">Fecha de fin</label>
+                <label className="label">
+                  Fecha de fin <span className="asterisco">*</span>
+                </label>
                 <input
                   type="date"
                   value={formData.endDate}
@@ -406,7 +436,10 @@ function FormularioOlimpiada() {
             </div>
 
             <div className="input-group">
-              <label className="label">Cupo mínimo de participantes</label>
+              <label className="label">
+                Cupo mínimo de participantes{" "}
+                <span className="asterisco">*</span>
+              </label>
               <input
                 type="number"
                 value={formData.minParticipants}
@@ -417,11 +450,13 @@ function FormularioOlimpiada() {
                 min="1"
                 required
               />
-              {formData.minParticipants !== "" }
+              {formData.minParticipants !== ""}
             </div>
 
             <div className="input-group">
-              <label className="label">Modalidad</label>
+              <label className="label">
+                Modalidad <span className="asterisco">*</span>
+              </label>
               <select
                 value={formData.modality}
                 onChange={(e) =>
@@ -441,7 +476,8 @@ function FormularioOlimpiada() {
 
             <div className="pdf-upload-container">
               <label className="pdf-upload-label">
-                Detalles de la olimpiada (PDF)
+                Detalles de la olimpiada (PDF){" "}
+                <span className="asterisco">*</span>
               </label>
               <div className="pdf-upload-wrapper">
                 <input
