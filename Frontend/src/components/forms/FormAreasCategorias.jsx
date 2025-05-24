@@ -57,36 +57,45 @@ const FormAreasCategorias = ({
     } else if (areasSeleccionadas.length >= 2) {
       alert("Solo puedes inscribirte en un máximo de 2 áreas.");
     } else {
-      setAreasSeleccionadas([...areasSeleccionadas, areaSeleccionada]);
-      setCategoriaSeleccionada(""); // Resetear categoría al cambiar de área
+      // 1. Agregamos la nueva área
+      const nuevasAreas = [...areasSeleccionadas, areaSeleccionada];
+      setAreasSeleccionadas(nuevasAreas);
+      setCategoriaSeleccionada(""); // Limpiar selección actual
+      setCategoriasFiltradas([]); // Limpiar visual
 
-      try {
-        const response = await obtenerCategoriasPorArea(idSeleccionado);
-        console.log("Respuesta completa de categorías:", response);
-        // setCategoriasFiltradas(
-        //   Array.isArray(response.data.data) ? response.data.data : []
-        // );
-        // Asegúrate de que `.data` esté correcto según tu backend
-        const cursoSeleccionado = parseInt(
-          localStorage.getItem("cursoSeleccionado")
-        );
+      const cursoSeleccionado = parseInt(
+        localStorage.getItem("cursoSeleccionado")
+      );
+      let todasLasCategorias = [];
 
-        const categoriasFiltradasPorCurso = Array.isArray(response.data.data)
-          ? response.data.data.filter((cat) => {
-              const min = parseInt(cat.grade_min);
-              const max = cat.grade_max ? parseInt(cat.grade_max) : 12;
-              return cursoSeleccionado >= min && cursoSeleccionado <= max;
-            })
-          : [];
+      for (const area of nuevasAreas) {
+        try {
+          const response = await obtenerCategoriasPorArea(area.id);
+          const categorias = Array.isArray(response.data.data)
+            ? response.data.data
+            : [];
 
-        setCategoriasFiltradas(categoriasFiltradasPorCurso);
-      } catch (error) {
-        console.error("Error al obtener categorías para el área:", error);
+          const filtradas = categorias.filter((cat) => {
+            const min = parseInt(cat.grade_min);
+            const max = cat.grade_max || 12;
+            return cursoSeleccionado >= min && cursoSeleccionado <= max;
+          });
+
+          todasLasCategorias = [...todasLasCategorias, ...filtradas];
+        } catch (error) {
+          console.error(
+            `Error al obtener categorías del área ${area.nombre}:`,
+            error
+          );
+        }
       }
+
+      setCategoriasFiltradas(todasLasCategorias); // ✅ Final: categorías unidas
     }
 
     e.target.value = "";
   };
+
   return (
     <>
       <h2>Selección de Áreas</h2>
@@ -145,14 +154,18 @@ const FormAreasCategorias = ({
             value={categoriaSeleccionada}
             onChange={(e) => setCategoriaSeleccionada(e.target.value)}
           >
-            <option value="">Selecciona una categoría</option>
-            {Array.isArray(categoriasFiltradas) &&
-              categoriasFiltradas.map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.name} - {cat.grade_name} (mínimo: {cat.grade_min} a
-                  máximo: {cat.grade_max})
-                </option>
-              ))}
+            <option value="">
+              {categoriasFiltradas.length === 0
+                ? "No existen niveles en las áreas seleccionadas"
+                : "Selecciona una categoría"}
+            </option>
+
+            {categoriasFiltradas.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.name} - {cat.grade_name} (mínimo: {cat.grade_min} a máximo:{" "}
+                {cat.grade_max})
+              </option>
+            ))}
           </select>
 
           {categoriaSeleccionada && (
