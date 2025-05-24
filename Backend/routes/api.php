@@ -99,6 +99,7 @@ Route::middleware([IsUserAuth::class])->group(
             // Rutas para obtener información de olimpiadas
             Route::get('/olimpiadas', [OlimpiadaController::class, 'indexUser'])->name('olimpiadas.indexUser');
             Route::get('/olimpiadas/{olimpiada}', [OlimpiadaController::class, 'show']);
+            Route::get('/olimpiadas/{olimpiada}/areas', [OlimpiadaController::class, 'getAreasByOlimpiada'])->name('olimpiadas.areas');
 
             // Rutas para obtener información de areas por el ususario
             Route::get('/areas', [AreaController::class, 'index'])->name('areas.indexUser');

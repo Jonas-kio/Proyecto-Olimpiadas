@@ -104,12 +104,17 @@ class InscripcionService
 
     public function guardarSeleccionArea(RegistrationProcess $proceso, int $areaId)
     {
-        $areaValida = $proceso->olimpiada->areas()
-            ->where('area.id', $areaId)
-            ->where('olimpiada_area.activo', true)
+        // Verificar si el área está en la tabla olimpiada_area
+        //$areaValida = $proceso->olimpiada->areas()
+        //    ->where('area.id', $areaId)
+        //    ->exists();
+
+        // Verificar si el área está en la tabla conditions
+        $areaValidaEnConditions = $proceso->olimpiada->conditions()
+            ->where('area_id', $areaId)
             ->exists();
 
-        if (!$areaValida) {
+        if (!$areaValidaEnConditions) {
             throw new Exception('El área seleccionada no es válida para esta olimpiada');
         }
 
@@ -272,6 +277,18 @@ class InscripcionService
     public function obtenerProcesoPorId($procesoId)
     {
         return 0;
+    }
+
+    public function obtenerEstadoProceso($procesoId)
+    {
+        $estado = $this->procesoRepository->obtenerEstadoProceso($procesoId);
+        if ($estado == EstadoInscripcion::PENDIENTE) {
+            return 'Pendiente';
+        } elseif ($estado == EstadoInscripcion::INSCRITO) {
+            return 'Aceptado';
+        } elseif ($estado == EstadoInscripcion::RECHAZADO) {
+            return 'Rechazado';
+        }
     }
 
     public function obtenerProcesoPorOlimpiada($olimpiadaId)

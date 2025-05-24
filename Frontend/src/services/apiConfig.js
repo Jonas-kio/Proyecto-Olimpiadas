@@ -87,11 +87,13 @@ export const inscripcionTutor = async (procesoId, formularioTutor) => {
   );
 };
 export const obtenerAreasPorOlimpiada = async (id) => {
-  const response = await api.get(`/libre/olimpiadas/${id}`);
+  const response = await api.get(`/user/olimpiadas/${id}/areas`);
 
   // Depura la estructura real
   console.log("Respuesta cruda del backend:", response.data);
-  const areas = response.data?.data?.olimpiada?.areas || [];
+  
+  // Las áreas están en response.data.data.areas según la estructura del backend
+  const areas = response.data?.data?.areas || [];
 
   console.log("Áreas extraídas correctamente:", areas);
 

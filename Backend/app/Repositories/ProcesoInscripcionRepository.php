@@ -152,4 +152,13 @@ class ProcesoInscripcionRepository
 
         return true;
     }
+
+    public function obtenerEstadoProceso($procesoId)
+    {
+        $proceso = RegistrationProcess::find($procesoId);
+        if ($proceso) {
+            return $proceso->status;
+        }
+        return null;
+    }
 }

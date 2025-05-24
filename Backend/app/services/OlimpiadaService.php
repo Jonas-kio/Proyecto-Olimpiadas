@@ -186,6 +186,25 @@ class OlimpiadaService
         });
     }
 
+    public function getAreasByOlimpiada (Olimpiada $olimpiada): array
+    {
+
+        $conditions = $olimpiada->conditions()->with('area')->get();
+
+        $areas = $conditions->map(function ($condition) {
+            return [
+                'id' => $condition->area->id,
+                'nombre' => $condition->area->nombre,
+                'descripcion' => $condition->area->descripcion,
+                'activo' => $condition->area->activo,
+                'nivel_unico' => $condition->nivel_unico,
+                'area_exclusiva' => $condition->area_exclusiva
+            ];
+        });
+
+        return $areas->toArray();
+    }
+
     private function updateConditions(Olimpiada $olimpiada, array $areas, array $condiciones): void
     {
         // Eliminar condiciones antiguas que ya no están en las áreas seleccionadas
