@@ -8,12 +8,6 @@ use App\Http\Requests\RequestCost\CostStoreRequest;
 use App\Http\Requests\RequestCost\CostUpdateRequest;
 use App\Services\CostService;
 
-/**
- * @OA\Tag(
- *     name="Costos",
- *     description="API Endpoints para gestión de costos"
- * )
- */
 class CostController extends Controller
 {
     protected $costService;
@@ -23,26 +17,6 @@ class CostController extends Controller
         $this->costService = $costService;
     }
 
-    /**
-     * @OA\Get(
-     *     path="/api/costs",
-     *     tags={"Costos"},
-     *     summary="Obtener lista de costos",
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Response(
-     *         response=200,
-     *         description="Lista de costos obtenida exitosamente",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(
-     *                 property="data",
-     *                 type="array",
-     *                 @OA\Items(ref="#/components/schemas/Cost")
-     *             )
-     *         )
-     *     )
-     * )
-     */
     public function index()
     {
         try {
@@ -85,28 +59,6 @@ class CostController extends Controller
         }
     }
 
-    /**
-     * @OA\Post(
-     *     path="/api/costs",
-     *     tags={"Costos"},
-     *     summary="Crear nuevo costo",
-     *     security={{"bearerAuth":{}}},
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             required={"monto","area_id"},
-     *             @OA\Property(property="monto", type="number", format="float", example=150.00),
-     *             @OA\Property(property="area_id", type="integer", example=1),
-     *             @OA\Property(property="descripcion", type="string", example="Costo de inscripción área matemáticas")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=201,
-     *         description="Costo creado exitosamente",
-     *         @OA\JsonContent(ref="#/components/schemas/Cost")
-     *     )
-     * )
-     */
     public function store(CostStoreRequest $request)
     {
         try {
@@ -127,29 +79,6 @@ class CostController extends Controller
         }
     }
 
-    /**
-     * @OA\Put(
-     *     path="/api/costs/{cost}",
-     *     tags={"Costos"},
-     *     summary="Actualizar costo existente",
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(
-     *         name="cost",
-     *         in="path",
-     *         required=true,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(ref="#/components/schemas/Cost")
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Costo actualizado exitosamente",
-     *         @OA\JsonContent(ref="#/components/schemas/Cost")
-     *     )
-     * )
-     */
     public function update(CostUpdateRequest $request, $id)
     {
         try {
@@ -177,24 +106,6 @@ class CostController extends Controller
         }
     }
 
-    /**
-     * @OA\Delete(
-     *     path="/api/costs/{cost}",
-     *     tags={"Costos"},
-     *     summary="Eliminar costo",
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(
-     *         name="cost",
-     *         in="path",
-     *         required=true,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Costo eliminado exitosamente"
-     *     )
-     * )
-     */
     public function destroy($id)
     {
         try {

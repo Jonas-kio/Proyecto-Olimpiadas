@@ -37,6 +37,8 @@ Route::get('/libre/olimpiadas/{olimpiada}', [OlimpiadaController::class, 'show']
 //TODO: Rutas Publicas
 Route::post('register', [AuthController::class, 'register']);
 Route::post('login', [AuthController::class, 'login']);
+Route::get('email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])->name('verification.verify');
+Route::post('email/resend', [AuthController::class, 'resendVerificationEmail'])->name('verification.resend');
 
 //TODO: Rutas Privadas
 Route::middleware([IsUserAuth::class])->group(

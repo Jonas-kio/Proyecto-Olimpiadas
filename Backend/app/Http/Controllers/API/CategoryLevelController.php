@@ -10,19 +10,6 @@ use App\Http\Requests\CategoryLevelRequest\CategoryLevelUpdateRequest;
 use GuzzleHttp\Psr7\Request;
 use Illuminate\Support\Facades\Log;
 
-/**
- * @OA\Tag(
- *     name="Niveles y Categorías",
- *     description="API Endpoints para gestión de niveles y categorías"
- * )
- */
-
-/**
- * @OA\Tag(
- *     name="Niveles y Categorías - Usuario",
- *     description="API Endpoints de niveles y categorías para usuarios normales"
- * )
- */
 class CategoryLevelController extends Controller
 {
     protected $categoryLevelService;
@@ -32,27 +19,6 @@ class CategoryLevelController extends Controller
         $this->categoryLevelService = $categoryLevelService;
     }
 
-    /**
-     * @OA\Get(
-     *     path="/api/categoryLevel",
-     *     tags={"Niveles y Categorías"},
-     *     summary="Obtener todos los niveles y categorías",
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Response(
-     *         response=200,
-     *         description="Lista de niveles y categorías",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(property="message", type="string", example="Niveles/categoría obtenidos exitosamente"),
-     *             @OA\Property(
-     *                 property="data",
-     *                 type="array",
-     *                 @OA\Items(ref="#/components/schemas/CategoryLevel")
-     *             )
-     *         )
-     *     )
-     * )
-     */
     public function index()
     {
         try {
@@ -79,27 +45,6 @@ class CategoryLevelController extends Controller
         }
     }
 
-    /**
-     * @OA\Get(
-     *     path="/api/user/categoryLevel",
-     *     tags={"Niveles y Categorías - Usuario"},
-     *     summary="Obtener niveles disponibles",
-     *     description="Obtiene la lista de niveles disponibles para usuarios normales",
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Response(
-     *         response=200,
-     *         description="Lista de niveles obtenida exitosamente",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(
-     *                 property="data",
-     *                 type="array",
-     *                 @OA\Items(ref="#/components/schemas/CategoryLevel")
-     *             )
-     *         )
-     *     )
-     * )
-     */
     public function indexUser()
     {
         try {
@@ -116,32 +61,6 @@ class CategoryLevelController extends Controller
         }
     }
 
-    /**
-     * @OA\Get(
-     *     path="/api/user/categoryLevel/{category_id}/{area_id}",
-     *     tags={"Niveles y Categorías - Usuario"},
-     *     summary="Obtener categoría específica por ID y área",
-     *     description="Obtiene un nivel específico según el área seleccionada",
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(
-     *         name="category_id",
-     *         in="path",
-     *         required=true,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Parameter(
-     *         name="area_id",
-     *         in="path",
-     *         required=true,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Categoría encontrada",
-     *         @OA\JsonContent(ref="#/components/schemas/CategoryLevel")
-     *     )
-     * )
-     */
     public function getCategoryByIdAndAreaId($categoryId, $areaId)
     {
         try {
@@ -160,23 +79,6 @@ class CategoryLevelController extends Controller
         }
     }
 
-    /**
-     * @OA\Post(
-     *     path="/api/categoryLevel",
-     *     tags={"Niveles y Categorías"},
-     *     summary="Crear nuevo nivel/categoría",
-     *     security={{"bearerAuth":{}}},
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(ref="#/components/schemas/CategoryLevel")
-     *     ),
-     *     @OA\Response(
-     *         response=201,
-     *         description="Nivel/categoría creado exitosamente",
-     *         @OA\JsonContent(ref="#/components/schemas/CategoryLevel")
-     *     )
-     * )
-     */
     public function store(CategoryLevelStoreRequest $request)
     {
         try {
@@ -218,29 +120,6 @@ class CategoryLevelController extends Controller
         }
     }
 
-    /**
-     * @OA\Put(
-     *     path="/api/categoryLevel/{id}",
-     *     tags={"Niveles y Categorías"},
-     *     summary="Actualizar nivel/categoría",
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(
-     *         name="id",
-     *         in="path",
-     *         required=true,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(ref="#/components/schemas/CategoryLevel")
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Nivel/categoría actualizado exitosamente",
-     *         @OA\JsonContent(ref="#/components/schemas/CategoryLevel")
-     *     )
-     * )
-     */
     public function update(CategoryLevelUpdateRequest $request, $id)
     {
         try {
@@ -283,50 +162,6 @@ class CategoryLevelController extends Controller
         }
     }
 
-    /**
-     * @OA\Get(
-     *     path="/api/user/categoryLevel/area/{area_id}",
-     *     tags={"Niveles y Categorías - Usuario"},
-     *     summary="Obtener categorías por área",
-     *     description="Obtiene todas las categorías asociadas a un área específica",
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(
-     *         name="area_id",
-     *         in="path",
-     *         required=true,
-     *         description="ID del área",
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Lista de categorías del área",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(
-     *                 property="data",
-     *                 type="array",
-     *                 @OA\Items(ref="#/components/schemas/CategoryLevel")
-     *             )
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=404,
-     *         description="No se encontraron categorías para el área",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=false),
-     *             @OA\Property(property="message", type="string", example="No existen categorías relacionadas a esta área")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=500,
-     *         description="Error del servidor",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=false),
-     *             @OA\Property(property="message", type="string", example="Error al obtener los niveles/categoría")
-     *         )
-     *     )
-     * )
-     */
     public function getCategoryByAreaId($areaId)
     {
         try {
@@ -351,47 +186,6 @@ class CategoryLevelController extends Controller
             ], $code ? $code : 500);
         }
     }
-
-    /**
-     * @OA\Delete(
-     *     path="/api/categoryLevel/{id}",
-     *     tags={"Niveles y Categorías"},
-     *     summary="Eliminar nivel/categoría",
-     *     description="Elimina un nivel o categoría específica",
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(
-     *         name="id",
-     *         in="path",
-     *         required=true,
-     *         description="ID del nivel/categoría a eliminar",
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Nivel/categoría eliminado exitosamente",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(property="message", type="string", example="Nivel/categoría eliminado exitosamente")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=404,
-     *         description="Nivel/categoría no encontrado",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=false),
-     *             @OA\Property(property="message", type="string", example="Nivel de categoría no encontrado")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=500,
-     *         description="Error del servidor",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=false),
-     *             @OA\Property(property="message", type="string", example="Error al eliminar el nivel/categoría")
-     *         )
-     *     )
-     * )
-     */
 
     public function destroy($id)
     {

@@ -16,12 +16,7 @@ use App\Services\BoletaService;
 
 use Illuminate\Support\Facades\Auth;
 
-/**
- * @OA\Tag(
- *     name="Inscripción",
- *     description="Endpoints para el proceso de inscripción"
- * )
- */
+
 class InscripcionController extends Controller
 {
     protected $inscripcionService;
@@ -32,31 +27,6 @@ class InscripcionController extends Controller
         $this->inscripcionService = $inscripcionService;
         $this->boletaService = $boletaService;
     }
-
-    /**
-     * @OA\Post(
-     *     path="/api/inscripcion/olimpiada/{olimpiada}/iniciar",
-     *     tags={"Inscripción"},
-     *     summary="Iniciar proceso de inscripción",
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(
-     *         name="olimpiada",
-     *         in="path",
-     *         required=true,
-     *         description="ID de la olimpiada",
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Response(
-     *         response=201,
-     *         description="Proceso iniciado exitosamente",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(property="message", type="string", example="Proceso de inscripción iniciado"),
-     *             @OA\Property(property="proceso", ref="#/components/schemas/RegistrationProcess")
-     *         )
-     *     )
-     * )
-     */
     public function iniciarProceso(IniciarProcesoRequest $request, Olimpiada $olimpiada)
     {
         $validated = $request->validated();
@@ -68,34 +38,6 @@ class InscripcionController extends Controller
         ]);
     }
 
-    /**
-     * @OA\Post(
-     *     path="/api/inscripcion/proceso/{proceso}/competidor",
-     *     tags={"Inscripción"},
-     *     summary="Registrar competidor en proceso",
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(
-     *         name="proceso",
-     *         in="path",
-     *         required=true,
-     *         description="ID del proceso de inscripción",
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(ref="#/components/schemas/Competitor")
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Competidor registrado exitosamente",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(property="message", type="string", example="Competidor registrado"),
-     *             @OA\Property(property="competitor", ref="#/components/schemas/Competitor")
-     *         )
-     *     )
-     * )
-     */
     public function registrarCompetidor(CompetidorRequest $request, RegistrationProcess $proceso)
     {
         $competidor = $this->inscripcionService->registrarCompetidor($proceso, $request->validated());
@@ -106,29 +48,6 @@ class InscripcionController extends Controller
         ]);
     }
 
-    /**
-     * @OA\Post(
-     *     path="/api/inscripcion/proceso/{proceso}/tutor",
-     *     tags={"Inscripción"},
-     *     summary="Registrar tutor en proceso",
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(
-     *         name="proceso",
-     *         in="path",
-     *         required=true,
-     *         description="ID del proceso de inscripción",
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(ref="#/components/schemas/Tutor")
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Tutor registrado exitosamente"
-     *     )
-     * )
-     */
     public function registrarTutor(TutorRequest $request, RegistrationProcess $proceso)
     {
         $tutor = $this->inscripcionService->registrarTutor(
@@ -165,29 +84,6 @@ class InscripcionController extends Controller
         ]);
     }
 
-    /**
-     * @OA\Get(
-     *     path="/api/inscripcion/proceso/{proceso}/resumen",
-     *     tags={"Inscripción"},
-     *     summary="Obtener resumen de inscripción",
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(
-     *         name="proceso",
-     *         in="path",
-     *         required=true,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Resumen obtenido exitosamente",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="proceso", ref="#/components/schemas/RegistrationProcess"),
-     *             @OA\Property(property="competitor", ref="#/components/schemas/Competitor"),
-     *             @OA\Property(property="tutor", ref="#/components/schemas/Tutor")
-     *         )
-     *     )
-     * )
-     */
     public function obtenerResumen(RegistrationProcess $proceso)
     {
         $resumen = $this->inscripcionService->generarResumen($proceso);
@@ -198,25 +94,6 @@ class InscripcionController extends Controller
         ]);
     }
 
-    /**
-     * @OA\Post(
-     *     path="/api/inscripcion/proceso/{proceso}/boleta",
-     *     tags={"Inscripción"},
-     *     summary="Generar boleta de inscripción",
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(
-     *         name="proceso",
-     *         in="path",
-     *         required=true,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Boleta generada exitosamente",
-     *         @OA\JsonContent(ref="#/components/schemas/Boleta")
-     *     )
-     * )
-     */
     public function generarBoleta(RegistrationProcess $proceso)
     {
         $boleta = $this->boletaService->generarBoleta($proceso);

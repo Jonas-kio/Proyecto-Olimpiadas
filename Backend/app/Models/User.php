@@ -2,26 +2,14 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+//use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 use App\Enums\UserRoles;
 
-/**
- * @OA\Schema(
- *     schema="User",
- *     required={"name", "email"},
- *     @OA\Property(property="id", type="integer", format="int64", readOnly=true),
- *     @OA\Property(property="name", type="string", example="Juan Pérez"),
- *     @OA\Property(property="email", type="string", format="email", example="juan@ejemplo.com"),
- *     @OA\Property(property="email_verified_at", type="string", format="date-time", nullable=true),
- *     @OA\Property(property="role", type="string", enum={"admin", "user"}, example="user"),
- *     @OA\Property(property="created_at", type="string", format="date-time", readOnly=true),
- *     @OA\Property(property="updated_at", type="string", format="date-time", readOnly=true)
- * )
- */
+
 class User extends Authenticatable implements JWTSubject
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
