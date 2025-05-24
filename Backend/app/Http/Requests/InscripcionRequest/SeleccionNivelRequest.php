@@ -17,7 +17,8 @@ class SeleccionNivelRequest extends FormRequest
     public function rules()
     {
         return [
-            'nivel_id' => 'required|exists:category_level,id',
+            'nivel_id' => 'required|array|min:1',
+            'nivel_id.*' => 'required|exists:category_level,id',
         ];
     }
 

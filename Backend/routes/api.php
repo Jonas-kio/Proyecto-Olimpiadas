@@ -142,6 +142,10 @@ Route::middleware([IsUserAuth::class])->group(
                 Route::get('/proceso/{proceso}/resumen', [InscripcionController::class, 'obtenerResumen'])
                     ->name('resumen');
 
+                // Verificar estado del proceso
+                Route::get('/proceso/{proceso}/estado', [InscripcionController::class, 'verificarEstadoProceso'])
+                    ->name('proceso.estado');
+
                 // Generar boleta
                 Route::post('/proceso/{proceso}/boleta', [InscripcionController::class, 'generarBoleta'])
                     ->name('boleta.generar');
@@ -151,6 +155,13 @@ Route::middleware([IsUserAuth::class])->group(
             Route::get('/boleta/{boleta}', [InscripcionController::class, 'obtenerBoleta'])
                 ->name('boleta.ver');
         });
+
+        Route::prefix('ocr')->name('ocr.')->group(function () {
+
+            Route::put('/proceso/{proceso}/estado', [InscripcionController::class, 'actualizarEstadoProceso'])
+                    ->name('proceso.actualizar.estado');
+        });
+
     }
 );
 

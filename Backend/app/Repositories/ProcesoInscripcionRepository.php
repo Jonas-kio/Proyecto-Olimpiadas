@@ -71,7 +71,7 @@ class ProcesoInscripcionRepository
 
     public function guardarSeleccionArea(int $procesoId, int $areaId)
     {
-        // Guardar el área individual seleccionada
+        // Guardar el área individual seleccionada (mantener por compatibilidad)
         $cacheKey = "proceso_{$procesoId}_area";
         Cache::put($cacheKey, $areaId, now()->addHours(24));
         Log::info("Área guardada en caché para el proceso {$procesoId}: {$areaId}");
@@ -95,9 +95,19 @@ class ProcesoInscripcionRepository
 
     public function guardarSeleccionNivel(int $procesoId, int $nivelId)
     {
+        // Guardar el nivel individual seleccionado (para compatibilidad)
         $cacheKey = "proceso_{$procesoId}_nivel";
-
         Cache::put($cacheKey, $nivelId, now()->addHours(24));
+
+        // También guardar en la colección de niveles seleccionados
+        $nivelesKey = "proceso_{$procesoId}_niveles";
+        $niveles = Cache::get($nivelesKey, []);
+
+        if (!in_array($nivelId, $niveles)) {
+            $niveles[] = $nivelId;
+            Cache::put($nivelesKey, $niveles, now()->addHours(24));
+            Log::info("Nivel agregado a la lista de seleccionados para el proceso {$procesoId}: {$nivelId}");
+        }
 
         if (Session::has('nivel_id')) {
             Session::put('nivel_id', $nivelId);
@@ -106,30 +116,25 @@ class ProcesoInscripcionRepository
         return true;
     }
 
+    public function actualizarEstadoActivacion(int $procesoId, bool $activo)
+    {
+        $proceso = RegistrationProcess::findOrFail($procesoId);
+        $proceso->active = $activo;
+        $resultado = $proceso->save();
+
+        if ($resultado) {
+            Log::info("Proceso {$procesoId} - Estado de activación actualizado a: " . ($activo ? 'activo' : 'inactivo'));
+        } else {
+            Log::error("Error al actualizar estado de activación del proceso {$procesoId}");
+        }
+
+        return $resultado;
+    }
+
     public function obtenerAreaSeleccionada(int $procesoId)
     {
         $cacheKey = "proceso_{$procesoId}_area";
-        $area_id = Cache::get($cacheKey);
-        Log::info("Área recuperada de la caché para el proceso areaID: {$area_id}");
-        return $area_id;
-    }
-
-    public function obtenerAreasSeleccionadas(int $procesoId)
-    {
-        $cacheKey = "proceso_{$procesoId}_areas";
-        $areas = Cache::get($cacheKey, []);
-
-        // Si no hay áreas en caché bajo la clave 'areas', verificar si hay un área individual seleccionada
-        if (empty($areas)) {
-            $areaId = $this->obtenerAreaSeleccionada($procesoId);
-            if ($areaId) {
-                $areas = [$areaId];
-                // Almacenar en caché para futuras consultas
-                Cache::put($cacheKey, $areas, now()->addHours(24));
-            }
-        }
-
-        return $areas;
+        return Cache::get($cacheKey);
     }
 
     public function obtenerNivelSeleccionado(int $procesoId)
@@ -138,22 +143,19 @@ class ProcesoInscripcionRepository
         return Cache::get($cacheKey);
     }
 
-    public function limpiarDatosProceso(int $procesoId)
+    public function obtenerAreasSeleccionadas(int $procesoId)
     {
-        $prefijo = "proceso_{$procesoId}_";
-
-        Cache::forget("{$prefijo}competidores");
-        Cache::forget("{$prefijo}area");
-        Cache::forget("{$prefijo}nivel");
-
-        Session::forget('competidores_ids');
-        Session::forget('area_id');
-        Session::forget('nivel_id');
-
-        return true;
+        $areasKey = "proceso_{$procesoId}_areas";
+        return Cache::get($areasKey, []);
     }
 
-    public function obtenerEstadoProceso($procesoId)
+    public function obtenerNivelesSeleccionados(int $procesoId)
+    {
+        $nivelesKey = "proceso_{$procesoId}_niveles";
+        return Cache::get($nivelesKey, []);
+    }
+
+    public function obtenerEstadoProceso(int $procesoId)
     {
         $proceso = RegistrationProcess::find($procesoId);
         if ($proceso) {

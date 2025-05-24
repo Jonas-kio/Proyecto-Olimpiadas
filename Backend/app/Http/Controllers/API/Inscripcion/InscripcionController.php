@@ -13,8 +13,12 @@ use App\Models\Olimpiada;
 use App\Models\RegistrationProcess;
 use App\Services\InscripcionService;
 use App\Services\BoletaService;
+use App\Enums\EstadoInscripcion;
 
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+use Exception;
 
 
 class InscripcionController extends Controller
@@ -26,6 +30,23 @@ class InscripcionController extends Controller
     {
         $this->inscripcionService = $inscripcionService;
         $this->boletaService = $boletaService;
+    }
+
+    /**
+     * Verifica el estado de activación de un proceso de inscripción
+     *
+     * @param RegistrationProcess $proceso Proceso a verificar
+     * @return JsonResponse
+     */
+    public function verificarEstadoProceso(RegistrationProcess $proceso)
+    {
+        return response()->json([
+            'success' => true,
+            'activo' => $proceso->active,
+            'estado' => $proceso->status->value,
+            'estado_label' => $proceso->status->label(),
+            'puede_modificar' => $proceso->active && $proceso->status->value === 'pending'
+        ]);
     }
     public function iniciarProceso(IniciarProcesoRequest $request, Olimpiada $olimpiada)
     {
@@ -70,7 +91,7 @@ class InscripcionController extends Controller
 
         return response()->json([
             'success' => true,
-            'mensaje' => 'Área seleccionada correctamente'
+            'mensaje' => count($request->area_id) > 1 ? 'Áreas seleccionadas correctamente' : 'Área seleccionada correctamente'
         ]);
     }
 
@@ -80,7 +101,7 @@ class InscripcionController extends Controller
 
         return response()->json([
             'success' => true,
-            'mensaje' => 'Nivel seleccionado correctamente'
+            'mensaje' => count($request->nivel_id) > 1 ? 'Niveles seleccionados correctamente' : 'Nivel seleccionado correctamente'
         ]);
     }
 
@@ -102,7 +123,7 @@ class InscripcionController extends Controller
             'success' => true,
             'boleta_id' => $boleta->id,
             'codigo' => $boleta->numero_boleta,
-            'mensaje' => 'Boleta generada correctamente'
+            'mensaje' => 'Boleta generada correctamente. El proceso de inscripción ha sido cerrado y no se podrán realizar más cambios.'
         ]);
     }
 
@@ -114,5 +135,38 @@ class InscripcionController extends Controller
             'success' => true,
             'boleta' => $datosBoleta
         ]);
+    }
+
+    public function actualizarEstadoProceso(Request $request, RegistrationProcess $proceso)
+    {
+        try {
+            $request->validate([
+                'nuevo_estado' => 'required|string|in:approved,rejected'
+            ]);
+
+            $nuevoEstado = EstadoInscripcion::from($request->nuevo_estado);
+
+            // Validamos si el cambio de estado es permitido
+            $this->inscripcionService->validarCambioEstado($proceso->status, $nuevoEstado);
+
+            // Actualizamos el estado temporalmente y volvemos a cerrar el proceso
+            $this->inscripcionService->actualizarEstadoProcesoTemporalmente($proceso, $nuevoEstado);
+
+            return response()->json([
+                'success' => true,
+                'mensaje' => "Estado del proceso actualizado a '{$nuevoEstado->label()}'",
+                'proceso' => [
+                    'id' => $proceso->id,
+                    'estado' => $nuevoEstado->value,
+                    'estado_label' => $nuevoEstado->label(),
+                    'activo' => false
+                ]
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'mensaje' => $e->getMessage()
+            ], 422);
+        }
     }
 }

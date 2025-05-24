@@ -84,6 +84,9 @@ class BoletaService
                 'estado' => BoletaEstado::PENDIENTE->value,
             ]);
 
+            // Desactivar el proceso de inscripción para evitar modificaciones
+            $this->procesoRepository->actualizarEstadoActivacion($proceso->id, false);
+
             DB::commit();
 
             event(new BoletaGenerada($boleta));

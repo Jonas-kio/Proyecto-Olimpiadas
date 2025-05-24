@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import "../../styles/components/InscripcionIndividual.css";
 
 const FormAreasCategorias = ({
@@ -12,6 +12,7 @@ const FormAreasCategorias = ({
   setCategoriasFiltradas,
   obtenerCategoriasPorArea,
 }) => {
+  const [categoriasSeleccionadas, setCategoriasSeleccionadas] = useState([]);
   console.log("Áreas disponibles recibidas:", areasDisponibles);
 
   // const handleAreaChange = (e) => {
@@ -143,16 +144,29 @@ const FormAreasCategorias = ({
               </button>
             </span>
           ))}
-        </div>
-
-        <div className="campo">
+        </div>        <div className="campo">
           <label>
             Nivel/Categoría <span className="asterisco rojo">*</span>
           </label>
           <select
             name="categoria"
             value={categoriaSeleccionada}
-            onChange={(e) => setCategoriaSeleccionada(e.target.value)}
+            onChange={(e) => {
+              const nivelId = e.target.value;
+              if (!nivelId) return;
+              
+              const nivelObj = categoriasFiltradas.find(cat => cat.id === parseInt(nivelId));
+              if (!nivelObj) return;
+              
+              // Si ya está seleccionado, no hacer nada
+              if (categoriaSeleccionada === nivelId) return;
+              
+              // Para mantener compatibilidad con el código existente
+              setCategoriaSeleccionada(nivelId);
+              
+              // Resetear el select
+              e.target.value = "";
+            }}
           >
             <option value="">
               {categoriasFiltradas.length === 0
