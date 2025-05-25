@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Area;
+use App\Models\Boleta;
 use App\Models\CategoryLevel;
 use App\Models\CompetidorTutor;
 use App\Models\Competitor;
@@ -177,7 +178,6 @@ class InscripcionService
 
     public function guardarSeleccionNivel(RegistrationProcess $proceso, $nivelIds)
     {
-        // Verificar si el proceso está activo
         \App\Services\Helpers\InscripcionHelper::verificarProcesoActivo($proceso, 'seleccionar niveles');
 
         if (!is_array($nivelIds)) {
@@ -190,13 +190,10 @@ class InscripcionService
             throw new Exception('Debe seleccionar al menos un área antes de seleccionar un nivel');
         }
 
-        // Obtener niveles ya seleccionados
         $nivelesSeleccionados = $this->procesoRepository->obtenerNivelesSeleccionados($proceso->id);
 
-        // Mapear cada nivel a qué áreas es compatible
         $nivelesAreasCompatibles = [];
 
-        // Para cada nuevo nivel, encontrar con qué áreas es compatible
         foreach ($nivelIds as $nivelId) {
             $areasCompatibles = [];
 
@@ -216,10 +213,8 @@ class InscripcionService
             $nivelesAreasCompatibles[$nivelId] = $areasCompatibles;
         }
 
-        // Verificar restricciones de nivel_unico por área
         $nivelesAsignadosPorArea = [];
 
-        // Primero considerar los niveles que ya están seleccionados
         foreach ($nivelesSeleccionados as $nivelId) {
             foreach ($areasSeleccionadas as $areaId) {
                 try {
@@ -234,23 +229,20 @@ class InscripcionService
             }
         }
 
-        // Luego verificar los nuevos niveles
         foreach ($nivelIds as $nivelId) {
             if (in_array($nivelId, $nivelesSeleccionados)) {
-                continue; // Ignorar niveles que ya están seleccionados
+                continue;
             }
 
             foreach ($nivelesAreasCompatibles[$nivelId] as $areaId) {
                 $condition = $proceso->olimpiada->getAreaConditions($areaId);
 
                 if ($condition && $condition->nivel_unico) {
-                    // Si esta área ya tiene un nivel asignado (tanto previamente seleccionado como en esta ejecución)
                     if (isset($nivelesAsignadosPorArea[$areaId]) && !empty($nivelesAsignadosPorArea[$areaId])) {
                         throw new Exception("El área con ID {$areaId} permite seleccionar un único nivel por competidor.");
                     }
                 }
 
-                // Registrar este nivel como asignado para esta área
                 if (!isset($nivelesAsignadosPorArea[$areaId])) {
                     $nivelesAsignadosPorArea[$areaId] = [];
                 }
@@ -351,12 +343,10 @@ class InscripcionService
                             // Verificar si esta combinación área-nivel es válida
                             $this->categoryLevelService->getCategoryByIdAndAreaId($nivelId, $areaId);
 
-                            // Si es válida, añadir el costo
                             $costoPorArea = $this->calcularCosto($areaId, $nivelId, count($competidores));
                             $costoUnitario += $costoPorArea['unitario'];
                             $costoTotal += $costoPorArea['total'];
                         } catch (Exception $e) {
-                            // Si no es válida, ignorar esta combinación
                             continue;
                         }
                     }
@@ -453,5 +443,44 @@ class InscripcionService
             throw new Exception("No se permite cambiar del estado '{$estadoActual->label()}' al estado '{$nuevoEstado->label()}'");
         }
         return true;
+    }
+
+    /**
+     * Verifica si hay procesos activos para un usuario y olimpiada, y repara problemas si es necesario
+     *
+     * @param int $olimpiadaId ID de la olimpiada
+     * @param int $userId ID del usuario
+     * @return RegistrationProcess|null Proceso activo si existe, null en caso contrario
+     */
+    public function verificarYRepararProcesosActivos(int $olimpiadaId, int $userId)
+    {
+        // Buscar procesos existentes para esta olimpiada y usuario
+        $procesos = RegistrationProcess::where('olimpiada_id', $olimpiadaId)
+            ->where('user_id', $userId)
+            ->get();
+
+        if ($procesos->isEmpty()) {
+            return null;
+        }
+
+        // Verificar si hay algún proceso activo sin boleta generada
+        foreach ($procesos as $proceso) {
+            $tieneBoleta = Boleta::where('registration_process_id', $proceso->id)->exists();
+
+            // Si no tiene boleta y está inactivo, lo reparamos
+            if (!$tieneBoleta && !$proceso->active) {
+                $proceso->active = true;
+                $proceso->save();
+                \Illuminate\Support\Facades\Log::info("Proceso {$proceso->id} reparado: Estado de activación cambiado a ACTIVO");
+                return $proceso;
+            }
+
+            // Si ya hay un proceso activo sin boleta, lo devolvemos
+            if ($proceso->active && !$tieneBoleta) {
+                return $proceso;
+            }
+        }
+
+        return null;
     }
 }

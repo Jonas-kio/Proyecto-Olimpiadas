@@ -163,4 +163,17 @@ class ProcesoInscripcionRepository
         }
         return null;
     }
+
+    /**
+     * Obtiene un proceso por su ID y asegura que esté activo
+     *
+     * @param int $procesoId ID del proceso
+     * @return RegistrationProcess|null Proceso encontrado o null
+     */
+    public function obtenerProcesoActivo(int $procesoId)
+    {
+        return RegistrationProcess::where('id', $procesoId)
+            ->where('active', true)
+            ->first();
+    }
 }

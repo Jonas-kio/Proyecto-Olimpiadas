@@ -114,7 +114,7 @@ Route::middleware([IsUserAuth::class])->group(
 
         });
 
-        // FLUJO DE INSCRIPCIÓN COMPLETO
+        // FLUJO DE VALIDACION DE COMPROVANTE CON OCR
         Route::prefix('inscripcion')->name('inscripcion.')->group(function () {
                 // Iniciar proceso
                 Route::post('/olimpiada/{olimpiada}/iniciar', [InscripcionController::class, 'iniciarProceso'])
@@ -145,6 +145,10 @@ Route::middleware([IsUserAuth::class])->group(
                 // Verificar estado del proceso
                 Route::get('/proceso/{proceso}/estado', [InscripcionController::class, 'verificarEstadoProceso'])
                     ->name('proceso.estado');
+
+                // Diagnosticar problemas con el proceso
+                Route::get('/proceso/{proceso}/diagnostico', [InscripcionController::class, 'diagnosticarProceso'])
+                    ->name('proceso.diagnostico');
 
                 // Generar boleta
                 Route::post('/proceso/{proceso}/boleta', [InscripcionController::class, 'generarBoleta'])

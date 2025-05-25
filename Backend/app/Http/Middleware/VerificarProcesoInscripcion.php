@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Models\RegistrationProcess;
 use App\Models\User;
+use App\Models\Boleta;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -32,9 +33,19 @@ class VerificarProcesoInscripcion
 
 
         if (!$proceso->active) {
+            // Verificar si ya tiene una boleta generada
+            $tieneBoleta = \App\Models\Boleta::where('registration_process_id', $proceso->id)->exists();
+            
+            $mensaje = 'El proceso de inscripción no está activo';
+            if ($tieneBoleta) {
+                $mensaje .= ' porque ya se generó una boleta de pago';
+            }
+
             return response()->json([
                 'success' => false,
-                'message' => 'El proceso de inscripción no está activo'
+                'message' => $mensaje,
+                'proceso_id' => $proceso->id,
+                'puede_diagnosticar' => true
             ], 403);
         }
 
