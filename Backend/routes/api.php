@@ -15,6 +15,7 @@ use App\Http\Controllers\API\OCR\OcrController;
 use App\Http\Middleware\IsAdmin;
 use App\Http\Middleware\IsUserAuth;
 use App\Http\Middleware\VerificarProcesoInscripcion;
+use App\Http\Controllers\API\ReportController;
 
 //TODO: Rutas Publicas
 
@@ -83,6 +84,12 @@ Route::middleware([IsUserAuth::class])->group(
                     Route::get('/{olimpiada}/areas', [OlimpiadaController::class, 'getAreas']);
                     Route::post('/{olimpiada}/areas', [OlimpiadaController::class, 'attachAreas']);
                     Route::delete('/{olimpiada}/areas/{area}', [OlimpiadaController::class, 'detachArea']);
+                });
+
+                // Rutas para reportes
+                Route::prefix('reports')->group(function () {
+                    Route::get('/inscriptions', [ReportController::class, 'getInscriptionReport']);
+                    Route::get('/summary', [ReportController::class, 'getReportSummary']);
                 });
 
                 // Mas Rutas de Admin ........
