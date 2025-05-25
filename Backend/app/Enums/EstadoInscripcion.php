@@ -13,7 +13,7 @@ enum EstadoInscripcion: string
         return match ($this) {
             self::PENDIENTE => 'Pendiente',
             self::INSCRITO => 'Inscrito',
-            self::RECHAZADO => 'Rechazado',
+            self::RECHAZADO => 'Rechazado'
         };
     }
 

@@ -302,18 +302,19 @@ const InscripcionIndividual = () => {
       });
 
       await Promise.all(registrosTutores);
-      console.log("Tutores registrados exitosamente");
-
-      // Paso 3: Guardar área seleccionada
-      const areaSeleccionada = areasSeleccionadas[0]; // Solo se permite una por ahora
-      await guardarSeleccionArea(procesoId, { area_id: areaSeleccionada.id });
-      console.log("Área seleccionada guardada:", areaSeleccionada);
-
-      // Paso 4: Guardar nivel seleccionado
+      console.log("Tutores registrados exitosamente");      // Paso 3: Guardar áreas seleccionadas
+      const areaIds = areasSeleccionadas.map(area => area.id);
+      await guardarSeleccionArea(procesoId, { area_id: areaIds });
+      console.log("Áreas seleccionadas guardadas:", areasSeleccionadas);      // Paso 4: Guardar nivel seleccionado
+      // Convertimos a array para manejar múltiples niveles
+      const nivelesIds = Array.isArray(categoriaSeleccionada) 
+        ? categoriaSeleccionada 
+        : [categoriaSeleccionada];
+        
       await guardarSeleccionNivel(procesoId, {
-        nivel_id: categoriaSeleccionada,
+        nivel_id: nivelesIds,
       });
-      console.log("Nivel seleccionado guardado:", categoriaSeleccionada);
+      console.log("Niveles seleccionados guardados:", nivelesIds);
 
       // Paso 5: Obtener resumen de inscripcion
       const resumen = await obtenerResumenInscripcion(procesoId);
