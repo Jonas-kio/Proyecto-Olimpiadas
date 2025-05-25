@@ -14,6 +14,9 @@ use Illuminate\Support\Facades\DB;
 use Exception;
 
 use App\Enums\UserRoles;
+use Illuminate\Http\Request;
+use Illuminate\Auth\Events\Verified;
+use Illuminate\Foundation\Auth\EmailVerificationRequest;
 
 class AuthService
 {
@@ -43,9 +46,9 @@ class AuthService
                 'password' => Hash::make($adminData['password']),
                 'role' => UserRoles::ADMIN->value,
             ]);
-            
+
             DB::commit();
-            
+
             return [
                 'success' => true,
                 'message' => 'Administrador creado exitosamente',
@@ -54,7 +57,7 @@ class AuthService
         } catch (Exception $e) {
             DB::rollBack();
             return [
-                'success' => false, 
+                'success' => false,
                 'message' => 'Error al crear administrador: ' . $e->getMessage()
             ];
         }
@@ -75,6 +78,7 @@ class AuthService
                 'password' => Hash::make($data['password']),
                 'role' => $data['role'],
             ]);
+            //$user->sendEmailVerificationNotification();
 
             $token = JWTAuth::fromUser($user);
 
@@ -145,5 +149,50 @@ class AuthService
             'success' => true,
             'message' => 'Logged out successfully',
         ];
+    }
+
+
+    public function verifyEmail(EmailVerificationRequest $request)
+    {
+        if ($request->user()->hasVerifiedEmail()) {
+            return response()->json([
+                'message' => 'El correo ya ha sido verificado.'
+            ]);
+        }
+
+        if ($request->user()->markEmailAsVerified()) {
+            event(new Verified($request->user()));
+        }
+
+        return response()->json([
+            'message' => 'Correo verificado exitosamente'
+        ]);
+    }
+
+    public function resendVerificationEmail(Request $request)
+    {
+        try {
+            if ($request->user()->hasVerifiedEmail()) {
+                return [
+                    'success' => false,
+                    'message' => 'El correo ya ha sido verificado.',
+                    'status' => 400
+                ];
+            }
+
+            $request->user()->sendEmailVerificationNotification();
+
+            return [
+                'success' => true,
+                'message' => 'Link de verificación reenviado exitosamente',
+                'status' => 200
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Error al reenviar el email de verificación: ' . $e->getMessage(),
+                'status' => 500
+            ];
+        }
     }
 }

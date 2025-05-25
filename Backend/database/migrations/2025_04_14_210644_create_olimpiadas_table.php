@@ -31,6 +31,7 @@ return new class extends Migration
                 'Terminado'
             ]);
             $table->boolean('activo')->default(true);
+            $table->integer('maximo_areas')->default(1);
             $table->timestamps();
         });
     }

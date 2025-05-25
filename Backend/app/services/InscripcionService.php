@@ -52,6 +52,10 @@ class InscripcionService
             throw new Exception('El proceso de inscripción no está activo');
         }
 
+        $cursoNivel = explode(' ', $datos['curso']);
+        $datos['curso'] = $cursoNivel[0];
+        $datos['nivel'] = $cursoNivel[1];
+
         $competidor = Competitor::create($datos);
         $this->procesoRepository->agregarCompetidor($proceso->id, $competidor->id);
 
@@ -109,6 +113,32 @@ class InscripcionService
             throw new Exception('El área seleccionada no es válida para esta olimpiada');
         }
 
+        // Obtener las áreas ya seleccionadas
+        $areasSeleccionadas = $this->procesoRepository->obtenerAreasSeleccionadas($proceso->id);
+
+        $maximoAreas = $proceso->olimpiada->maximo_areas;
+        if (count($areasSeleccionadas) >= $maximoAreas && !in_array($areaId, $areasSeleccionadas)) {
+            throw new Exception("No puede seleccionar más de {$maximoAreas} área(s) para esta olimpiada. Ya ha seleccionado " . count($areasSeleccionadas) . " área(s).");
+        }
+
+        // Validación para área_exclusiva
+        $condition = $proceso->olimpiada->getAreaConditions($areaId);
+        if ($condition && $condition->area_exclusiva) {
+            if (!empty($areasSeleccionadas) && !in_array($areaId, $areasSeleccionadas)) {
+                throw new Exception("El área seleccionada es exclusiva y no puede combinarse con otras áreas.");
+            }
+        }
+
+        // Verificar si alguna de las áreas ya seleccionadas es exclusiva
+        if (!empty($areasSeleccionadas) && !in_array($areaId, $areasSeleccionadas)) {
+            foreach ($areasSeleccionadas as $selectedAreaId) {
+                $areaCondition = $proceso->olimpiada->getAreaConditions($selectedAreaId);
+                if ($areaCondition && $areaCondition->area_exclusiva) {
+                    throw new Exception("Ya ha seleccionado un área exclusiva que no permite combinaciones con otras áreas.");
+                }
+            }
+        }
+
         $this->procesoRepository->guardarSeleccionArea($proceso->id, $areaId);
         return true;
     }
@@ -127,6 +157,15 @@ class InscripcionService
             throw new Exception('El nivel seleccionado no es válido para esta área');
         }
 
+        // Validación para nivel_unico
+        $condition = $proceso->olimpiada->getAreaConditions($areaId);
+        if ($condition && $condition->nivel_unico) {
+            $nivelSeleccionado = $this->procesoRepository->obtenerNivelSeleccionado($proceso->id);
+
+            if ($nivelSeleccionado && $nivelSeleccionado != $nivelId) {
+                throw new Exception('Esta área permite seleccionar un único nivel por competidor.');
+            }
+        }
 
         $this->procesoRepository->guardarSeleccionNivel($proceso->id, $nivelId);
         return true;
@@ -228,5 +267,15 @@ class InscripcionService
             'unitario' => $costoUnitario,
             'total' => $costoUnitario * $cantidadCompetidores
         ];
+    }
+
+    public function obtenerProcesoPorId($procesoId)
+    {
+        return 0;
+    }
+
+    public function obtenerProcesoPorOlimpiada($olimpiadaId)
+    {
+        return 0;
     }
 }
