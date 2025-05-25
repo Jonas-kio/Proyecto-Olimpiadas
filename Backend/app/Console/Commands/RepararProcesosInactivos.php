@@ -16,7 +16,6 @@ class RepararProcesosInactivos extends Command
     {
         $this->info('Iniciando reparación de procesos inactivos...');
 
-        // Obtener todos los procesos inactivos
         $procesosInactivos = RegistrationProcess::where('active', false)->get();
 
         $this->info("Se encontraron {$procesosInactivos->count()} procesos inactivos");
@@ -24,10 +23,8 @@ class RepararProcesosInactivos extends Command
         $procesosReparados = 0;
 
         foreach ($procesosInactivos as $proceso) {
-            // Verificar si el proceso tiene una boleta generada
             $tieneBoleta = Boleta::where('registration_process_id', $proceso->id)->exists();
 
-            // Si no tiene boleta, reparamos el proceso activándolo
             if (!$tieneBoleta) {
                 $proceso->active = true;
                 $proceso->save();
