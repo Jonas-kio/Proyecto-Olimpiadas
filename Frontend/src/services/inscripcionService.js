@@ -60,6 +60,60 @@ export const obtenerResumenInscripcion = async (procesoId) => {
 //   return await api.get("/inscripcion/area");
 // };
 
-export const inscripcionCategoryLevel = async () => {//ya ta
+export const inscripcionCategoryLevel = async () => {
+  //ya ta
   return await api.get("/categoryLevelUser");
+};
+
+// Función para obtener todos los costos
+export const getPublicCosts = async () => {
+  try {
+    const response = await api.get("/public/costs"); // Llamada a tu nueva ruta
+    if (response.data.success) {
+      return response.data.data;
+    } else {
+      throw new Error(
+        response.data.message || "Error al obtener los costos públicos"
+      );
+    }
+  } catch (error) {
+    console.error("Error al obtener los costos públicos:", error);
+    throw error;
+  }
+};
+
+export const verificarEstadoProceso = async (procesoId) => {
+  try {
+    const response = await api.get(`/inscripcion/proceso/${procesoId}/estado`);
+    if (response.data.success) {
+      return response.data; // Devuelve todo el objeto con estado, label, activo y más
+    } else {
+      throw new Error(
+        response.data.message || "Error al verificar el estado del proceso"
+      );
+    }
+  } catch (error) {
+    console.error("Error al verificar el estado del proceso:", error);
+    throw error;
+  }
+};
+
+// Función para obtener diagnóstico del proceso de inscripción
+export const diagnosticarProceso = async (procesoId) => {
+  try {
+    const response = await api.get(
+      `/api/inscripcion/proceso/${procesoId}/diagnostico`
+    );
+    if (response.data.success) {
+      console.log("Diagnóstico del proceso:", response.data);
+      return response.data;
+    } else {
+      throw new Error(
+        response.data.message || "Error al diagnosticar el proceso"
+      );
+    }
+  } catch (error) {
+    console.error("Error al diagnosticar el proceso:", error);
+    throw error;
+  }
 };

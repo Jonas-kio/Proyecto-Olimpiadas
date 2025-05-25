@@ -3,6 +3,7 @@ import "../../styles/components/InscripcionIndividual.css";
 import "../../styles/components/InscripcionConfirmacion.css";
 import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
+//importando servicios
 import {
   iniciarProceso,
   inscripcionCompetidor,
@@ -13,8 +14,10 @@ import {
   guardarSeleccionNivel,
   obtenerResumenInscripcion,
   obtenerCategoriasPorArea,
+  verificarEstadoProceso,
+  diagnosticarProceso,
 } from "../../services/inscripcionService";
-
+import { getOlimpiadaDetail } from "../../services/olimpiadaService";
 // Componentes comunes
 import SuccessModal from "../../components/common/SuccessModal";
 import ErrorModal from "../../components/common/ErrorModal";
@@ -69,7 +72,8 @@ const InscripcionIndividual = () => {
   const [areasSeleccionadas, setAreasSeleccionadas] = useState([]);
   const [categoriasDisponibles, setCategoriasDisponibles] = useState([]);
   const [categoriasFiltradas, setCategoriasFiltradas] = useState([]);
-  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState("");
+  // const [categoriaSeleccionada, setCategoriaSeleccionada] = useState("");
+  const [categoriasSeleccionadas, setCategoriasSeleccionadas] = useState([]);
 
   const [errores, setErrores] = useState({});
   const [modalAbierto, setModalAbierto] = useState(false);
@@ -78,6 +82,7 @@ const InscripcionIndividual = () => {
   const [mensajeDeError, setMensajeDeError] = useState("");
   const [camposConError, setCamposConError] = useState([]);
   const [usarBackend, setUsarBackend] = useState(true); // Bandera para cambiar entre modos
+  const [maximoAreas, setMaximoAreas] = useState(0);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -126,6 +131,27 @@ const InscripcionIndividual = () => {
   }, []);
 
   useEffect(() => {
+    const fetchMaximoAreas = async () => {
+      try {
+        const idOlimpiada = localStorage.getItem("idOlimpiada");
+        if (idOlimpiada) {
+          const res = await getOlimpiadaDetail(idOlimpiada);
+          const data = res.data?.data?.olimpiada;
+          console.log("Datos de olimpiada:", data);
+          if (data?.maximo_areas) {
+            console.log("Maximo de areas permitidas:", data.maximo_areas);
+            setMaximoAreas(data.maximo_areas);
+          }
+        }
+      } catch (err) {
+        console.error("Error al obtener detalle de olimpiada con await:", err);
+      }
+    };
+
+    fetchMaximoAreas();
+  }, []);
+
+  useEffect(() => {
     console.log("Áreas seleccionadas:", areasSeleccionadas);
   }, [areasSeleccionadas]);
 
@@ -165,7 +191,8 @@ const InscripcionIndividual = () => {
   const telefonoValido = (tel) => /^\d+$/.test(tel);
   const documentoValido = (doc) => /^\d+$/.test(doc);
   const fechaNacimientoValida = (fecha) => new Date(fecha) <= new Date();
-  const categoriaSeleccionadaValida = () => categoriaSeleccionada.trim() !== "";
+  const categoriasSeleccionadasValida = () =>
+    categoriasSeleccionadas.length > 0;
 
   const camposEstudianteCompletos = () => {
     const llenos = Object.values(estudiante).every((v) => v.trim());
@@ -196,7 +223,7 @@ const InscripcionIndividual = () => {
     if (paso === 1) return camposEstudianteCompletos();
     if (paso === 2) return camposTutoresCompletos();
     if (paso === 3)
-      return camposAreasCompletos() && categoriaSeleccionadaValida();
+      return camposAreasCompletos() && categoriasSeleccionadasValida();
     return true;
   };
 
@@ -212,6 +239,7 @@ const InscripcionIndividual = () => {
     // Guardar curso seleccionado en localStorage si es "curso"
     if (name === "curso") {
       localStorage.setItem("cursoSeleccionado", value);
+      console.log("curso : ", value);
     }
     if (name === "documento_identidad" && value.length > 10) return;
     if ((name === "nombres" || name === "apellidos") && value.length > 50)
@@ -242,8 +270,8 @@ const InscripcionIndividual = () => {
     setTutorActivo(idx);
   };
 
-  const categoriaElegida = categoriasDisponibles.find(
-    (cat) => cat.id === parseInt(categoriaSeleccionada)
+  const categoriasElegidas = categoriasDisponibles.filter((cat) =>
+    categoriasSeleccionadas.some((sel) => sel.id === cat.id)
   );
 
   const volverDesdeBoletaPago = () => {
@@ -302,15 +330,19 @@ const InscripcionIndividual = () => {
       });
 
       await Promise.all(registrosTutores);
-      console.log("Tutores registrados exitosamente");      // Paso 3: Guardar áreas seleccionadas
-      const areaIds = areasSeleccionadas.map(area => area.id);
+      console.log("Tutores registrados exitosamente"); // Paso 3: Guardar áreas seleccionadas
+      const areaIds = areasSeleccionadas.map((area) => area.id);
       await guardarSeleccionArea(procesoId, { area_id: areaIds });
-      console.log("Áreas seleccionadas guardadas:", areasSeleccionadas);      // Paso 4: Guardar nivel seleccionado
+      console.log("Áreas seleccionadas guardadas:", areasSeleccionadas); // Paso 4: Guardar nivel seleccionado
       // Convertimos a array para manejar múltiples niveles
-      const nivelesIds = Array.isArray(categoriaSeleccionada) 
-        ? categoriaSeleccionada 
-        : [categoriaSeleccionada];
-        
+      // const nivelesIds = Array.isArray(categoriaSeleccionada)
+      //   ? categoriaSeleccionada
+      //   : [categoriaSeleccionada];
+
+      // await guardarSeleccionNivel(procesoId, {
+      //   nivel_id: nivelesIds,
+      // });
+      const nivelesIds = categoriasSeleccionadas.map((cat) => cat.id);
       await guardarSeleccionNivel(procesoId, {
         nivel_id: nivelesIds,
       });
@@ -382,6 +414,26 @@ const InscripcionIndividual = () => {
       // Guardar el número de boleta generado
       setNumeroBoleta(resultado.nuevoBoleta);
       setInscripcionId(resultado.estudianteId || null);
+
+      // 👇 Aquí llamas a verificar el estado del proceso 👇
+      const estadoProceso = await verificarEstadoProceso(
+        localStorage.getItem("procesoId")
+      );
+      console.log(
+        "Estado del proceso después de la inscripción:",
+        estadoProceso
+      );
+      //Diagnostico Proceso
+      const consultarDiagnosticoProceso = async () => {
+        try {
+          const procesoId = localStorage.getItem("procesoId"); // o tu fuente de ID
+          const diagnostico = await diagnosticarProceso(procesoId);
+          console.log("Diagnóstico del proceso:", diagnostico);
+          // Aquí puedes mostrar un mensaje, actualizar estado, etc.
+        } catch (error) {
+          console.error("No se pudo obtener el diagnóstico:", error);
+        }
+      };
 
       // Generar el PDF de la boleta
       try {
@@ -525,10 +577,11 @@ const InscripcionIndividual = () => {
                 setAreasSeleccionadas={setAreasSeleccionadas}
                 categoriasFiltradas={categoriasFiltradas}
                 setCategoriasFiltradas={setCategoriasFiltradas} // 👈 NUEVO
-                categoriaSeleccionada={categoriaSeleccionada}
-                setCategoriaSeleccionada={setCategoriaSeleccionada}
+                categoriasSeleccionadas={categoriasSeleccionadas}
+                setCategoriasSeleccionadas={setCategoriasSeleccionadas}
                 obtenerCategoriasPorArea={obtenerCategoriasPorArea} // 👈 NUEVO
                 categoriasDisponibles={categoriasDisponibles}
+                maximoAreas={maximoAreas} // 🔥 Aquí lo pasas
               />
             )}
 
@@ -537,7 +590,7 @@ const InscripcionIndividual = () => {
                 estudiante={estudiante}
                 tutores={tutores}
                 areasSeleccionadas={areasSeleccionadas}
-                categoriaElegida={categoriaElegida}
+                categoriasElegidas={categoriasSeleccionadas}
               />
             )}
 

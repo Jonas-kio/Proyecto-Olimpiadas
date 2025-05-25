@@ -1,12 +1,14 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
+
 import "../../styles/components/InscripcionIndividual.css";
 
 const FormResumen = ({
   estudiante,
   tutores,
   areasSeleccionadas,
-  categoriaElegida,
+  categoriasElegidas,
 }) => {
+  
   const precioPorArea = 50;
   const total = areasSeleccionadas.length * precioPorArea;
 
@@ -80,23 +82,18 @@ const FormResumen = ({
 
       {/* Sección: Categoría */}
       <div className="seccion">
-        <h3>Categoría Seleccionada</h3>
-        {categoriaElegida ? (
-          <>
-            <div className="fila-resumen">
-              <span className="etiqueta">Nombre:</span>
-              <span className="valor">{categoriaElegida.name}</span>
-            </div>
-            <div className="fila-resumen">
-              <span className="etiqueta">Grado:</span>
-              <span className="valor">
-                {categoriaElegida.grade_name} ({categoriaElegida.grade_min}° a{" "}
-                {categoriaElegida.grade_max}°)
-              </span>
-            </div>
-          </>
+        <h3>Categorías Seleccionadas</h3>
+        {categoriasElegidas.length > 0 ? (
+          <ul className="areas-lista">
+            {categoriasElegidas.map((cat, index) => (
+              <li key={index}>
+                {cat.name} - {cat.grade_name} ({cat.grade_min}
+                {cat.grade_max ? ` a ${cat.grade_max}` : ""})
+              </li>
+            ))}
+          </ul>
         ) : (
-          <span className="valor">No seleccionada</span>
+          <span className="valor">No se seleccionaron categorías</span>
         )}
       </div>
 
