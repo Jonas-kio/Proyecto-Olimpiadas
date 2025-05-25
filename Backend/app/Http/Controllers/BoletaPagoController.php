@@ -44,7 +44,6 @@ class BoletaPagoController extends Controller
                 'message' => 'Boleta enviada con éxito.'
             ]);
         } catch (\Exception $e) {
-            \Log::error('Error al enviar boleta por correo: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Error al enviar la boleta: ' . $e->getMessage()

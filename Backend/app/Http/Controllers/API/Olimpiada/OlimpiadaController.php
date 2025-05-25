@@ -102,11 +102,11 @@ class OlimpiadaController extends Controller
     {
         try {
             $olimpiada->load('areas', 'conditions.area');
-            
+
             // Agregar datos formateados con las áreas y sus condiciones
             $areasConCondiciones = $olimpiada->areas->map(function ($area) use ($olimpiada) {
                 $condicion = $olimpiada->conditions->where('area_id', $area->id)->first();
-                
+
                 return [
                     'id' => $area->id,
                     'nombre' => $area->nombre,
@@ -119,13 +119,13 @@ class OlimpiadaController extends Controller
                     ] : null
                 ];
             });
-            
+
             Log::info('show: Áreas con condiciones', [
-                'olimpiada_id' => $olimpiada->id, 
+                'olimpiada_id' => $olimpiada->id,
                 'areas_count' => $areasConCondiciones->count(),
                 'conditions_count' => $olimpiada->conditions->count()
             ]);
-            
+
             return $this->successResponse([
                 'olimpiada' => $olimpiada,
                 'areas_con_condiciones' => $areasConCondiciones
@@ -139,11 +139,11 @@ class OlimpiadaController extends Controller
     {
         try {
             $olimpiada->load('areas', 'conditions.area');
-            
+
             // Agregar datos formateados con las áreas y sus condiciones
             $areasConCondiciones = $olimpiada->areas->map(function ($area) use ($olimpiada) {
                 $condicion = $olimpiada->conditions->where('area_id', $area->id)->first();
-                
+
                 return [
                     'id' => $area->id,
                     'nombre' => $area->nombre,
@@ -156,13 +156,13 @@ class OlimpiadaController extends Controller
                     ] : null
                 ];
             });
-            
+
             Log::info('showUser: Áreas con condiciones', [
-                'olimpiada_id' => $olimpiada->id, 
+                'olimpiada_id' => $olimpiada->id,
                 'areas_count' => $areasConCondiciones->count(),
                 'conditions_count' => $olimpiada->conditions->count()
             ]);
-            
+
             return $this->successResponse([
                 'olimpiada' => $olimpiada,
                 'areas_con_condiciones' => $areasConCondiciones
@@ -228,6 +228,19 @@ class OlimpiadaController extends Controller
             ], 'Olimpiada eliminada exitosamente');
         } catch (\Exception $e) {
             return $this->errorResponse('Error al eliminar la olimpiada', $e);
+        }
+    }
+
+    public  function getAreasByOlimpiada (Olimpiada $olimpiada): JsonResponse
+    {
+        try {
+            $areas = $this->olimpiadaService->getAreasByOlimpiada($olimpiada);
+
+            return $this->successResponse([
+                'areas' => $areas
+            ]);
+        } catch (\Exception $e) {
+            return $this->errorResponse('Error al obtener las áreas de la olimpiada', $e);
         }
     }
 

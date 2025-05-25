@@ -11,10 +11,15 @@ use App\Http\Requests\InscripcionRequest\TutorRequest;
 use App\Models\Olimpiada;
 
 use App\Models\RegistrationProcess;
+use App\Models\Boleta;
 use App\Services\InscripcionService;
 use App\Services\BoletaService;
+use App\Enums\EstadoInscripcion;
 
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+use Exception;
 
 
 class InscripcionController extends Controller
@@ -27,8 +32,41 @@ class InscripcionController extends Controller
         $this->inscripcionService = $inscripcionService;
         $this->boletaService = $boletaService;
     }
+
+    /**
+     * Verifica el estado de activación de un proceso de inscripción
+     *
+     * @param RegistrationProcess $proceso Proceso a verificar
+     * @return JsonResponse
+     */
+    public function verificarEstadoProceso(RegistrationProcess $proceso)
+    {
+        return response()->json([
+            'success' => true,
+            'activo' => $proceso->active,
+            'estado' => $proceso->status->value,
+            'estado_label' => $proceso->status->label(),
+            'puede_modificar' => $proceso->active && $proceso->status->value === 'pending'
+        ]);
+    }
     public function iniciarProceso(IniciarProcesoRequest $request, Olimpiada $olimpiada)
     {
+        // Primero verificamos si ya hay un proceso activo que pueda ser reparado
+        $procesoExistente = $this->inscripcionService->verificarYRepararProcesosActivos(
+            $olimpiada->id,
+            Auth::id()
+        );
+
+        if ($procesoExistente) {
+            return response()->json([
+                'success' => true,
+                'proceso_id' => $procesoExistente->id,
+                'mensaje' => 'Se encontró un proceso de inscripción existente',
+                'reparado' => true
+            ]);
+        }
+
+        // Si no hay proceso existente, creamos uno nuevo
         $validated = $request->validated();
         $proceso = $this->inscripcionService->iniciarProceso($olimpiada, $validated['tipo'], Auth::id());
         return response()->json([
@@ -70,7 +108,7 @@ class InscripcionController extends Controller
 
         return response()->json([
             'success' => true,
-            'mensaje' => 'Área seleccionada correctamente'
+            'mensaje' => count($request->area_id) > 1 ? 'Áreas seleccionadas correctamente' : 'Área seleccionada correctamente'
         ]);
     }
 
@@ -80,7 +118,7 @@ class InscripcionController extends Controller
 
         return response()->json([
             'success' => true,
-            'mensaje' => 'Nivel seleccionado correctamente'
+            'mensaje' => count($request->nivel_id) > 1 ? 'Niveles seleccionados correctamente' : 'Nivel seleccionado correctamente'
         ]);
     }
 
@@ -102,7 +140,7 @@ class InscripcionController extends Controller
             'success' => true,
             'boleta_id' => $boleta->id,
             'codigo' => $boleta->numero_boleta,
-            'mensaje' => 'Boleta generada correctamente'
+            'mensaje' => 'Boleta generada correctamente. El proceso de inscripción ha sido cerrado y no se podrán realizar más cambios.'
         ]);
     }
 
@@ -113,6 +151,83 @@ class InscripcionController extends Controller
         return response()->json([
             'success' => true,
             'boleta' => $datosBoleta
+        ]);
+    }
+
+    public function actualizarEstadoProceso(Request $request, RegistrationProcess $proceso)
+    {
+        try {
+            $request->validate([
+                'status' => 'required|string|in:approved,rejected'
+            ]);
+
+            $nuevoEstado = EstadoInscripcion::from($request->status);
+
+            // Validamos si el cambio de estado es permitido
+            $this->inscripcionService->validarCambioEstado($proceso->status, $nuevoEstado);
+
+            // Actualizamos el estado temporalmente y volvemos a cerrar el proceso
+            $this->inscripcionService->actualizarEstadoProcesoTemporalmente($proceso, $nuevoEstado);
+
+            return response()->json([
+                'success' => true,
+                'mensaje' => "Estado del proceso actualizado a '{$nuevoEstado->label()}'",
+                'proceso' => [
+                    'id' => $proceso->id,
+                    'estado' => $nuevoEstado->value,
+                    'estado_label' => $nuevoEstado->label(),
+                    'activo' => false
+                ]
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'mensaje' => $e->getMessage()
+            ], 422);
+        }
+    }
+
+    /**
+     * Diagnostica por qué un proceso no está activo o no puede ser modificado
+     *
+     * @param RegistrationProcess $proceso Proceso a diagnosticar
+     * @return JsonResponse
+     */
+    public function diagnosticarProceso(RegistrationProcess $proceso)
+    {
+        // Recuperar el proceso de la base de datos para asegurarnos de tener la información actualizada
+        $procesoActualizado = RegistrationProcess::find($proceso->id);
+
+        if (!$procesoActualizado) {
+            return response()->json([
+                'success' => false,
+                'mensaje' => 'El proceso de inscripción no existe',
+                'detalles' => 'El ID del proceso no corresponde a ningún registro en la base de datos'
+            ], 404);
+        }
+
+        $boleta = Boleta::where('registration_process_id', $proceso->id)->first();
+
+        return response()->json([
+            'success' => true,
+            'proceso' => [
+                'id' => $procesoActualizado->id,
+                'estado' => $procesoActualizado->status->value,
+                'estado_label' => $procesoActualizado->status->label(),
+                'activo' => (bool)$procesoActualizado->active,
+                'fecha_creacion' => $procesoActualizado->created_at,
+                'fecha_actualizacion' => $procesoActualizado->updated_at,
+                'tipo' => $procesoActualizado->type
+            ],
+            'tiene_boleta' => $boleta ? true : false,
+            'boleta' => $boleta ? [
+                'id' => $boleta->id,
+                'estado' => $boleta->estado,
+                'fecha_emision' => $boleta->fecha_emision
+            ] : null,
+            'puede_modificar' => $procesoActualizado->active && $procesoActualizado->status->value === 'pending',
+            'razon_inactivo' => !$procesoActualizado->active ?
+                ($boleta ? 'El proceso está inactivo porque ya se generó una boleta' : 'El proceso está inactivo por razones desconocidas') : null
         ]);
     }
 }
