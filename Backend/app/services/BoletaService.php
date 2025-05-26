@@ -64,7 +64,10 @@ class BoletaService
             }
 
             $montoTotal = 0;
-
+            $fechaExpiracion = $proceso->olimpiada->fecha_fin;
+            if (!$fechaExpiracion) {
+                throw new \Exception('La olimpiada no tiene definida una fecha de finalización');
+            }
             foreach ($competidoresIds as $competidorId) {
                 DetalleInscripcion::create([
                     'register_process_id' => $proceso->id,
@@ -78,13 +81,17 @@ class BoletaService
                 $montoTotal += $costo->price;
             }
 
-            $diasExpiracion = config('app.boleta_dias_expiracion', 15);
+            $fechaExpiracion = $proceso->olimpiada->fecha_fin;
+            if (!$fechaExpiracion) {
+                throw new \Exception('La olimpiada no tiene definida una fecha de finalización');
+            }
+
             $boleta = Boleta::create([
                 'registration_process_id' => $proceso->id,
                 'numero_boleta' => $this->generarCodigoBoleta($proceso->type),
                 'monto_total' => $montoTotal,
                 'fecha_emision' => now(),
-                'fecha_expiracion' => now()->addDays($diasExpiracion),
+                'fecha_expiracion' => $fechaExpiracion,
                 'estado' => BoletaEstado::PENDIENTE->value,
                 'validado' => false
             ]);
