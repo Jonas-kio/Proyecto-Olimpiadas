@@ -16,7 +16,11 @@ return new class extends Migration
             $table->float('monto_total', 8, 2);
             $table->date('fecha_emision');
             $table->date('fecha_expiracion');
-            $table->string('estado', 20)->default('pendiente');
+            $table->enum('estado', [
+                'pendiente',
+                'Pagado'
+            ])->default('pendiente');
+            $table->boolean('validado')->default(false);
             $table->timestamps();
         });
     }

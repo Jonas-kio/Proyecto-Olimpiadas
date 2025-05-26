@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\CostController;
 use App\Http\Controllers\API\AreaController;
 use App\Http\Controllers\API\AuthController;
+use App\Http\Controllers\API\boleta\BoletaController;
 use App\Http\Controllers\API\CategoryLevelController;
 use App\Http\Controllers\API\Inscripcion\InscripcionController;
 use App\Http\Controllers\API\Olimpiada\OlimpiadaController;
@@ -85,6 +86,13 @@ Route::middleware([IsUserAuth::class])->group(
                     Route::delete('/{olimpiada}/areas/{area}', [OlimpiadaController::class, 'detachArea']);
                 });
 
+                // rutas para las boletas
+                Route::prefix('boletas')->group(function () {
+                    Route::get('olimpiada/{olimpiadaId}', [BoletaController::class, 'obtenerBoletasPorOlimpiada']);
+                    Route::post('actualizar-estado', [BoletaController::class, 'actualizarEstadoBoletas']);
+                });
+
+
                 // Mas Rutas de Admin ........
             }
         );
@@ -160,7 +168,7 @@ Route::middleware([IsUserAuth::class])->group(
             });
 
             // Obtener detalles de boleta (no requiere verificar proceso)
-            Route::get('/boleta/{boleta}', [InscripcionController::class, 'obtenerBoleta'])
+            Route::get('procesos/{procesoId}/boletas/{boletaId}', [BoletaController::class, 'obtenerDatosBoleta'])
                 ->name('boleta.ver');
         });
 

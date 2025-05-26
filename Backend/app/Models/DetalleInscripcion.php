@@ -23,6 +23,7 @@ class DetalleInscripcion extends Model
 
     protected $casts = [
         'monto' => 'decimal:2',
+        'status'=> 'boolean'
     ];
 
     public function proceso_inscripcion()
@@ -37,11 +38,16 @@ class DetalleInscripcion extends Model
 
     public function area()
     {
-        return $this->belongsTo(Area::class);
+        return $this->belongsTo(Area::class, 'area_id');
     }
 
     public function nivel_categoria()
     {
         return $this->belongsTo(CategoryLevel::class, 'categoria_id');
+    }
+
+    public function scopeActivo($query)
+    {
+        return $query->where('status', true);
     }
 }

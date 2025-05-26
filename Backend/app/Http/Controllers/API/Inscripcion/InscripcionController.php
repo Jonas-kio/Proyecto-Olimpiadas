@@ -144,9 +144,9 @@ class InscripcionController extends Controller
         ]);
     }
 
-    public function obtenerBoleta($boletaId)
+    public function obtenerBoleta($procesoId, $boletaId)
     {
-        $datosBoleta = $this->boletaService->obtenerDatosBoleta($boletaId);
+        $datosBoleta = $this->boletaService->obtenerDatosBoleta($procesoId, $boletaId);
 
         return response()->json([
             'success' => true,
