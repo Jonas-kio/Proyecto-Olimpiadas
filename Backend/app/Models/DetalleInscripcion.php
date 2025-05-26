@@ -27,12 +27,12 @@ class DetalleInscripcion extends Model
 
     public function proceso_inscripcion()
     {
-        return $this->belongsTo(RegistrationProcess::class);
+        return $this->belongsTo(RegistrationProcess::class, 'register_process_id');
     }
 
     public function competidor()
     {
-        return $this->belongsTo(Competitor::class);
+        return $this->belongsTo(Competitor::class, 'competidor_id');
     }
 
     public function area()
@@ -42,6 +42,6 @@ class DetalleInscripcion extends Model
 
     public function nivel_categoria()
     {
-        return $this->belongsTo(CategoryLevel::class);
+        return $this->belongsTo(CategoryLevel::class, 'categoria_id');
     }
 }

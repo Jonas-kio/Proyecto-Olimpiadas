@@ -112,9 +112,13 @@ Route::middleware([IsUserAuth::class])->group(
 
             Route::post('/inscripcion/competidor', [CompetitorController::class, 'store']);
 
+
+            // Rutas para obtener información de las inscripciones
+            Route::get('/inscripcion/procesos', [InscripcionController::class, 'obtenerProcesosInscripcion']);
+            Route::get('/inscripcion/proceso/{proceso}', [InscripcionController::class, 'obtenerProcesoCerradoPorId']);
         });
 
-        // FLUJO DE VALIDACION DE COMPROVANTE CON OCR
+        // FLUJO DE INSCRIPCIÓN
         Route::prefix('inscripcion')->name('inscripcion.')->group(function () {
                 // Iniciar proceso
                 Route::post('/olimpiada/{olimpiada}/iniciar', [InscripcionController::class, 'iniciarProceso'])
@@ -160,12 +164,13 @@ Route::middleware([IsUserAuth::class])->group(
                 ->name('boleta.ver');
         });
 
+        // FLUJO DE VALIDACIÓN DE COMPROBANTE CON OCR
         Route::prefix('ocr')->name('ocr.')->group(function () {
 
             Route::put('/proceso/{proceso}/estado', [InscripcionController::class, 'actualizarEstadoProceso'])
                     ->name('proceso.actualizar.estado');
-        });
 
+        });
     }
 );
 
