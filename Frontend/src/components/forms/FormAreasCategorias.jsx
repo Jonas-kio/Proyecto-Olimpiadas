@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import "../../styles/components/InscripcionIndividual.css";
 
 const FormAreasCategorias = ({
@@ -6,12 +6,15 @@ const FormAreasCategorias = ({
   areasSeleccionadas,
   setAreasSeleccionadas,
   categoriasFiltradas,
-  categoriaSeleccionada,
-  setCategoriaSeleccionada,
+  categoriasSeleccionadas,
+  setCategoriasSeleccionadas,
   categoriasDisponibles,
   setCategoriasFiltradas,
   obtenerCategoriasPorArea,
+  maximoAreas, // 🔥 Lo recibimos aquí
 }) => {
+  const [mensajeError, setMensajeError] = useState("");
+  // const [categoriasSeleccionadas, setCategoriasSeleccionadas] = useState([]);
   console.log("Áreas disponibles recibidas:", areasDisponibles);
 
   // const handleAreaChange = (e) => {
@@ -48,48 +51,97 @@ const FormAreasCategorias = ({
       return;
     }
 
-    const yaSeleccionada = areasSeleccionadas.some(
-      (a) => a.id === idSeleccionado
-    );
-
-    if (yaSeleccionada) {
+    if (areasSeleccionadas.some((a) => a.id === idSeleccionado)) {
       alert("Esta área ya ha sido seleccionada.");
-    } else if (areasSeleccionadas.length >= 2) {
-      alert("Solo puedes inscribirte en un máximo de 2 áreas.");
-    } else {
-      setAreasSeleccionadas([...areasSeleccionadas, areaSeleccionada]);
-      setCategoriaSeleccionada(""); // Resetear categoría al cambiar de área
+      e.target.value = "";
+      return;
+    }
 
+    // Validación del máximo de áreas permitidas
+    if (areasSeleccionadas.length >= maximoAreas) {
+      setMensajeError(`Solo se permiten ${maximoAreas} áreas.`);
+      e.target.value = "";
+
+      // Ocultar el mensaje después de 5 segundos
+      setTimeout(() => {
+        setMensajeError("");
+      }, 3000);
+      return;
+    }
+
+    // Continúa normalmente si pasa todas las validaciones
+    const nuevasAreas = [...areasSeleccionadas, areaSeleccionada];
+    setAreasSeleccionadas(nuevasAreas);
+    setCategoriasSeleccionadas([]);
+    setCategoriasFiltradas([]);
+
+    const cursoSeleccionado = localStorage.getItem("cursoSeleccionado");
+    const cursosOrdenados = [
+      "3ro Primaria",
+      "4to Primaria",
+      "5to Primaria",
+      "6to Primaria",
+      "1ro Secundaria",
+      "2do Secundaria",
+      "3ro Secundaria",
+      "4to Secundaria",
+      "5to Secundaria",
+      "6to Secundaria",
+    ];
+    let todasLasCategorias = [];
+
+    for (const area of nuevasAreas) {
       try {
-        const response = await obtenerCategoriasPorArea(idSeleccionado);
-        console.log("Respuesta completa de categorías:", response);
-        // setCategoriasFiltradas(
-        //   Array.isArray(response.data.data) ? response.data.data : []
-        // );
-        // Asegúrate de que `.data` esté correcto según tu backend
-        const cursoSeleccionado = parseInt(
-          localStorage.getItem("cursoSeleccionado")
-        );
-
-        const categoriasFiltradasPorCurso = Array.isArray(response.data.data)
-          ? response.data.data.filter((cat) => {
-              const min = parseInt(cat.grade_min);
-              const max = cat.grade_max ? parseInt(cat.grade_max) : 12;
-              return cursoSeleccionado >= min && cursoSeleccionado <= max;
-            })
+        const response = await obtenerCategoriasPorArea(area.id);
+        const categorias = Array.isArray(response.data.data)
+          ? response.data.data
           : [];
 
-        setCategoriasFiltradas(categoriasFiltradasPorCurso);
+        const filtradas = categorias.filter((cat) => {
+          // Concatenamos nivel (grade_name) y curso (grade_min) para formar el formato del curso
+          const minCurso = `${cat.grade_min} ${cat.grade_name}`.trim();
+          const maxCurso = cat.grade_max
+            ? `${cat.grade_max} ${cat.grade_name}`.trim()
+            : minCurso;
+
+          const indexSeleccionado = cursosOrdenados.indexOf(cursoSeleccionado);
+          const indexMin = cursosOrdenados.indexOf(minCurso);
+          const indexMax = cursosOrdenados.indexOf(maxCurso);
+
+          console.log(
+            `Comparando ${cursoSeleccionado} con rango ${minCurso} - ${maxCurso}`
+          );
+          console.log(
+            `Índices: curso=${indexSeleccionado}, min=${indexMin}, max=${indexMax}`
+          );
+
+          return (
+            indexSeleccionado !== -1 &&
+            indexMin !== -1 &&
+            indexSeleccionado >= indexMin &&
+            indexSeleccionado <= indexMax
+          );
+        });
+
+        todasLasCategorias = [...todasLasCategorias, ...filtradas];
       } catch (error) {
-        console.error("Error al obtener categorías para el área:", error);
+        console.error(
+          `Error al obtener categorías del área ${area.nombre}:`,
+          error
+        );
       }
     }
 
+    setCategoriasFiltradas(todasLasCategorias);
     e.target.value = "";
   };
+
   return (
     <>
       <h2>Selección de Áreas</h2>
+      <p style={{ marginTop: "10px", fontWeight: "bold" }}>
+        Máximo de áreas permitidas: {maximoAreas}
+      </p>
       <div className="alerta">
         Puedes inscribirte en múltiples áreas. El costo se calculará en base a
         tu selección.
@@ -119,21 +171,42 @@ const FormAreasCategorias = ({
               ))}
           </select>
 
-          {areasSeleccionadas.map((area) => (
-            <span className="etiqueta-area" key={area.id}>
-              {area.nombre}
-              <button
-                type="button"
-                onClick={() =>
-                  setAreasSeleccionadas(
-                    areasSeleccionadas.filter((a) => a.id !== area.id)
-                  )
-                }
-              >
-                ×
-              </button>
-            </span>
-          ))}
+          <div className="etiquetas-contenedor">
+            {areasSeleccionadas.map((area) => (
+              <span className="etiqueta-area" key={area.id}>
+                {area.nombre}
+                <button
+                  type="button"
+                  onClick={() => {
+                    // 1️⃣ Elimina el área de la lista de seleccionadas
+                    setAreasSeleccionadas(
+                      areasSeleccionadas.filter((a) => a.id !== area.id)
+                    );
+
+                    // 2️⃣ Filtra las categorías filtradas para eliminar las de esta área
+                    setCategoriasFiltradas(
+                      categoriasFiltradas.filter(
+                        (cat) => cat.area_id !== area.id
+                      )
+                    );
+
+                    // 3️⃣ Filtra las categorías seleccionadas para eliminar las de esta área
+                    setCategoriasSeleccionadas(
+                      categoriasSeleccionadas.filter(
+                        (cat) => cat.area_id !== area.id
+                      )
+                    );
+                  }}
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+          </div>
+          {/* Mensaje de error debajo de las etiquetas */}
+          {mensajeError && (
+            <p style={{ color: "red", marginTop: "8px" }}>{mensajeError}</p>
+          )}
         </div>
 
         <div className="campo">
@@ -142,32 +215,72 @@ const FormAreasCategorias = ({
           </label>
           <select
             name="categoria"
-            value={categoriaSeleccionada}
-            onChange={(e) => setCategoriaSeleccionada(e.target.value)}
+            value=""
+            onChange={(e) => {
+              const nivelId = parseInt(e.target.value);
+              if (!nivelId) return;
+
+              const nivelObj = categoriasFiltradas.find(
+                (cat) => cat.id === nivelId
+              );
+              if (!nivelObj) return;
+
+              if (!categoriasSeleccionadas.some((cat) => cat.id === nivelId)) {
+                setCategoriasSeleccionadas([
+                  ...categoriasSeleccionadas,
+                  nivelObj,
+                ]);
+              }
+
+              e.target.value = ""; // Limpiar selección
+            }}
           >
-            <option value="">Selecciona una categoría</option>
-            {Array.isArray(categoriasFiltradas) &&
-              categoriasFiltradas.map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.name} - {cat.grade_name} (mínimo: {cat.grade_min} a
-                  máximo: {cat.grade_max})
-                </option>
-              ))}
+            <option value="">
+              {categoriasFiltradas.length === 0
+                ? "No existen niveles en las áreas seleccionadas"
+                : "Selecciona una categoría"}
+            </option>
+            {categoriasFiltradas
+              .filter(
+                (cat) =>
+                  !categoriasSeleccionadas.some((sel) => sel.id === cat.id)
+              )
+              .map((cat) => {
+                // Encuentra el nombre del área correspondiente a cada categoría
+                const area = areasDisponibles.find((a) => a.id === cat.area_id);
+                const nombreArea = area ? area.nombre : "Área desconocida";
+                return (
+                  <option key={cat.id} value={cat.id}>
+                    [{nombreArea}] {cat.name} - {cat.grade_name} (cursos:{" "}
+                    {cat.grade_min} a máximo: {cat.grade_max})
+                  </option>
+                );
+              })}
           </select>
 
-          {categoriaSeleccionada && (
+          {categoriasSeleccionadas.length > 0 && (
             <div className="etiquetas-contenedor">
-              <span className="etiqueta-area">
-                {categoriasDisponibles.find(
-                  (cat) => cat.id === parseInt(categoriaSeleccionada)
-                )?.name || "Categoría"}
-                <button
-                  type="button"
-                  onClick={() => setCategoriaSeleccionada("")}
-                >
-                  ×
-                </button>
-              </span>
+              {categoriasSeleccionadas.map((cat) => {
+                const area = areasDisponibles.find((a) => a.id === cat.area_id);
+                const nombreArea = area ? area.nombre : "Área desconocida";
+                return (
+                  <span className="etiqueta-area" key={cat.id}>
+                    [{nombreArea}] {cat.name} - {cat.grade_name}
+                    {/* - (curso:{" "}
+                    {cat.grade_min}) */}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setCategoriasSeleccionadas(
+                          categoriasSeleccionadas.filter((c) => c.id !== cat.id)
+                        )
+                      }
+                    >
+                      ×
+                    </button>
+                  </span>
+                );
+              })}
             </div>
           )}
         </div>

@@ -23,7 +23,7 @@ return new class extends Migration
             ])->default('pending');
             $table->dateTime('start_date');
             $table->string('type');
-            $table->boolean('active');
+            $table->boolean('active')->default(true);
             $table->timestamps();
         });
     }

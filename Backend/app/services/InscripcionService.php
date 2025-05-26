@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Area;
+use App\Models\Boleta;
 use App\Models\CategoryLevel;
 use App\Models\CompetidorTutor;
 use App\Models\Competitor;
@@ -48,9 +49,15 @@ class InscripcionService
 
     public function registrarCompetidor(RegistrationProcess $proceso, array $datos)
     {
-        if (!$proceso->active || $proceso->status !== EstadoInscripcion::PENDIENTE) {
-            throw new Exception('El proceso de inscripción no está activo');
+        \App\Services\Helpers\InscripcionHelper::verificarProcesoActivo($proceso, 'registrar competidores');
+
+        if ($proceso->status !== EstadoInscripcion::PENDIENTE) {
+            throw new Exception('El proceso de inscripción no está en estado pendiente');
         }
+
+        $cursoNivel = explode(' ', $datos['curso']);
+        $datos['curso'] = $cursoNivel[0];
+        $datos['nivel'] = $cursoNivel[1];
 
         $competidor = Competitor::create($datos);
         $this->procesoRepository->agregarCompetidor($proceso->id, $competidor->id);
@@ -60,8 +67,10 @@ class InscripcionService
 
     public function registrarTutor(RegistrationProcess $proceso, array $datos, array $competidoresIds, int $usuarioId)
     {
-        if (!$proceso->active || $proceso->status !== EstadoInscripcion::PENDIENTE) {
-            throw new Exception('El proceso de inscripción no está activo');
+        \App\Services\Helpers\InscripcionHelper::verificarProcesoActivo($proceso, 'registrar tutores');
+
+        if ($proceso->status !== EstadoInscripcion::PENDIENTE) {
+            throw new Exception('El proceso de inscripción no está en estado pendiente');
         }
 
         if (empty($competidoresIds)) {
@@ -98,38 +107,157 @@ class InscripcionService
         return $tutor;
     }
 
-    public function guardarSeleccionArea(RegistrationProcess $proceso, int $areaId)
+    public function guardarSeleccionArea(RegistrationProcess $proceso, $areaIds)
     {
-        $areaValida = $proceso->olimpiada->areas()
-            ->where('area.id', $areaId)
-            ->where('olimpiada_area.activo', true)
-            ->exists();
+        // Verificar si el proceso está activo
+        \App\Services\Helpers\InscripcionHelper::verificarProcesoActivo($proceso, 'seleccionar áreas');
 
-        if (!$areaValida) {
-            throw new Exception('El área seleccionada no es válida para esta olimpiada');
+        // Convertir el parámetro a arreglo si no lo es
+        if (!is_array($areaIds)) {
+            $areaIds = [$areaIds];
         }
 
-        $this->procesoRepository->guardarSeleccionArea($proceso->id, $areaId);
-        return true;
+
+        $areasSeleccionadas = $this->procesoRepository->obtenerAreasSeleccionadas($proceso->id);
+
+
+        $maximoAreas = $proceso->olimpiada->maximo_areas;
+
+        // Verificar que no exceda el máximo de áreas permitidas
+        $nuevasAreas = array_diff($areaIds, $areasSeleccionadas);
+        if (count($areasSeleccionadas) + count($nuevasAreas) > $maximoAreas) {
+            throw new Exception("No puede seleccionar más de {$maximoAreas} área(s) para esta olimpiada. Ya ha seleccionado " . count($areasSeleccionadas) . " área(s).");
+        }
+
+        // Verificar para cada área nueva si es válida y si cumple con las condiciones
+        foreach ($areaIds as $areaId) {
+
+            $areaValidaEnConditions = $proceso->olimpiada->conditions()
+                ->where('area_id', $areaId)
+                ->exists();
+
+            if (!$areaValidaEnConditions) {
+                throw new Exception("El área con ID {$areaId} no es válida para esta olimpiada");
+            }
+
+
+            $condition = $proceso->olimpiada->getAreaConditions($areaId);
+
+            // Si el área que se está intentando agregar es exclusiva
+            if ($condition && $condition->area_exclusiva) {
+                if (!empty($areasSeleccionadas) && !in_array($areaId, $areasSeleccionadas)) {
+                    throw new Exception("El área con ID {$areaId} es exclusiva y no puede combinarse con otras áreas.");
+                }
+
+                if (count($areaIds) > 1) {
+                    throw new Exception("El área con ID {$areaId} es exclusiva y no puede combinarse con otras áreas.");
+                }
+            }
+
+            // Verificar si alguna de las áreas ya seleccionadas es exclusiva
+            if (!empty($areasSeleccionadas) && !in_array($areaId, $areasSeleccionadas)) {
+                foreach ($areasSeleccionadas as $selectedAreaId) {
+                    $areaCondition = $proceso->olimpiada->getAreaConditions($selectedAreaId);
+                    if ($areaCondition && $areaCondition->area_exclusiva) {
+                        throw new Exception("Ya ha seleccionado un área exclusiva (ID: {$selectedAreaId}) que no permite combinaciones con otras áreas.");
+                    }
+                }
+            }
+        }
+
+        // Si todas las validaciones pasan, guardar todas las áreas
+        $guardadas = true;
+        foreach ($areaIds as $areaId) {
+            if (!in_array($areaId, $areasSeleccionadas)) {
+                $guardadas = $guardadas && $this->procesoRepository->guardarSeleccionArea($proceso->id, $areaId);
+            }
+        }
+
+        return $guardadas;
     }
 
-    public function guardarSeleccionNivel(RegistrationProcess $proceso, int $nivelId)
+    public function guardarSeleccionNivel(RegistrationProcess $proceso, $nivelIds)
     {
-        $areaId = $this->procesoRepository->obtenerAreaSeleccionada($proceso->id);
+        \App\Services\Helpers\InscripcionHelper::verificarProcesoActivo($proceso, 'seleccionar niveles');
 
-        if (!$areaId) {
-            throw new Exception('Debe seleccionar un área antes de seleccionar un nivel');
+        if (!is_array($nivelIds)) {
+            $nivelIds = [$nivelIds];
         }
 
-        try {
-            $this->categoryLevelService->getCategoryByIdAndAreaId($nivelId, $areaId);
-        } catch (Exception $e) {
-            throw new Exception('El nivel seleccionado no es válido para esta área');
+        $areasSeleccionadas = $this->procesoRepository->obtenerAreasSeleccionadas($proceso->id);
+
+        if (empty($areasSeleccionadas)) {
+            throw new Exception('Debe seleccionar al menos un área antes de seleccionar un nivel');
         }
 
+        $nivelesSeleccionados = $this->procesoRepository->obtenerNivelesSeleccionados($proceso->id);
 
-        $this->procesoRepository->guardarSeleccionNivel($proceso->id, $nivelId);
-        return true;
+        $nivelesAreasCompatibles = [];
+
+        foreach ($nivelIds as $nivelId) {
+            $areasCompatibles = [];
+
+            foreach ($areasSeleccionadas as $areaId) {
+                try {
+                    $this->categoryLevelService->getCategoryByIdAndAreaId($nivelId, $areaId);
+                    $areasCompatibles[] = $areaId;
+                } catch (Exception $e) {
+                    continue;
+                }
+            }
+
+            if (empty($areasCompatibles)) {
+                throw new Exception("El nivel con ID {$nivelId} no es válido para ninguna de las áreas seleccionadas");
+            }
+
+            $nivelesAreasCompatibles[$nivelId] = $areasCompatibles;
+        }
+
+        $nivelesAsignadosPorArea = [];
+
+        foreach ($nivelesSeleccionados as $nivelId) {
+            foreach ($areasSeleccionadas as $areaId) {
+                try {
+                    $this->categoryLevelService->getCategoryByIdAndAreaId($nivelId, $areaId);
+                    if (!isset($nivelesAsignadosPorArea[$areaId])) {
+                        $nivelesAsignadosPorArea[$areaId] = [];
+                    }
+                    $nivelesAsignadosPorArea[$areaId][] = $nivelId;
+                } catch (Exception $e) {
+                    continue;
+                }
+            }
+        }
+
+        foreach ($nivelIds as $nivelId) {
+            if (in_array($nivelId, $nivelesSeleccionados)) {
+                continue;
+            }
+
+            foreach ($nivelesAreasCompatibles[$nivelId] as $areaId) {
+                $condition = $proceso->olimpiada->getAreaConditions($areaId);
+
+                if ($condition && $condition->nivel_unico) {
+                    if (isset($nivelesAsignadosPorArea[$areaId]) && !empty($nivelesAsignadosPorArea[$areaId])) {
+                        throw new Exception("El área con ID {$areaId} permite seleccionar un único nivel por competidor.");
+                    }
+                }
+
+                if (!isset($nivelesAsignadosPorArea[$areaId])) {
+                    $nivelesAsignadosPorArea[$areaId] = [];
+                }
+                $nivelesAsignadosPorArea[$areaId][] = $nivelId;
+            }
+        }
+
+        $guardadas = true;
+        foreach ($nivelIds as $nivelId) {
+            if (!in_array($nivelId, $nivelesSeleccionados)) {
+                $guardadas = $guardadas && $this->procesoRepository->guardarSeleccionNivel($proceso->id, $nivelId);
+            }
+        }
+
+        return $guardadas;
     }
 
     public function generarResumen(RegistrationProcess $proceso)
@@ -176,33 +304,58 @@ class InscripcionService
             $resumen['competidores'][] = $datosCompetidor;
         }
 
-        $areaId = $this->procesoRepository->obtenerAreaSeleccionada($proceso->id);
-        $nivelId = $this->procesoRepository->obtenerNivelSeleccionado($proceso->id);
+        $areasSeleccionadas = $this->procesoRepository->obtenerAreasSeleccionadas($proceso->id);
+        $nivelesSeleccionados = $this->procesoRepository->obtenerNivelesSeleccionados($proceso->id);
 
-        if ($areaId && $nivelId) {
+        if (!empty($areasSeleccionadas) && !empty($nivelesSeleccionados)) {
             try {
-                $area = Area::findOrFail($areaId);
-                $nivel = CategoryLevel::findOrFail($nivelId);
+                $areas = Area::whereIn('id', $areasSeleccionadas)->get();
+                $niveles = CategoryLevel::whereIn('id', $nivelesSeleccionados)->get();
 
-                $resumen['seleccion'] = [
-                    'area' => [
+                $areasData = $areas->map(function ($area) {
+                    return [
                         'id' => $area->id,
                         'nombre' => $area->nombre,
                         'descripcion' => $area->descripcion
-                    ],
-                    'nivel' => [
+                    ];
+                })->toArray();
+
+                $nivelesData = $niveles->map(function ($nivel) {
+                    return [
                         'id' => $nivel->id,
                         'nombre' => $nivel->nombre,
                         'descripcion' => $nivel->descripcion
-                    ]
+                    ];
+                })->toArray();
+
+                $resumen['seleccion'] = [
+                    'areas' => $areasData,
+                    'niveles' => $nivelesData
                 ];
 
-                $costo = $this->calcularCosto($areaId, $nivelId, count($competidores));
+                // Para el costo, sumamos el costo de cada combinación área-nivel
+                $costoTotal = 0;
+                $costoUnitario = 0;
+
+                foreach ($areasSeleccionadas as $areaId) {
+                    foreach ($nivelesSeleccionados as $nivelId) {
+                        try {
+                            // Verificar si esta combinación área-nivel es válida
+                            $this->categoryLevelService->getCategoryByIdAndAreaId($nivelId, $areaId);
+
+                            $costoPorArea = $this->calcularCosto($areaId, $nivelId, count($competidores));
+                            $costoUnitario += $costoPorArea['unitario'];
+                            $costoTotal += $costoPorArea['total'];
+                        } catch (Exception $e) {
+                            continue;
+                        }
+                    }
+                }
 
                 $resumen['costo'] = [
-                    'monto_unitario' => $costo['unitario'],
+                    'monto_unitario' => $costoUnitario,
                     'cantidad_competidores' => count($competidores),
-                    'monto_total' => $costo['total']
+                    'monto_total' => $costoTotal
                 ];
             } catch (ModelNotFoundException $e) {
                 $resumen['seleccion'] = null;
@@ -228,5 +381,106 @@ class InscripcionService
             'unitario' => $costoUnitario,
             'total' => $costoUnitario * $cantidadCompetidores
         ];
+    }
+
+    public function obtenerProcesoPorId($procesoId)
+    {
+        return 0;
+    }
+
+    public function obtenerEstadoProceso($procesoId)
+    {
+        $estado = $this->procesoRepository->obtenerEstadoProceso($procesoId);
+        if ($estado == EstadoInscripcion::PENDIENTE) {
+            return 'Pendiente';
+        } elseif ($estado == EstadoInscripcion::INSCRITO) {
+            return 'Aceptado';
+        } elseif ($estado == EstadoInscripcion::RECHAZADO) {
+            return 'Rechazado';
+        }
+    }
+
+    public function obtenerProcesoPorOlimpiada($olimpiadaId)
+    {
+        return 0;
+    }
+
+    public function actualizarEstadoProcesoTemporalmente(RegistrationProcess $proceso, EstadoInscripcion $nuevoEstado)
+    {
+        try {
+
+            $this->procesoRepository->actualizarEstadoActivacion($proceso->id, true);
+
+            $proceso->status = $nuevoEstado;
+            $resultado = $proceso->save();
+
+            if (!$resultado) {
+                throw new Exception('No se pudo actualizar el estado del proceso de inscripción');
+            }
+
+            $this->procesoRepository->actualizarEstadoActivacion($proceso->id, false);
+
+            return true;
+        } catch (Exception $e) {
+            // Si hay algún error, nos aseguramos de que el proceso quede desactivado
+            $this->procesoRepository->actualizarEstadoActivacion($proceso->id, false);
+            throw $e;
+        }
+    }
+
+    public function validarCambioEstado(EstadoInscripcion $estadoActual, EstadoInscripcion $nuevoEstado)
+    {
+        $transicionesPermitidas = [
+            EstadoInscripcion::PENDIENTE->value => [
+                EstadoInscripcion::INSCRITO->value,
+                EstadoInscripcion::RECHAZADO->value
+            ],
+        ];
+
+        // Si no hay transiciones definidas para el estado actual o el nuevo estado no está en la lista de permitidos
+        if (!isset($transicionesPermitidas[$estadoActual->value]) ||
+            !in_array($nuevoEstado->value, $transicionesPermitidas[$estadoActual->value])) {
+            throw new Exception("No se permite cambiar del estado '{$estadoActual->label()}' al estado '{$nuevoEstado->label()}'");
+        }
+        return true;
+    }
+
+    /**
+     * Verifica si hay procesos activos para un usuario y olimpiada, y repara problemas si es necesario
+     *
+     * @param int $olimpiadaId ID de la olimpiada
+     * @param int $userId ID del usuario
+     * @return RegistrationProcess|null Proceso activo si existe, null en caso contrario
+     */
+    public function verificarYRepararProcesosActivos(int $olimpiadaId, int $userId)
+    {
+        // Buscar procesos existentes para esta olimpiada y usuario
+        $procesos = RegistrationProcess::where('olimpiada_id', $olimpiadaId)
+            ->where('user_id', $userId)
+            ->get();
+
+        if ($procesos->isEmpty()) {
+            return null;
+        }
+
+        // Verificar si hay algún proceso activo sin boleta generada
+        foreach ($procesos as $proceso) {
+            $tieneBoleta = Boleta::where('registration_process_id', $proceso->id)->exists();
+
+            // Si no tiene boleta y está inactivo, lo reparamos
+            if (!$tieneBoleta && !$proceso->active) {
+                $proceso->active = true;
+                $proceso->save();
+                \Illuminate\Support\Facades\Log::info("Proceso {$proceso->id} reparado: Estado de activación cambiado a ACTIVO");
+                return $proceso;
+            }
+
+            // Si ya hay un proceso activo sin boleta, lo devolvemos
+            if ($proceso->active && !$tieneBoleta) {
+                return $proceso;
+            }
+        }
+
+        return null;
     }
 }

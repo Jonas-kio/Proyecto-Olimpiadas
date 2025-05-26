@@ -21,6 +21,7 @@ class UpdateOlimpiadaRequest extends FormRequest
 
         $inputs = [];
 
+        // Procesar áreas
         if ($this->has('areas')) {
             $areas = $this->input('areas');
             if (is_string($areas)) {
@@ -33,6 +34,24 @@ class UpdateOlimpiadaRequest extends FormRequest
             }
         }
 
+        // Procesar condiciones
+        if ($this->has('condiciones')) {
+            $condiciones = $this->input('condiciones');
+            if (is_string($condiciones)) {
+                $decoded = json_decode($condiciones, true);
+                if ($decoded !== null) {
+                    $inputs['condiciones'] = array_map(function ($condicion) {
+                        return [
+                            'area_id' => (int)$condicion['area_id'],
+                            'nivel_unico' => (bool)($condicion['nivel_unico'] ?? false),
+                            'area_exclusiva' => (bool)($condicion['area_exclusiva'] ?? false),
+                        ];
+                    }, $decoded);
+                }
+            }
+        }
+
+        // Procesar otros campos
         if ($this->has('activo')) {
             $activo = $this->input('activo');
             $inputs['activo'] = in_array(strtolower($activo), ['true', '1', 'yes', 'si', 't']) ? true : false;
@@ -74,10 +93,15 @@ class UpdateOlimpiadaRequest extends FormRequest
                 }
             ],
             'areas' => 'sometimes|nullable|array',
-            'areas.*' => 'integer|exists:areas,id',
+            'areas.*' => 'integer|exists:area,id',
             'pdf_detalles' => 'sometimes|nullable|file|mimes:pdf|max:10240',
             'imagen_portada' => 'sometimes|nullable|image|mimes:jpeg,png,jpg|max:10240',
+            'maximo_areas' => 'sometimes|nullable|integer|min:0',
             'activo' => 'sometimes|nullable|boolean',
+            'condiciones' => 'sometimes|nullable|array',
+            'condiciones.*.area_id' => 'required_with:condiciones|exists:area,id',
+            'condiciones.*.nivel_unico' => 'boolean',
+            'condiciones.*.area_exclusiva' => 'boolean',
         ];
 
         return $rules;
@@ -98,6 +122,14 @@ class UpdateOlimpiadaRequest extends FormRequest
             'imagen_portada.image' => 'El archivo debe ser una imagen.',
             'imagen_portada.mimes' => 'La imagen debe ser de tipo: jpeg, png, jpg, gif.',
             'imagen_portada.max' => 'La imagen no debe ser mayor a 5MB.',
+            'maximo_areas.integer' => 'El máximo de áreas debe ser un número entero.',
+            'maximo_areas.min' => 'El máximo de áreas debe ser al menos 0.',
+            'activo.boolean' => 'El campo activo debe ser verdadero o falso.',
+            'condiciones.array' => 'Las condiciones deben ser una lista de elementos.',
+            'condiciones.*.area_id.required_with' => 'Para cada condición, el área es requerida.',
+            'condiciones.*.area_id.exists' => 'Una de las áreas seleccionadas en las condiciones no existe.',
+            'condiciones.*.nivel_unico.boolean' => 'El campo nivel único debe ser verdadero o falso.',
+            'condiciones.*.area_exclusiva.boolean' => 'El campo área exclusiva debe ser verdadero o falso.',
         ];
     }
 

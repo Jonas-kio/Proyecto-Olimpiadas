@@ -37,6 +37,8 @@ Route::get('/libre/olimpiadas/{olimpiada}', [OlimpiadaController::class, 'show']
 //TODO: Rutas Publicas
 Route::post('register', [AuthController::class, 'register']);
 Route::post('login', [AuthController::class, 'login']);
+Route::get('email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])->name('verification.verify');
+Route::post('email/resend', [AuthController::class, 'resendVerificationEmail'])->name('verification.resend');
 
 //TODO: Rutas Privadas
 Route::middleware([IsUserAuth::class])->group(
@@ -97,6 +99,7 @@ Route::middleware([IsUserAuth::class])->group(
             // Rutas para obtener información de olimpiadas
             Route::get('/olimpiadas', [OlimpiadaController::class, 'indexUser'])->name('olimpiadas.indexUser');
             Route::get('/olimpiadas/{olimpiada}', [OlimpiadaController::class, 'show']);
+            Route::get('/olimpiadas/{olimpiada}/areas', [OlimpiadaController::class, 'getAreasByOlimpiada'])->name('olimpiadas.areas');
 
             // Rutas para obtener información de areas por el ususario
             Route::get('/areas', [AreaController::class, 'index'])->name('areas.indexUser');
@@ -111,7 +114,7 @@ Route::middleware([IsUserAuth::class])->group(
 
         });
 
-        // FLUJO DE INSCRIPCIÓN COMPLETO
+        // FLUJO DE VALIDACION DE COMPROVANTE CON OCR
         Route::prefix('inscripcion')->name('inscripcion.')->group(function () {
                 // Iniciar proceso
                 Route::post('/olimpiada/{olimpiada}/iniciar', [InscripcionController::class, 'iniciarProceso'])
@@ -139,6 +142,14 @@ Route::middleware([IsUserAuth::class])->group(
                 Route::get('/proceso/{proceso}/resumen', [InscripcionController::class, 'obtenerResumen'])
                     ->name('resumen');
 
+                // Verificar estado del proceso
+                Route::get('/proceso/{proceso}/estado', [InscripcionController::class, 'verificarEstadoProceso'])
+                    ->name('proceso.estado');
+
+                // Diagnosticar problemas con el proceso
+                Route::get('/proceso/{proceso}/diagnostico', [InscripcionController::class, 'diagnosticarProceso'])
+                    ->name('proceso.diagnostico');
+
                 // Generar boleta
                 Route::post('/proceso/{proceso}/boleta', [InscripcionController::class, 'generarBoleta'])
                     ->name('boleta.generar');
@@ -148,6 +159,13 @@ Route::middleware([IsUserAuth::class])->group(
             Route::get('/boleta/{boleta}', [InscripcionController::class, 'obtenerBoleta'])
                 ->name('boleta.ver');
         });
+
+        Route::prefix('ocr')->name('ocr.')->group(function () {
+
+            Route::put('/proceso/{proceso}/estado', [InscripcionController::class, 'actualizarEstadoProceso'])
+                    ->name('proceso.actualizar.estado');
+        });
+
     }
 );
 

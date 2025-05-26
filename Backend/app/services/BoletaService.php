@@ -74,17 +74,18 @@ class BoletaService
                 $montoTotal += $costo->price;
             }
 
-            //$proceso->update(['status' => EstadoInscripcion::INSCRITO]);
-
             $diasExpiracion = config('app.boleta_dias_expiracion', 15);
             $boleta = Boleta::create([
                 'registration_process_id' => $proceso->id,
-                'numero_boleta' => $this->generarCodigoBoleta(),
+                'numero_boleta' => $this->generarCodigoBoleta($proceso->type), // Pasamos el tipo de proceso
                 'monto_total' => $montoTotal,
                 'fecha_emision' => now(),
                 'fecha_expiracion' => now()->addDays($diasExpiracion),
                 'estado' => BoletaEstado::PENDIENTE->value,
             ]);
+
+            // Desactivar el proceso de inscripción para evitar modificaciones
+            $this->procesoRepository->actualizarEstadoActivacion($proceso->id, false);
 
             DB::commit();
 
@@ -97,13 +98,22 @@ class BoletaService
         }
     }
 
-    protected function generarCodigoBoleta()
+    protected function generarCodigoBoleta($tipo = null)
     {
         $fechaActual = Carbon::now()->format('Ymd');
-        $codigo = 'BOL-' . $fechaActual . '-' . strtoupper(Str::random(6));
+
+
+        $prefijo = 'BOL';
+        if ($tipo === 'individual') {
+            $prefijo = 'BOL-IND';
+        } elseif ($tipo === 'grupal') {
+            $prefijo = 'BOL-GRP';
+        }
+
+        $codigo = $prefijo . '-' . $fechaActual . '-' . strtoupper(Str::random(6));
 
         while (Boleta::where('numero_boleta', $codigo)->exists()) {
-            $codigo = 'BOL-' . $fechaActual . '-' . strtoupper(Str::random(6));
+            $codigo = $prefijo . '-' . $fechaActual . '-' . strtoupper(Str::random(6));
         }
 
         return $codigo;
@@ -145,7 +155,6 @@ class BoletaService
             })->toArray();
         }
 
-        // Construir datos de competidores con sus detalles
         $competidoresData = [];
         foreach ($detalles as $detalle) {
             $competidorId = $detalle->competidor->id;
@@ -176,7 +185,6 @@ class BoletaService
             ];
         }
 
-        // Construir respuesta
         return [
             'boleta' => [
                 'id' => $boleta->id,

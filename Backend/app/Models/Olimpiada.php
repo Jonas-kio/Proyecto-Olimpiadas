@@ -7,31 +7,8 @@ use App\Enums\OlimpiadaModalidades;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
-/**
- * @OA\Schema(
- *     schema="Olimpiada",
- *     title="Olimpiada",
- *     description="Modelo de Olimpiada",
- *     @OA\Property(property="id", type="integer", format="int64", readOnly=true),
- *     @OA\Property(property="nombre", type="string", example="Olimpiada de Matemáticas 2025"),
- *     @OA\Property(property="descripcion", type="string", example="Competencia nacional de matemáticas"),
- *     @OA\Property(property="fecha_inicio", type="string", format="date", example="2025-06-01"),
- *     @OA\Property(property="fecha_fin", type="string", format="date", example="2025-06-30"),
- *     @OA\Property(property="cupo_minimo", type="integer", example=50),
- *     @OA\Property(property="modalidad", type="string", example="Presencial"),
- *     @OA\Property(property="pdf_detalles", type="string", example="olimpiada_detalles.pdf"),
- *     @OA\Property(property="imagen_portada", type="string", example="olimpiada_portada.jpg"),
- *     @OA\Property(property="activo", type="boolean", example=true),
- *     @OA\Property(
- *         property="areas",
- *         type="array",
- *         @OA\Items(ref="#/components/schemas/Area")
- *     ),
- *     @OA\Property(property="created_at", type="string", format="datetime", readOnly=true),
- *     @OA\Property(property="updated_at", type="string", format="datetime", readOnly=true)
- * )
- */
 class Olimpiada extends Model
 {
     use HasFactory;
@@ -48,6 +25,7 @@ class Olimpiada extends Model
         'ruta_pdf_detalles',
         'ruta_imagen_portada',
         'estado',
+        'maximo_areas',
         'activo'
     ];
 
@@ -56,6 +34,19 @@ class Olimpiada extends Model
         return $this->belongsToMany(Area::class, 'olimpiada_area', 'olimpiada_id', 'area_id')
             ->withPivot('activo')
             ->withTimestamps();
+    }
+
+    public function areasWithConditions(): BelongsToMany
+    {
+        return $this->belongsToMany(Area::class, 'olimpiada_area', 'olimpiada_id', 'area_id')
+            ->withPivot('activo')
+            ->with('conditions')
+            ->withTimestamps();
+    }
+
+    public function conditions(): HasMany
+    {
+        return $this->hasMany(Condition::class);
     }
 
     public function getAreasAttribute()
@@ -75,11 +66,30 @@ class Olimpiada extends Model
     public function getFormattedAreasAttribute()
     {
         return $this->areas->map(function ($area) {
+            $condition = $this->getAreaConditions($area->id);
             return [
                 'id' => $area->id,
                 'nombre' => $area->nombre,
-                'descripcion' => $area->descripcion ?? null
+                'descripcion' => $area->descripcion ?? null,
+                'conditions' => [
+                    'nivel_unico' => $condition ? $condition->nivel_unico : false,
+                    'area_exclusiva' => $condition ? $condition->area_exclusiva : false
+                ]
             ];
         });
+    }
+
+    public function hasConditionForArea(int $areaId): bool
+    {
+        return $this->conditions()
+            ->where('area_id', $areaId)
+            ->exists();
+    }
+
+    public function getAreaConditions(int $areaId)
+    {
+        return $this->conditions()
+            ->where('area_id', $areaId)
+            ->first();
     }
 }

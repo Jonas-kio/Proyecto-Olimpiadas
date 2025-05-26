@@ -11,17 +11,17 @@ use App\Http\Requests\InscripcionRequest\TutorRequest;
 use App\Models\Olimpiada;
 
 use App\Models\RegistrationProcess;
+use App\Models\Boleta;
 use App\Services\InscripcionService;
 use App\Services\BoletaService;
+use App\Enums\EstadoInscripcion;
 
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+use Exception;
 
-/**
- * @OA\Tag(
- *     name="Inscripción",
- *     description="Endpoints para el proceso de inscripción"
- * )
- */
+
 class InscripcionController extends Controller
 {
     protected $inscripcionService;
@@ -34,31 +34,39 @@ class InscripcionController extends Controller
     }
 
     /**
-     * @OA\Post(
-     *     path="/api/inscripcion/olimpiada/{olimpiada}/iniciar",
-     *     tags={"Inscripción"},
-     *     summary="Iniciar proceso de inscripción",
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(
-     *         name="olimpiada",
-     *         in="path",
-     *         required=true,
-     *         description="ID de la olimpiada",
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Response(
-     *         response=201,
-     *         description="Proceso iniciado exitosamente",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(property="message", type="string", example="Proceso de inscripción iniciado"),
-     *             @OA\Property(property="proceso", ref="#/components/schemas/RegistrationProcess")
-     *         )
-     *     )
-     * )
+     * Verifica el estado de activación de un proceso de inscripción
+     *
+     * @param RegistrationProcess $proceso Proceso a verificar
+     * @return JsonResponse
      */
+    public function verificarEstadoProceso(RegistrationProcess $proceso)
+    {
+        return response()->json([
+            'success' => true,
+            'activo' => $proceso->active,
+            'estado' => $proceso->status->value,
+            'estado_label' => $proceso->status->label(),
+            'puede_modificar' => $proceso->active && $proceso->status->value === 'pending'
+        ]);
+    }
     public function iniciarProceso(IniciarProcesoRequest $request, Olimpiada $olimpiada)
     {
+        // Primero verificamos si ya hay un proceso activo que pueda ser reparado
+        $procesoExistente = $this->inscripcionService->verificarYRepararProcesosActivos(
+            $olimpiada->id,
+            Auth::id()
+        );
+
+        if ($procesoExistente) {
+            return response()->json([
+                'success' => true,
+                'proceso_id' => $procesoExistente->id,
+                'mensaje' => 'Se encontró un proceso de inscripción existente',
+                'reparado' => true
+            ]);
+        }
+
+        // Si no hay proceso existente, creamos uno nuevo
         $validated = $request->validated();
         $proceso = $this->inscripcionService->iniciarProceso($olimpiada, $validated['tipo'], Auth::id());
         return response()->json([
@@ -68,34 +76,6 @@ class InscripcionController extends Controller
         ]);
     }
 
-    /**
-     * @OA\Post(
-     *     path="/api/inscripcion/proceso/{proceso}/competidor",
-     *     tags={"Inscripción"},
-     *     summary="Registrar competidor en proceso",
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(
-     *         name="proceso",
-     *         in="path",
-     *         required=true,
-     *         description="ID del proceso de inscripción",
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(ref="#/components/schemas/Competitor")
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Competidor registrado exitosamente",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(property="message", type="string", example="Competidor registrado"),
-     *             @OA\Property(property="competitor", ref="#/components/schemas/Competitor")
-     *         )
-     *     )
-     * )
-     */
     public function registrarCompetidor(CompetidorRequest $request, RegistrationProcess $proceso)
     {
         $competidor = $this->inscripcionService->registrarCompetidor($proceso, $request->validated());
@@ -106,29 +86,6 @@ class InscripcionController extends Controller
         ]);
     }
 
-    /**
-     * @OA\Post(
-     *     path="/api/inscripcion/proceso/{proceso}/tutor",
-     *     tags={"Inscripción"},
-     *     summary="Registrar tutor en proceso",
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(
-     *         name="proceso",
-     *         in="path",
-     *         required=true,
-     *         description="ID del proceso de inscripción",
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(ref="#/components/schemas/Tutor")
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Tutor registrado exitosamente"
-     *     )
-     * )
-     */
     public function registrarTutor(TutorRequest $request, RegistrationProcess $proceso)
     {
         $tutor = $this->inscripcionService->registrarTutor(
@@ -151,7 +108,7 @@ class InscripcionController extends Controller
 
         return response()->json([
             'success' => true,
-            'mensaje' => 'Área seleccionada correctamente'
+            'mensaje' => count($request->area_id) > 1 ? 'Áreas seleccionadas correctamente' : 'Área seleccionada correctamente'
         ]);
     }
 
@@ -161,33 +118,10 @@ class InscripcionController extends Controller
 
         return response()->json([
             'success' => true,
-            'mensaje' => 'Nivel seleccionado correctamente'
+            'mensaje' => count($request->nivel_id) > 1 ? 'Niveles seleccionados correctamente' : 'Nivel seleccionado correctamente'
         ]);
     }
 
-    /**
-     * @OA\Get(
-     *     path="/api/inscripcion/proceso/{proceso}/resumen",
-     *     tags={"Inscripción"},
-     *     summary="Obtener resumen de inscripción",
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(
-     *         name="proceso",
-     *         in="path",
-     *         required=true,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Resumen obtenido exitosamente",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="proceso", ref="#/components/schemas/RegistrationProcess"),
-     *             @OA\Property(property="competitor", ref="#/components/schemas/Competitor"),
-     *             @OA\Property(property="tutor", ref="#/components/schemas/Tutor")
-     *         )
-     *     )
-     * )
-     */
     public function obtenerResumen(RegistrationProcess $proceso)
     {
         $resumen = $this->inscripcionService->generarResumen($proceso);
@@ -198,25 +132,6 @@ class InscripcionController extends Controller
         ]);
     }
 
-    /**
-     * @OA\Post(
-     *     path="/api/inscripcion/proceso/{proceso}/boleta",
-     *     tags={"Inscripción"},
-     *     summary="Generar boleta de inscripción",
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(
-     *         name="proceso",
-     *         in="path",
-     *         required=true,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Boleta generada exitosamente",
-     *         @OA\JsonContent(ref="#/components/schemas/Boleta")
-     *     )
-     * )
-     */
     public function generarBoleta(RegistrationProcess $proceso)
     {
         $boleta = $this->boletaService->generarBoleta($proceso);
@@ -225,7 +140,7 @@ class InscripcionController extends Controller
             'success' => true,
             'boleta_id' => $boleta->id,
             'codigo' => $boleta->numero_boleta,
-            'mensaje' => 'Boleta generada correctamente'
+            'mensaje' => 'Boleta generada correctamente. El proceso de inscripción ha sido cerrado y no se podrán realizar más cambios.'
         ]);
     }
 
@@ -236,6 +151,83 @@ class InscripcionController extends Controller
         return response()->json([
             'success' => true,
             'boleta' => $datosBoleta
+        ]);
+    }
+
+    public function actualizarEstadoProceso(Request $request, RegistrationProcess $proceso)
+    {
+        try {
+            $request->validate([
+                'status' => 'required|string|in:approved,rejected'
+            ]);
+
+            $nuevoEstado = EstadoInscripcion::from($request->status);
+
+            // Validamos si el cambio de estado es permitido
+            $this->inscripcionService->validarCambioEstado($proceso->status, $nuevoEstado);
+
+            // Actualizamos el estado temporalmente y volvemos a cerrar el proceso
+            $this->inscripcionService->actualizarEstadoProcesoTemporalmente($proceso, $nuevoEstado);
+
+            return response()->json([
+                'success' => true,
+                'mensaje' => "Estado del proceso actualizado a '{$nuevoEstado->label()}'",
+                'proceso' => [
+                    'id' => $proceso->id,
+                    'estado' => $nuevoEstado->value,
+                    'estado_label' => $nuevoEstado->label(),
+                    'activo' => false
+                ]
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'mensaje' => $e->getMessage()
+            ], 422);
+        }
+    }
+
+    /**
+     * Diagnostica por qué un proceso no está activo o no puede ser modificado
+     *
+     * @param RegistrationProcess $proceso Proceso a diagnosticar
+     * @return JsonResponse
+     */
+    public function diagnosticarProceso(RegistrationProcess $proceso)
+    {
+        // Recuperar el proceso de la base de datos para asegurarnos de tener la información actualizada
+        $procesoActualizado = RegistrationProcess::find($proceso->id);
+
+        if (!$procesoActualizado) {
+            return response()->json([
+                'success' => false,
+                'mensaje' => 'El proceso de inscripción no existe',
+                'detalles' => 'El ID del proceso no corresponde a ningún registro en la base de datos'
+            ], 404);
+        }
+
+        $boleta = Boleta::where('registration_process_id', $proceso->id)->first();
+
+        return response()->json([
+            'success' => true,
+            'proceso' => [
+                'id' => $procesoActualizado->id,
+                'estado' => $procesoActualizado->status->value,
+                'estado_label' => $procesoActualizado->status->label(),
+                'activo' => (bool)$procesoActualizado->active,
+                'fecha_creacion' => $procesoActualizado->created_at,
+                'fecha_actualizacion' => $procesoActualizado->updated_at,
+                'tipo' => $procesoActualizado->type
+            ],
+            'tiene_boleta' => $boleta ? true : false,
+            'boleta' => $boleta ? [
+                'id' => $boleta->id,
+                'estado' => $boleta->estado,
+                'fecha_emision' => $boleta->fecha_emision
+            ] : null,
+            'puede_modificar' => $procesoActualizado->active && $procesoActualizado->status->value === 'pending',
+            'razon_inactivo' => !$procesoActualizado->active ?
+                ($boleta ? 'El proceso está inactivo porque ya se generó una boleta' : 'El proceso está inactivo por razones desconocidas') : null
         ]);
     }
 }
