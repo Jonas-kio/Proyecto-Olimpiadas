@@ -86,7 +86,7 @@ Route::middleware([IsUserAuth::class])->group(
                     Route::delete('/{olimpiada}/areas/{area}', [OlimpiadaController::class, 'detachArea']);
                 });
 
-                // Rutas para reportes
+               // Rutas para reportes
                 Route::prefix('reports')->group(function () {
                     Route::get('/inscriptions', [ReportController::class, 'getInscriptionReport']);
                     Route::get('/summary', [ReportController::class, 'getReportSummary']);
