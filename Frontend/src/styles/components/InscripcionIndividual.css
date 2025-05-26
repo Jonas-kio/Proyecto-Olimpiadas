@@ -355,22 +355,28 @@ select.error {
   min-width: 250px;
 }
 .etiqueta-area {
-  background-color: #0a53be;
-  color: white;
-  border-radius: 999px;
-  padding: 0.4rem 1rem;
-  margin: 0.3rem;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
+  background-color: #e8f0fe;
+  color: #0073e6;
+  /* border-radius: 999px; */
+  padding: 3px 8px;
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid #bcdffb;
+  margin: 1px;
+}
+
+.etiqueta-area:hover {
+  background-color: #d4edff;
 }
 
 .etiqueta-area button {
   background: none;
   border: none;
-  color: white;
-  font-weight: bold;
+  color: #0073e6;
+  font-size: 0.9rem;
+  line-height: 1;
   cursor: pointer;
+  padding: 0;
 }
 .subseccion-tutor {
   text-align: left;
