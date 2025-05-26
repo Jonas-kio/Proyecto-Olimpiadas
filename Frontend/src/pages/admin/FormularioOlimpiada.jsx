@@ -47,6 +47,7 @@ function FormularioOlimpiada() {
     modality: "",
     pdfFile: null,
     coverImage: null,
+    maxAreas: "", // NUEVO CAMPO
   });
   const [areasDisponibles, setAreasDisponibles] = useState([]);
   const [imagePreview, setImagePreview] = useState("");
@@ -103,6 +104,7 @@ function FormularioOlimpiada() {
             modality: data.modalidad || "",
             pdfFile: null, // PDF no obligatorio al editar
             coverImage: null,
+            maxAreas: data.maximo_areas || "", // NUEVO CAMPO
           });
 
           if (data.ruta_imagen_portada) {
@@ -194,6 +196,8 @@ function FormularioOlimpiada() {
       formData.selectedAreas.length > 0 &&
       formData.minParticipants !== "" &&
       formData.modality !== "" &&
+      formData.maxAreas !== "" &&
+      formData.maxAreas > 0 && // NUEVO
       imagenObligatoria &&
       pdfObligatorio
     );
@@ -223,6 +227,7 @@ function FormularioOlimpiada() {
     if (formData.pdfFile) data.append("pdf_detalles", formData.pdfFile);
     if (formData.coverImage) data.append("imagen_portada", formData.coverImage);
     data.append("areas", JSON.stringify(formData.selectedAreas));
+    data.append("maximo_areas", formData.maxAreas);
 
     try {
       if (id) {
@@ -395,6 +400,22 @@ function FormularioOlimpiada() {
                   </p>
                 )}
               </div>
+            </div>
+
+            <div className="input-group">
+              <label className="label">
+                Máximo de áreas permitidas <span className="asterisco">*</span>
+              </label>
+              <input
+                type="number"
+                value={formData.maxAreas}
+                onChange={(e) =>
+                  setFormData({ ...formData, maxAreas: e.target.value })
+                }
+                className="input"
+                min="1"
+                required
+              />
             </div>
 
             {/* Áreas */}
