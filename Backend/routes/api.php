@@ -173,11 +173,8 @@ Route::middleware([IsUserAuth::class])->group(
         });
 
         // FLUJO DE VALIDACIÓN DE COMPROBANTE CON OCR
-        Route::prefix('ocr')->name('ocr.')->group(function () {
-
-            Route::put('/proceso/{proceso}/estado', [InscripcionController::class, 'actualizarEstadoProceso'])
-                    ->name('proceso.actualizar.estado');
-
+        Route::prefix('ocr')->group(function () {
+            Route::post('/procesar-comprobante', [OcrController::class, 'procesarComprobante']);
         });
     }
 );
