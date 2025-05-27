@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { LayoutGrid, Settings, FileText, Users, LogOut, Trophy } from 'lucide-react';
+import { LayoutGrid, Settings, FileText, Users, LogOut, Trophy, ReceiptIcon} from 'lucide-react';
 import { useState, useEffect } from "react";
 import "../styles/Sidebar.css";
 
@@ -29,6 +29,8 @@ const Sidebar = () => {
       setActiveItem("configuracion");
     } else if (currentPath.includes("/app/reportes")) {
       setActiveItem("reportes");
+    } else if (currentPath.includes("/app/boletas")) {
+      setActiveItem("boletas");
     } else if (currentPath.includes("/app/participantes")) {
       setActiveItem("participantes");
     }
@@ -94,6 +96,16 @@ const Sidebar = () => {
             >
               <FileText size={20} />
               <span>Reportes</span>
+            </Link>
+          </li>
+          <li>
+            <Link 
+              to="/app/boletas" 
+              className={`nav-item ${activeItem === "boletas" ? "active" : ""}`}
+              onClick={() => setActiveItem("boletas")}
+            >
+              <ReceiptIcon size={20} />
+              <span>Boletas</span>
             </Link>
           </li>
           <li>
