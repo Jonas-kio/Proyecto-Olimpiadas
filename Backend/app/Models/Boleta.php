@@ -16,15 +16,21 @@ class Boleta extends Model
         'fecha_emision',
         'fecha_expiracion',
         'monto_total',
-        'estado'
+        'estado',
+        'validado'
     ];
-    protected $casts = [
-        'estado' => BoletaEstado::class
+
+   protected $casts = [
+        'estado' => BoletaEstado::class,
+        'fecha_emision' => 'datetime',
+        'fecha_expiracion' => 'datetime',
+        'validado' => 'boolean',
+        'monto_total' => 'decimal:2'
     ];
 
 
     public function registrationProcess()
     {
-        return $this->belongsTo(RegistrationProcess::class);
+        return $this->belongsTo(RegistrationProcess::class, 'registration_process_id');
     }
 }

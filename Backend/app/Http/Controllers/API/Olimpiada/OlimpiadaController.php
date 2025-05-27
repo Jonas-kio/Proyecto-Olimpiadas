@@ -66,21 +66,11 @@ class OlimpiadaController extends Controller
 
             // Obtener las áreas directamente de la validación para evitar problemas de parseo
             $areas = $request->validated()['areas'];
-            Log::info('store: areas obtenidas de validación', ['areas' => $areas]);
-
-            // Verificar cómo vienen las condiciones en la solicitud
-            Log::info('store: examinando condiciones antes de procesar', [
-                'condiciones_raw' => $request->input('condiciones'),
-                'condiciones_tipo' => gettype($request->input('condiciones')),
-                'condiciones_en_validated' => array_key_exists('condiciones', $request->validated()) ? $request->validated()['condiciones'] : 'no existe'
-            ]);
-
             // Usar condiciones de la validación si existen, o procesarlas directamente
             $condiciones = array_key_exists('condiciones', $request->validated())
                 ? $this->parseCondiciones($request->validated()['condiciones'])
                 : $this->parseCondiciones($request->input('condiciones'));
 
-            Log::info('store: condiciones parseadas', ['condiciones' => $condiciones]);
 
             $olimpiada = $this->olimpiadaService->createOlimpiada(
                 $data,

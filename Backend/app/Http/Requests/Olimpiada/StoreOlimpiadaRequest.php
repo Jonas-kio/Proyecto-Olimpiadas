@@ -293,7 +293,11 @@ class StoreOlimpiadaRequest extends FormRequest
             'datos_enviados' => $this->all()
         ]);
 
-        parent::failedValidation($validator);
+        throw new \Illuminate\Validation\ValidationException($validator, response()->json([
+            'success' => false,
+            'message' => 'Error de validación',
+            'errors' => $validator->errors()
+        ], 422));
     }
 
     /**

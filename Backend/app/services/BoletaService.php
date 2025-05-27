@@ -11,9 +11,14 @@ use App\Models\Cost;
 use App\Models\DetalleInscripcion;
 use App\Models\RegistrationProcess;
 use App\Repositories\ProcesoInscripcionRepository;
+
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Exception;
+use Illuminate\Http\UploadedFile;
+use League\Csv\Reader;
+use League\Csv\Statement;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class BoletaService
@@ -59,7 +64,10 @@ class BoletaService
             }
 
             $montoTotal = 0;
-
+            $fechaExpiracion = $proceso->olimpiada->fecha_fin;
+            if (!$fechaExpiracion) {
+                throw new \Exception('La olimpiada no tiene definida una fecha de finalización');
+            }
             foreach ($competidoresIds as $competidorId) {
                 DetalleInscripcion::create([
                     'register_process_id' => $proceso->id,
@@ -67,24 +75,27 @@ class BoletaService
                     'area_id' => $areaId,
                     'categoria_id' => $nivelId,
                     'monto' => $costo->price,
-                    'status' => true,
-                    'estado' => 'pendiente'
+                    'status' => true
                 ]);
 
                 $montoTotal += $costo->price;
             }
 
-            $diasExpiracion = config('app.boleta_dias_expiracion', 15);
+            $fechaExpiracion = $proceso->olimpiada->fecha_fin;
+            if (!$fechaExpiracion) {
+                throw new \Exception('La olimpiada no tiene definida una fecha de finalización');
+            }
+
             $boleta = Boleta::create([
                 'registration_process_id' => $proceso->id,
-                'numero_boleta' => $this->generarCodigoBoleta($proceso->type), // Pasamos el tipo de proceso
+                'numero_boleta' => $this->generarCodigoBoleta($proceso->type),
                 'monto_total' => $montoTotal,
                 'fecha_emision' => now(),
-                'fecha_expiracion' => now()->addDays($diasExpiracion),
+                'fecha_expiracion' => $fechaExpiracion,
                 'estado' => BoletaEstado::PENDIENTE->value,
+                'validado' => false
             ]);
 
-            // Desactivar el proceso de inscripción para evitar modificaciones
             $this->procesoRepository->actualizarEstadoActivacion($proceso->id, false);
 
             DB::commit();
@@ -119,98 +130,250 @@ class BoletaService
         return $codigo;
     }
 
-    public function obtenerDatosBoleta($boletaId)
+
+    public function obtenerDatosBoleta($procesoId, $boletaId)
     {
-        $boleta = Boleta::with([
-            'proceso_inscripcion',
-            'proceso_inscripcion.olimpiada',
-            'proceso_inscripcion.usuario',
-            'proceso_inscripcion.detalles_inscripcion.competidor.colegio',
-            'proceso_inscripcion.detalles_inscripcion.area',
-            'proceso_inscripcion.detalles_inscripcion.nivel_categoria'
-        ])->findOrFail($boletaId);
+        try {
+            $boleta = Boleta::with([
+                'registrationProcess',
+                'registrationProcess.olimpiada',
+                'registrationProcess.user',
+                'registrationProcess.detalles.competidor',
+                'registrationProcess.detalles.area',
+                'registrationProcess.detalles.nivel_categoria'
+            ])
+            ->where('registration_process_id', $procesoId)
+            ->where('id', $boletaId)
+            ->firstOrFail();
 
-        $proceso = $boleta->proceso_inscripcion;
-        $detalles = $proceso->detalles_inscripcion;
+            $proceso = $boleta->registrationProcess;
+            if (!$proceso) {
+                throw new Exception('No se encontró el proceso de inscripción');
+            }
 
-        $competidoresIds = $detalles->pluck('competidor_id')->toArray();
-
-        $tutoresPorCompetidor = [];
-        $competidoresTutores = CompetidorTutor::whereIn('competidor_id', $competidoresIds)
-            ->with('tutor')
-            ->get()
-            ->groupBy('competidor_id');
-
-        foreach ($competidoresTutores as $competidorId => $tutores) {
-            $tutoresPorCompetidor[$competidorId] = $tutores->map(function ($ct) {
-                return [
-                    'id' => $ct->tutor->id,
-                    'nombres' => $ct->tutor->nombres,
-                    'apellidos' => $ct->tutor->apellidos,
-                    'correo' => $ct->tutor->correo,
-                    'telefono' => $ct->tutor->telefono,
-                    'es_principal' => $ct->es_principal,
-                    'relacion' => $ct->relacion
-                ];
-            })->toArray();
-        }
-
-        $competidoresData = [];
-        foreach ($detalles as $detalle) {
-            $competidorId = $detalle->competidor->id;
-            $competidoresData[] = [
-                'id' => $competidorId,
-                'nombres' => $detalle->competidor->nombres,
-                'apellidos' => $detalle->competidor->apellidos,
-                'nombre_completo' => $detalle->competidor->nombres . ' ' . $detalle->competidor->apellidos,
-                'ci' => $detalle->competidor->ci,
-                'fecha_nacimiento' => $detalle->competidor->fecha_nacimiento,
-                'correo' => $detalle->competidor->correo,
-                'telefono' => $detalle->competidor->telefono,
-                'curso' => $detalle->competidor->curso,
-                'colegio' => [
-                    'id' => $detalle->competidor->colegio->id,
-                    'nombre' => $detalle->competidor->colegio->nombre
+            // Datos básicos del resumen
+            $resumen = [
+                'proceso_id' => $proceso->id,
+                'olimpiada' => [
+                    'id' => $proceso->olimpiada->id,
+                    'nombre' => $proceso->olimpiada->nombre,
+                    'descripcion' => $proceso->olimpiada->descripcion
                 ],
-                'area' => [
-                    'id' => $detalle->area->id,
-                    'nombre' => $detalle->area->nombre
-                ],
-                'nivel' => [
-                    'id' => $detalle->nivel_categoria->id,
-                    'nombre' => $detalle->nivel_categoria->nombre
-                ],
-                'monto' => $detalle->monto,
-                'tutores' => $tutoresPorCompetidor[$competidorId] ?? []
+                'tipo_inscripcion' => $proceso->type,
+                'fecha_inicio' => $proceso->start_date->format('Y-m-d H:i:s'),
+                'estado' => $proceso->status->value
             ];
-        }
 
-        return [
-            'boleta' => [
+            // Datos de la boleta
+            $resumen['boleta'] = [
                 'id' => $boleta->id,
-                'codigo' => $boleta->codigo,
+                'numero_boleta' => $boleta->numero_boleta,
                 'monto_total' => $boleta->monto_total,
-                'fecha_emision' => $boleta->fecha_emision->format('Y-m-d H:i:s'),
-                'fecha_emision_formateada' => $boleta->fecha_emision->format('d/m/Y H:i'),
-                'fecha_expiracion' => $boleta->fecha_expiracion->format('Y-m-d H:i:s'),
-                'fecha_expiracion_formateada' => $boleta->fecha_expiracion->format('d/m/Y H:i'),
-                'estado' => $boleta->estado
-            ],
-            'proceso' => [
-                'id' => $proceso->id,
-                'tipo' => $proceso->tipo,
-                'estado' => $proceso->estado,
-                'fecha_inicio' => $proceso->fecha_inicio->format('Y-m-d H:i:s')
-            ],
-            'olimpiada' => [
-                'id' => $proceso->olimpiada->id,
-                'nombre' => $proceso->olimpiada->nombre,
-                'descripcion' => $proceso->olimpiada->descripcion,
-                'modalidad' => $proceso->olimpiada->modalidad
-            ],
-            'competidores' => $competidoresData,
-            'monto_total_formateado' => number_format($boleta->monto_total, 2),
-            'tipo_inscripcion' => ucfirst($proceso->tipo)
-        ];
+                'fecha_emision' => $boleta->fecha_emision ? $boleta->fecha_emision->format('Y-m-d H:i:s') : null,
+                'fecha_emision_formateada' => $boleta->fecha_emision ? $boleta->fecha_emision->format('d/m/Y H:i') : null,
+                'fecha_expiracion' => $boleta->fecha_expiracion ? $boleta->fecha_expiracion->format('Y-m-d H:i:s') : null,
+                'fecha_expiracion_formateada' => $boleta->fecha_expiracion ? $boleta->fecha_expiracion->format('d/m/Y H:i') : null,
+                'estado' => $boleta->estado->value,
+                'validado' => $boleta->validado
+            ];
+
+            // Datos de competidores
+            $competidores = $proceso->detalles->map(function ($detalle) {
+                if (!$detalle->competidor) {
+                    return null;
+                }
+
+                $datosCompetidor = [
+                    'id' => $detalle->competidor->id,
+                    'nombres' => $detalle->competidor->nombres,
+                    'apellidos' => $detalle->competidor->apellidos,
+                    'nombre_completo' => $detalle->competidor->nombres . ' ' . $detalle->competidor->apellidos,
+                    'ci' => $detalle->competidor->ci ?? null,
+                    'documento_identidad' => $detalle->competidor->documento_identidad,
+                    'correo_electronico' => $detalle->competidor->correo_electronico,
+                    'telefono' => $detalle->competidor->telefono,
+                    'curso' => $detalle->competidor->curso,
+                    'colegio' => $detalle->competidor->colegio,
+                    'area' => [
+                        'id' => $detalle->area->id,
+                        'nombre' => $detalle->area->nombre
+                    ],
+                    'nivel' => [
+                        'id' => $detalle->nivel_categoria->id,
+                        'nombre' => $detalle->nivel_categoria->nombre
+                    ],
+                    'monto' => $detalle->monto
+                ];
+
+                // Obtener tutores si existen
+                if ($detalle->competidor->tutores) {
+                    $datosCompetidor['tutores'] = $detalle->competidor->tutores->map(function ($tutor) {
+                        return [
+                            'id' => $tutor->id,
+                            'nombres' => $tutor->nombres,
+                            'apellidos' => $tutor->apellidos,
+                            'correo_electronico' => $tutor->correo_electronico,
+                            'telefono' => $tutor->telefono,
+                            'es_principal' => (bool) ($tutor->pivot->es_principal ?? false),
+                            'relacion' => $tutor->pivot->relacion ?? null
+                        ];
+                    })->toArray();
+                }
+
+                return $datosCompetidor;
+            })->filter()->values()->toArray();
+
+            $resumen['competidores'] = $competidores;
+
+            // Datos de selección y costos
+            $areasSeleccionadas = collect($competidores)->pluck('area')->unique('id')->values()->toArray();
+            $nivelesSeleccionados = collect($competidores)->pluck('nivel')->unique('id')->values()->toArray();
+
+            $resumen['seleccion'] = [
+                'areas' => $areasSeleccionadas,
+                'niveles' => $nivelesSeleccionados
+            ];
+
+            $resumen['costo'] = [
+                'monto_total' => $boleta->monto_total,
+                'monto_total_formateado' => number_format($boleta->monto_total, 2),
+                'cantidad_competidores' => count($competidores)
+            ];
+
+            return [
+                'success' => true,
+                'data' => $resumen
+            ];
+
+        } catch (Exception $e) {
+            Log::error('Error al obtener datos de boleta:', [
+                'proceso_id' => $procesoId,
+                'boleta_id' => $boletaId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            throw new Exception('Error al obtener los datos de la boleta: ' . $e->getMessage());
+        }
     }
+
+    public function obtenerBoletasPorOlimpiada($olimpiadaId)
+    {
+        try {
+            $boletas = Boleta::with([
+                'registrationProcess',
+                'registrationProcess.olimpiada',
+                'registrationProcess.user'
+            ])
+            ->whereHas('registrationProcess', function ($query) use ($olimpiadaId) {
+                $query->where('olimpiada_id', $olimpiadaId);
+            })
+            ->get()
+            ->map(function ($boleta) {
+                return [
+                    'id' => $boleta->id,
+                    'numero_boleta' => $boleta->numero_boleta,
+                    'estado' => $boleta->estado->value,
+                    'estado_formateado' => ucfirst($boleta->estado->value),
+                    'validado' => $boleta->validado,
+                    'usuario' => $boleta->registrationProcess->user->full_name,
+                    'tipo_proceso' => ucfirst($boleta->registrationProcess->type),
+                    'fecha_emision' => Carbon::parse($boleta->fecha_emision)->format('d/m/Y'),
+                    'fecha_expiracion' => Carbon::parse($boleta->fecha_expiracion)->format('d/m/Y'),
+                    'monto_total' => number_format($boleta->monto_total, 2),
+                ];
+            });
+
+            $estadisticas = [
+                'total_boletas' => $boletas->count(),
+                'pendientes' => $boletas->where('estado', BoletaEstado::PENDIENTE->value)->count(),
+                'pagadas' => $boletas->where('estado', BoletaEstado::PAGADO->value)->count(),
+                'validadas' => $boletas->where('validado', true)->count(),
+            ];
+
+            return [
+                'success' => true,
+                'data' => [
+                    'boletas' => $boletas,
+                    'estadisticas' => $estadisticas,
+                    'totales' => [
+                        'monto_total' => number_format($boletas->sum('monto_total'), 2),
+                        'cantidad_boletas' => $boletas->count()
+                    ]
+                ]
+            ];
+
+        } catch (Exception $e) {
+            Log::error('Error al obtener boletas: ' . $e->getMessage());
+            throw new Exception('Error al obtener las boletas: ' . $e->getMessage());
+        }
+    }
+
+    public function actualizarEstadoBoletas(UploadedFile $archivo)
+    {
+        try {
+            $extension = strtolower($archivo->getClientOriginalExtension());
+            if ($extension !== 'csv') {
+                throw new Exception('El archivo debe ser CSV');
+            }
+
+            $csv = Reader::createFromPath($archivo->getRealPath(), 'r');
+            $csv->setHeaderOffset(0);
+            $records = Statement::create()->process($csv);
+
+            DB::beginTransaction();
+
+            $actualizados = 0;
+            $errores = [];
+
+            foreach ($records as $record) {
+                $numeroBoleta = trim($record['numero_boleta'] ?? '');
+
+                if (empty($numeroBoleta)) {
+                    continue;
+                }
+
+                try {
+                // Usamos DB::table directamente para la actualización
+                    $actualizado = DB::table('boleta')
+                    ->where('numero_boleta', $numeroBoleta)
+                    ->where('estado', BoletaEstado::PENDIENTE->value)
+                    ->update([
+                        'estado' => BoletaEstado::PAGADO->value,
+                        'updated_at' => now()
+                    ]);
+
+                    if ($actualizado) {
+                        $actualizados++;
+                    } else {
+                        $errores[] = "Boleta no encontrada o ya procesada: {$numeroBoleta}";
+                    }
+                } catch (Exception $e) {
+                    Log::error("Error procesando boleta", [
+                        'numero_boleta' => $numeroBoleta,
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString()
+                    ]);
+                    $errores[] = "Error al procesar boleta {$numeroBoleta}: " . $e->getMessage();
+                }
+            }
+            DB::commit();
+
+            return [
+                'success' => true,
+                'mensaje' => "Se actualizaron {$actualizados} boletas correctamente",
+                'actualizados' => $actualizados,
+                'errores' => $errores
+            ];
+
+        } catch (Exception $e) {
+            DB::rollBack();
+            Log::error('Error al procesar archivo de boletas:', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw new Exception('Error al procesar el archivo: ' . $e->getMessage());
+        }
+    }
+
 }

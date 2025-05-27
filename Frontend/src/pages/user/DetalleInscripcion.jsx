@@ -1,15 +1,19 @@
-import React, { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import "../../styles/components/Inscripcion.css";
 import ProcesandoModal from "../../components/common/ProcesandoModal";
 import ValidacionExitosaModal from "../../components/common/ValidacionExitosaModal";
 import { FaDownload, FaPrint } from "react-icons/fa";
 import { FaArrowLeft } from "react-icons/fa";
+import { optenerInscripcionId } from "../../services/inscripcionService"; 
 
 
 const DetalleInscripcion = () => {
-  const { id } = useParams();
+  
   const navigate = useNavigate();
+  const location = useLocation();
+  const { procesoId } = location.state || {};
+
   const [archivo, setArchivo] = useState(null);
   const [mensajeOcr, setMensajeOcr] = useState("Esperando archivo...");
   const [errorArchivo, setErrorArchivo] = useState("");
@@ -18,9 +22,40 @@ const DetalleInscripcion = () => {
   const [exito, setExito] = useState(false);
   const [validado, setValidado] = useState(false);
 
+  const [procesoDetalle, setProcesoDetalle] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
   const tiposPermitidos = ["application/pdf", "image/jpeg", "image/png"];
   const maxSizeMB = 5;
   const maxSizeBytes = maxSizeMB * 1024 * 1024;
+
+  useEffect(() => {
+    const cargarDetalleInscripcion = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        if (procesoId) {
+          const response = await optenerInscripcionId(procesoId);
+          if (response.success) {
+            setProcesoDetalle(response.proceso);
+          } else {
+            setError("No se encontró el detalle de la inscripción.");
+          }
+        } else {
+          setError("ID de inscripción no proporcionado.");
+        }
+      } catch (err) {
+        console.error("Error al cargar detalle:", err);
+        setError("Error al cargar los datos de la inscripción.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    cargarDetalleInscripcion();
+  }, [procesoId]);
 
   const validarArchivo = (file) => {
     if (!file) return false;
@@ -88,69 +123,96 @@ const DetalleInscripcion = () => {
     navigate(`/user/detalle-inscripcion/${id}`); //redireccionamiento a Detalle de Inscripción
   };
 
+   const getEstadoTexto = (estado) => {
+    const estadoMap = {
+      'pending': 'PENDIENTE',
+      'approved': 'INSCRITO', 
+      'rejected': 'RECHAZADO'
+    };
+    return estadoMap[estado] || estado.toUpperCase();
+  };
+
+  const getEstadoClass = (estado) => {
+    const estadoMap = {
+      'pending': 'pendiente',
+      'approved': 'inscrito',
+      'rejected': 'rechazado'
+    };
+    return `estado ${estadoMap[estado] || 'pendiente'}`;
+  };
+
+  if (loading) {
+    return <p>Cargando detalle de inscripción...</p>;
+  }
+
+  if (error) {
+    return <p style={{ color: "red" }}>{error}</p>;
+  }
+
   return (
     <div className="contenedor-inscripciones">
       {procesando && <ProcesandoModal />}
       {exito && (
         <ValidacionExitosaModal
-          inscripcionId={`#${id}`}
+          inscripcionId={`#${procesoId}`}
           onClose={cerrarModalExito}
         />
       )}
 
-     
-
-      <div className="detalle-contenedor"> 
+      <div className="detalle-contenedor">
 
       <div style={{ display: "flex", alignItems: "center", marginBottom: "20px" }}>
 
-      <button
-  onClick={() => window.history.back()}
-  style={{
-    backgroundColor: "#1d4ed8",
-    border: "none",
-    width: "50px",
-    height: "50px",
-    borderRadius: "8px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    cursor: "pointer",
-    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-    marginRight: "12px"
-  }}
->
-  <FaArrowLeft color="white" size={24} />
-</button>
+        <button
+          onClick={() => window.history.back()}
+          style={{
+            backgroundColor: "#1d4ed8",
+            border: "none",
+            width: "50px",
+            height: "50px",
+            borderRadius: "8px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+            marginRight: "12px"
+          }}
+        >
+          <FaArrowLeft color="white" size={24} />
+        </button>
 
 
 
 
 
-  <h1 style={{ fontSize: "20px", fontWeight: "600", color: "#1e3a8a", margin: 0 }}>
-    Detalle de Inscripción
-  </h1>
-</div>
+        <h1 style={{ fontSize: "20px", fontWeight: "600", color: "#1e3a8a", margin: 0 }}>
+          Detalle de Inscripción
+        </h1>
+      </div>
 
 
-        <div className="detalle-info" style={{ backgroundColor: "#f1f5f9", padding: "16px", borderRadius: "8px", marginBottom: "24px" }}>
-          <h3 style={{ fontSize: "16px", fontWeight: "bold", color: "#1e3a8a", marginBottom: "12px" }}>
-            Información de Inscripción
-          </h3>
-          <div className="detalle-datos" style={{ display: "flex", justifyContent: "space-between" }}>
-            <div>
-              <strong>ID Inscripción:</strong> {id}<br />
-              <strong>Áreas:</strong> Matemáticas, Física
-            </div>
-            <div>
-              <strong>Total a pagar:</strong> Bs. 150.00<br />
-              <strong>Fecha:</strong> 17/03/2025<br />
-              <span className={`estado ${validado ? "inscrito" : "pendiente"}`}>
-                {validado ? "INSCRITO" : "PENDIENTE"}
-              </span>
-            </div>
+      <div className="detalle-info" style={{ backgroundColor: "#f1f5f9", padding: "16px", borderRadius: "8px", marginBottom: "24px" }}>
+        <h3 style={{ fontSize: "16px", fontWeight: "bold", color: "#1e3a8a", marginBottom: "12px" }}>
+          Información de Inscripción
+        </h3>
+        <div className="detalle-datos" style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "20px" }}>
+          <div>
+            <strong>ID Inscripción:</strong> {procesoDetalle.boleta?.numero || `#IN${procesoDetalle.id}`}<br />
+            <strong>Áreas:</strong> {procesoDetalle.areas}<br />
+            <strong>Olimpiada:</strong> {procesoDetalle.olimpiada?.nombre || "N/A"}<br />
+            <strong>Tipo:</strong> {procesoDetalle.tipo ? procesoDetalle.tipo.charAt(0).toUpperCase() + procesoDetalle.tipo.slice(1) : "N/A"}<br />
+            <strong>Estudiantes:</strong> {procesoDetalle.cantidad_estudiantes || 0}
+          </div>
+          <div>
+            <strong>Total a pagar:</strong> Bs. {procesoDetalle.monto || "0"}<br />
+            <strong>Fecha:</strong> {procesoDetalle.fecha || "N/A"}<br />
+            <span className={getEstadoClass(procesoDetalle.estado)}>
+              {getEstadoTexto(procesoDetalle.estado)}
+            </span>
           </div>
         </div>
+      </div>
 
         {!validado && (
           <>

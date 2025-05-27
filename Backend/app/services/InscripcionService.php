@@ -483,4 +483,158 @@ class InscripcionService
 
         return null;
     }
+
+    public function obtenerProcesosCerradosUsuario(int $userId): array
+    {
+        $procesos = RegistrationProcess::with([
+            'olimpiada:id,nombre',
+            'detalles.area:id,nombre',
+            'detalles.nivel_categoria:id,name',
+            'detalles.competidor:id,nombres,apellidos,documento_identidad,colegio',
+            'detalles.competidor.tutores:id,nombres,apellidos,telefono,correo_electronico',
+            'boleta:id,registration_process_id,numero_boleta,monto_total,estado,fecha_emision'
+        ])
+        ->where('user_id', $userId)
+        ->where('active', false)
+        ->orderBy('created_at', 'desc')
+        ->get();
+
+        return $procesos->map(function ($proceso) {
+            // Agrupar detalles por área
+            $areas = $proceso->detalles->groupBy('area_id')->map(function($detallesArea, $areaId) {
+                $primerDetalle = $detallesArea->first();
+                return [
+                    'id' => $areaId,
+                    'nombre' => $primerDetalle->area->nombre,
+                    'niveles' => $detallesArea->pluck('nivel_categoria.name', 'nivel_categoria.id')->toArray()
+                ];
+            })->values();
+
+            $competidores = $proceso->detalles->pluck('competidor')->unique('id')->values();
+
+            $tutores = $competidores->flatMap(function($competidor) {
+                return $competidor->tutores;
+            })->unique('id')->values();
+
+            // Calcular monto total
+            $montoTotal = $proceso->boleta ? $proceso->boleta->monto_total :
+                        $proceso->detalles->sum('monto');
+
+            return [
+                'id' => $proceso->id,
+                'tipo' => $proceso->type,
+                'fecha' => $proceso->created_at->format('d/m/Y'),
+                'estado' => $proceso->status->value,
+                'estado_label' => $proceso->status->label(),
+                'olimpiada' => [
+                    'id' => $proceso->olimpiada->id,
+                    'nombre' => $proceso->olimpiada->nombre
+                ],
+                'areas' => $areas->pluck('nombre')->join(', '),
+                'areas_detalle' => $areas,
+                'competidores' => $competidores->map(function($competidor) {
+                    return [
+                        'id' => $competidor->id,
+                        'nombre_completo' => $competidor->nombres . ' ' . $competidor->apellidos,
+                        'ci' => $competidor->documento_identidad,
+                        'colegio' => $competidor->colegio
+                    ];
+                }),
+                'tutores' => $tutores->map(function($tutor) {
+                    return [
+                        'id' => $tutor->id,
+                        'nombre_completo' => $tutor->nombres . ' ' . $tutor->apellidos,
+                        'email' => $tutor->correo_electronico,
+                        'telefono' => $tutor->telefono
+                    ];
+                }),
+                'monto' => $montoTotal,
+                'boleta' => $proceso->boleta ? [
+                    'id' => $proceso->boleta->id,
+                    'numero' => $proceso->boleta->numero_boleta,
+                    'estado' => $proceso->boleta->estado
+                ] : null,
+                'cantidad_estudiantes' => $competidores->count(),
+                'tiene_boleta' => (bool) $proceso->boleta
+            ];
+        })->toArray();
+    }
+
+    public function obtenerProcesoCerradoPorId(int $procesoId, int $userId): array|null
+    {
+        $proceso = RegistrationProcess::with([
+            'olimpiada:id,nombre',
+            'detalles.area:id,nombre',
+            'detalles.nivel_categoria:id,name',
+            'detalles.competidor:id,nombres,apellidos,documento_identidad,colegio',
+            'detalles.competidor.tutores:id,nombres,apellidos,telefono,correo_electronico',
+            'boleta:id,registration_process_id,numero_boleta,monto_total,estado,fecha_emision'
+        ])
+        ->where('user_id', $userId)
+        ->where('id', $procesoId)
+        ->where('active', false)
+        ->first();
+
+        if (!$proceso) {
+            return null;
+        }
+
+        // Agrupar detalles por área
+        $areas = $proceso->detalles->groupBy('area_id')->map(function($detallesArea, $areaId) {
+            $primerDetalle = $detallesArea->first();
+            return [
+                'id' => $areaId,
+                'nombre' => $primerDetalle->area->nombre,
+                'niveles' => $detallesArea->pluck('nivel_categoria.name', 'nivel_categoria.id')->toArray()
+            ];
+        })->values();
+
+        $competidores = $proceso->detalles->pluck('competidor')->unique('id')->values();
+
+        $tutores = $competidores->flatMap(function($competidor) {
+            return $competidor->tutores;
+        })->unique('id')->values();
+
+        // Calcular monto total
+        $montoTotal = $proceso->boleta ? $proceso->boleta->monto_total :
+                    $proceso->detalles->sum('monto');
+
+        return [
+            'id' => $proceso->id,
+            'tipo' => $proceso->type,
+            'fecha' => $proceso->created_at->format('d/m/Y'),
+            'estado' => $proceso->status->value,
+            'estado_label' => $proceso->status->label(),
+            'olimpiada' => [
+                'id' => $proceso->olimpiada->id,
+                'nombre' => $proceso->olimpiada->nombre
+            ],
+            'areas' => $areas->pluck('nombre')->join(', '),
+            'areas_detalle' => $areas,
+            'competidores' => $competidores->map(function($competidor) {
+                return [
+                    'id' => $competidor->id,
+                    'nombre_completo' => $competidor->nombres . ' ' . $competidor->apellidos,
+                    'ci' => $competidor->documento_identidad,
+                    'colegio' => $competidor->colegio
+                ];
+            }),
+            'tutores' => $tutores->map(function($tutor) {
+                return [
+                    'id' => $tutor->id,
+                    'nombre_completo' => $tutor->nombres . ' ' . $tutor->apellidos,
+                    'email' => $tutor->correo_electronico,
+                    'telefono' => $tutor->telefono
+                ];
+            }),
+            'monto' => $montoTotal,
+            'boleta' => $proceso->boleta ? [
+                'id' => $proceso->boleta->id,
+                'numero' => $proceso->boleta->numero_boleta,
+                'estado' => $proceso->boleta->estado
+            ] : null,
+            'cantidad_estudiantes' => $competidores->count(),
+            'tiene_boleta' => (bool) $proceso->boleta
+        ];
+    }
 }
