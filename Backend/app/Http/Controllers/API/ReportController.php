@@ -16,36 +16,32 @@ class ReportController extends Controller
 {
     /**
      * Determina el nombre correcto de la tabla de registro
-     * Verifica si existe registration_processes o registration_process
      */
     private function getTableName()
     {
-        // Intenta determinar el nombre correcto de la tabla
-        if (Schema::hasTable('registration_processes')) {
-            return 'registration_processes';
-        } elseif (Schema::hasTable('registration_process')) {
+        if (Schema::hasTable('registration_process')) {
             return 'registration_process';
+        } elseif (Schema::hasTable('registration_processes')) {
+            return 'registration_processes';
         }
         throw new \Exception('Tabla de registro no encontrada');
     }
 
     /**
      * Obtiene el reporte detallado de inscripciones con filtros opcionales
-     * 
-     * @param Request $request - Puede contener filtros: area_id, level_id, status
-     * @return \Illuminate\Http\JsonResponse
      */
     public function getInscriptionReport(Request $request)
     {
         try {
             Log::info('Iniciando getInscriptionReport con filtros:', $request->all());
             
-            // Construye la consulta base con todas las relaciones necesarias
+            // Construye la consulta base con las relaciones correctas
             $query = RegistrationProcess::with([
-                'participante',                         // Datos del competidor
-                'detalleInscripcion',                  // Detalles de la inscripción
-                'detalleInscripcion.area',             // Área de competencia
-                'detalleInscripcion.nivel_categoria'   // Nivel/categoría
+                'participante',                           // Relación a Competitor
+                'olimpiada',                             // Relación a Olimpiada
+                'detalleInscripcion',                    // Relación a DetalleInscripcion
+                'detalleInscripcion.area',               // Área a través del detalle
+                'detalleInscripcion.nivel_categoria'     // Categoría a través del detalle
             ]);
 
             // Aplica filtro por área si se proporciona
@@ -67,11 +63,11 @@ class ReportController extends Controller
                 $query->where('status', $request->status);
             }
 
-            // Ejecuta la consulta y obtiene los resultados
+            // Ejecuta la consulta
             $registrations = $query->get();
             Log::info('Registros encontrados:', ['count' => $registrations->count()]);
 
-            // Transforma cada registro al formato requerido por el frontend
+            // Transforma cada registro al formato requerido
             $formattedRegistrations = $registrations->map(function ($registration) {
                 try {
                     // Verifica que el registro tenga un participante válido
@@ -80,18 +76,21 @@ class ReportController extends Controller
                         return null;
                     }
 
-                    // Manejo seguro del status - convierte a string
+                    // Verifica que tenga detalle de inscripción
+                    if (!$registration->detalleInscripcion) {
+                        Log::warning('Registro sin detalle de inscripción:', ['id' => $registration->id]);
+                        return null;
+                    }
+
+                    // Manejo seguro del status
                     $status = 'N/A';
                     try {
                         if ($registration->status) {
-                            // Maneja enums de Laravel
                             if (is_object($registration->status)) {
                                 if (method_exists($registration->status, 'value')) {
                                     $status = $registration->status->value;
                                 } elseif (method_exists($registration->status, 'name')) {
                                     $status = $registration->status->name;
-                                } elseif (property_exists($registration->status, 'value')) {
-                                    $status = $registration->status->value;
                                 } else {
                                     $status = (string) $registration->status;
                                 }
@@ -104,10 +103,10 @@ class ReportController extends Controller
                         $status = 'Error';
                     }
 
-                    // Manejo seguro del nivel/categoría
-                    $levelName = $registration->detalleInscripcion->nivel_categoria->name ?? 'N/A';
+                    // Obtener información del detalle
+                    $detalle = $registration->detalleInscripcion;
 
-                    // Retorna el formato estructurado para el frontend
+                    // Retorna el formato estructurado
                     return [
                         'id' => $registration->id,
                         'competitor' => [
@@ -116,14 +115,18 @@ class ReportController extends Controller
                             'lastname' => $registration->participante->lastname ?? 'N/A',
                             'dni' => $registration->participante->dni ?? 'N/A',
                         ],
-                        'area' => $registration->detalleInscripcion->area->name ?? 'N/A',
-                        'level' => $levelName,
+                        'area' => $detalle->area->name ?? 'N/A',
+                        'level' => $detalle->nivel_categoria->name ?? 'N/A',
+                        'olimpiada' => $registration->olimpiada->nombre ?? 'N/A',
+                        'type' => $registration->type ?? 'N/A',
                         'status' => $status,
+                        'monto' => $detalle->monto ?? 0,
+                        'payment_status' => $detalle->status ? 'Pagado' : 'Pendiente',
+                        'start_date' => $registration->start_date ? $registration->start_date->format('Y-m-d H:i:s') : null,
                         'created_at' => $registration->created_at ? $registration->created_at->format('Y-m-d H:i:s') : null,
                         'updated_at' => $registration->updated_at ? $registration->updated_at->format('Y-m-d H:i:s') : null
                     ];
                 } catch (\Exception $e) {
-                    // Log de errores individuales para debugging
                     Log::error('Error procesando registro individual:', [
                         'registration_id' => $registration->id ?? 'desconocido',
                         'error' => $e->getMessage(),
@@ -131,17 +134,15 @@ class ReportController extends Controller
                     ]);
                     return null;
                 }
-            })->filter()->values(); // Filtra nulos y reindexar array
+            })->filter()->values();
 
             Log::info('Registros formateados:', ['count' => $formattedRegistrations->count()]);
 
-            // Retorna respuesta exitosa con los datos formateados
             return response()->json([
                 'success' => true,
                 'data' => $formattedRegistrations
             ]);
         } catch (\Exception $e) {
-            // Manejo de errores generales
             Log::error('Error en getInscriptionReport: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
                 'request' => $request->all()
@@ -155,40 +156,21 @@ class ReportController extends Controller
     }
 
     /**
-     * Obtiene un resumen estadístico completo de las inscripciones
-     * Incluye totales, agrupaciones por área/nivel/status y resumen de pagos
-     * 
-     * @return \Illuminate\Http\JsonResponse
+     * Obtiene un resumen estadístico de las inscripciones
      */
     public function getReportSummary()
     {
         try {
             Log::info('=== INICIANDO getReportSummary ===');
             
-            // Obtiene el nombre correcto de la tabla
             $tableName = $this->getTableName();
             Log::info('Usando nombre de tabla: ' . $tableName);
             
-            // Paso 1: Prueba de conteo básico
-            Log::info('Paso 1: Probando conteo básico');
-            $totalRegistrations = 0;
-            try {
-                $totalRegistrations = DB::table($tableName)->count();
-                Log::info('Total de registros encontrados:', ['count' => $totalRegistrations]);
-            } catch (\Exception $e) {
-                Log::error('Error contando registros:', ['error' => $e->getMessage()]);
-                throw $e;
-            }
+            // Conteo básico
+            $totalRegistrations = DB::table($tableName)->count();
+            Log::info('Total de registros encontrados:', ['count' => $totalRegistrations]);
 
-            // Estructura básica del resumen
-            $summary = [
-                'total_registrations' => $totalRegistrations,
-                'table_used' => $tableName
-            ];
-
-            // Solo procede con las agrupaciones si hay datos
             if ($totalRegistrations === 0) {
-                Log::info('No se encontraron registros, retornando resumen vacío');
                 return response()->json([
                     'success' => true,
                     'data' => [
@@ -196,13 +178,20 @@ class ReportController extends Controller
                         'by_status' => [],
                         'by_area' => [],
                         'by_level' => [],
+                        'by_type' => [],
+                        'payment_summary' => [
+                            'total_recaudado' => 0,
+                            'pagos_pendientes_count' => 0,
+                            'pagos_verificados_porcentaje' => 0,
+                            'total_detalles' => 0
+                        ],
                         'message' => 'No hay registros de inscripciones disponibles'
                     ]
                 ]);
             }
 
-            // Paso 2: Agrupación por status usando SQL directo
-            Log::info('Paso 2: Probando agrupación por status');
+            // Agrupación por status
+            $byStatus = collect();
             try {
                 $statusResults = DB::select("
                     SELECT status, COUNT(*) as total 
@@ -210,7 +199,6 @@ class ReportController extends Controller
                     GROUP BY status
                 ");
                 
-                // Transforma los resultados a formato consistente
                 $byStatus = collect($statusResults)->map(function ($item) {
                     return [
                         'status' => (string) $item->status,
@@ -218,21 +206,17 @@ class ReportController extends Controller
                     ];
                 });
                 
-                $summary['by_status'] = $byStatus;
                 Log::info('Agrupación por status exitosa:', ['count' => $byStatus->count()]);
             } catch (\Exception $e) {
                 Log::error('Error en agrupación por status:', ['error' => $e->getMessage()]);
-                $summary['by_status'] = [];
             }
 
-            // Paso 3: Agrupación por área
-            Log::info('Paso 3: Probando agrupación por área');
+            // Agrupación por área
+            $byArea = collect();
             try {
-                // Agrupa por nombre de área usando la relación cargada
                 $byArea = RegistrationProcess::with('detalleInscripcion.area')
-                    ->get() // Obtiene todos los registros primero
+                    ->get()
                     ->groupBy(function($item) {
-                        // Agrupa por nombre de área o 'Sin Área' si no tiene
                         return $item->detalleInscripcion->area->name ?? 'Sin Área';
                     })
                     ->map(function ($group, $areaName) {
@@ -240,19 +224,16 @@ class ReportController extends Controller
                             'name' => $areaName,
                             'total' => $group->count()
                         ];
-                    })->values(); // Reindexar para obtener array numérico
+                    })->values();
                 
-                $summary['by_area'] = $byArea;
                 Log::info('Agrupación por área exitosa:', ['count' => $byArea->count()]);
             } catch (\Exception $e) {
                 Log::error('Error en agrupación por área:', ['error' => $e->getMessage()]);
-                $summary['by_area'] = [];
             }
 
-            // Paso 4: Agrupación por nivel/categoría
-            Log::info('Paso 4: Probando agrupación por nivel');
+            // Agrupación por nivel/categoría
+            $byLevel = collect();
             try {
-                // Agrupa por nombre de nivel usando la relación detalleInscripcion
                 $byLevel = RegistrationProcess::with('detalleInscripcion.nivel_categoria')
                     ->get()
                     ->groupBy(function($item) {
@@ -265,60 +246,87 @@ class ReportController extends Controller
                         ];
                     })->values();
                 
-                $summary['by_level'] = $byLevel;
                 Log::info('Agrupación por nivel exitosa:', ['count' => $byLevel->count()]);
             } catch (\Exception $e) {
                 Log::error('Error en agrupación por nivel:', ['error' => $e->getMessage()]);
-                $summary['by_level'] = [];
             }
 
-            // Paso 5: Resumen de pagos desde DetalleInscripcion
-            Log::info('Paso 5: Calculando resumen de pagos');
+            // Agrupación por tipo
+            $byType = collect();
             try {
-                // Total recaudado de pagos confirmados
-                $totalRecaudado = DetalleInscripcion::where('status', 'pagado') // Asumiendo 'pagado' como status de pagado
-                    ->sum('monto');
+                $typeResults = DB::select("
+                    SELECT type, COUNT(*) as total 
+                    FROM {$tableName} 
+                    WHERE type IS NOT NULL
+                    GROUP BY type
+                ");
+                
+                $byType = collect($typeResults)->map(function ($item) {
+                    return [
+                        'type' => (string) $item->type,
+                        'total' => (int) $item->total
+                    ];
+                });
+                
+                Log::info('Agrupación por tipo exitosa:', ['count' => $byType->count()]);
+            } catch (\Exception $e) {
+                Log::error('Error en agrupación por tipo:', ['error' => $e->getMessage()]);
+            }
 
-                // Conteo de pagos pendientes
-                $pagosPendientesCount = DetalleInscripcion::where('status', 'pendiente') // Asumiendo 'pendiente' como status
-                    ->count();
+            // Resumen de pagos desde DetalleInscripcion
+            $paymentSummary = [
+                'total_recaudado' => 0,
+                'pagos_pendientes_count' => 0,
+                'pagos_verificados_porcentaje' => 0,
+                'total_detalles' => 0
+            ];
+
+            try {
+                // Total recaudado de pagos confirmados (status = true)
+                $totalRecaudado = DetalleInscripcion::where('status', true)->sum('monto');
+
+                // Conteo de pagos pendientes (status = false)
+                $pagosPendientesCount = DetalleInscripcion::where('status', false)->count();
 
                 // Total de detalles de inscripción
                 $totalDetalles = DetalleInscripcion::count();
 
                 // Calcula porcentaje de pagos verificados
-                $pagosVerificadosPorcentaje = $totalDetalles > 0 ? ($totalDetalles - $pagosPendientesCount) / $totalDetalles * 100 : 0;
+                $pagosVerificadosPorcentaje = $totalDetalles > 0 ? 
+                    (($totalDetalles - $pagosPendientesCount) / $totalDetalles * 100) : 0;
 
-                $summary['payment_summary'] = [
-                    'total_recaudado' => $totalRecaudado,
+                $paymentSummary = [
+                    'total_recaudado' => (float) $totalRecaudado,
                     'pagos_pendientes_count' => $pagosPendientesCount,
                     'pagos_verificados_porcentaje' => round($pagosVerificadosPorcentaje, 2),
-                    'total_detalles' => $totalDetalles // Incluye total para contexto
+                    'total_detalles' => $totalDetalles
                 ];
-                Log::info('Resumen de pagos calculado:', $summary['payment_summary']);
+
+                Log::info('Resumen de pagos calculado:', $paymentSummary);
 
             } catch (\Exception $e) {
                 Log::error('Error calculando resumen de pagos:', ['error' => $e->getMessage()]);
-                // Proporciona datos vacíos por defecto en caso de error
-                $summary['payment_summary'] = [
-                    'total_recaudado' => 0,
-                    'pagos_pendientes_count' => 0,
-                    'pagos_verificados_porcentaje' => 0,
-                    'total_detalles' => 0,
-                    'error' => config('app.debug') ? $e->getMessage() : 'Error al obtener resumen de pagos'
-                ];
+                $paymentSummary['error'] = config('app.debug') ? $e->getMessage() : 'Error al obtener resumen de pagos';
             }
+
+            $summary = [
+                'total_registrations' => $totalRegistrations,
+                'table_used' => $tableName,
+                'by_status' => $byStatus,
+                'by_area' => $byArea,
+                'by_level' => $byLevel,
+                'by_type' => $byType,
+                'payment_summary' => $paymentSummary
+            ];
 
             Log::info('=== getReportSummary COMPLETADO EXITOSAMENTE ===');
 
-            // Retorna el resumen completo
             return response()->json([
                 'success' => true,
                 'data' => $summary
             ]);
 
         } catch (\Exception $e) {
-            // Manejo de errores fatales
             Log::error('=== ERROR FATAL en getReportSummary ===', [
                 'message' => $e->getMessage(),
                 'file' => $e->getFile(),
@@ -329,11 +337,7 @@ class ReportController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error al obtener el resumen del reporte',
-                'error' => config('app.debug') ? $e->getMessage() : 'Error interno del servidor',
-                'debug_info' => config('app.debug') ? [
-                    'file' => $e->getFile(),
-                    'line' => $e->getLine()
-                ] : null
+                'error' => config('app.debug') ? $e->getMessage() : 'Error interno del servidor'
             ], 500);
         }
     }
