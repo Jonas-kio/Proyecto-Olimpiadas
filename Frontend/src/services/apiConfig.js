@@ -65,65 +65,6 @@ api.interceptors.response.use(
   }
 );
 
-//FUNCIONES DE INSCRIPCIÓN INDIVIDUAL
-
-export const iniciarProceso = async (olimpiadaId, tipo) => {
-  return await api.post(`/inscripcion/olimpiada/${olimpiadaId}/iniciar`, {
-    tipo,
-  });
-};
-
-export const inscripcionCompetidor = async (procesoId, formulario) => {
-  return await api.post(
-    `/inscripcion/proceso/${procesoId}/competidor`,
-    formulario
-  );
-};
-
-export const inscripcionTutor = async (procesoId, formularioTutor) => {
-  return await api.post(
-    `/inscripcion/proceso/${procesoId}/tutor`,
-    formularioTutor
-  );
-};
-export const obtenerAreasPorOlimpiada = async (id) => {
-  const response = await api.get(`/user/olimpiadas/${id}/areas`);
-
-  // Depura la estructura real
-  console.log("Respuesta cruda del backend:", response.data);
-  
-  // Las áreas están en response.data.data.areas según la estructura del backend
-  const areas = response.data?.data?.areas || [];
-
-  console.log("Áreas extraídas correctamente:", areas);
-
-  return areas;
-};
-
-export const obtenerCategoriasPorArea = async (areaId) => {
-  return await api.get(`/user/categoryLevel/area/${areaId}`);
-};
-
-export const guardarSeleccionArea = async (procesoId, payload) => {
-  return await api.post(`/inscripcion/proceso/${procesoId}/area`, payload);
-};
-
-export const guardarSeleccionNivel = async (procesoId, payload) => {
-  return await api.post(`/inscripcion/proceso/${procesoId}/nivel`, payload);
-};
-
-export const obtenerResumenInscripcion = async (procesoId) => {
-  return await api.get(`/inscripcion/proceso/${procesoId}/resumen`);
-};
-
-// export const inscripcionArea = async () => {
-//   return await api.get("/inscripcion/area");
-// };
-
-export const inscripcionCategoryLevel = async () => {
-  return await api.get("/categoryLevelUser");
-};
-
 //FUNCIONES PARA LAS OLIMPIADAS
 
 export const crearOlimpiada = async (olimpiada) => {

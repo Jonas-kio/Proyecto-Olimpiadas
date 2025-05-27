@@ -1,0 +1,15 @@
+.summary-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem; /* space-y-3 */
+  color: #4b5563; /* text-gray-600 */
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+}
+
+.summary-value {
+  font-weight: 500;
+}
