@@ -1,0 +1,347 @@
+/* ===============================
+   CONTENEDOR PRINCIPAL
+================================= */
+.create-olympiad-container {
+  max-width: 900px;
+  margin: auto;
+  padding: 1.5rem;
+}
+
+.create-olympiad-box {
+  background-color: white;
+  border-radius: 1rem;
+  padding: 2rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: bold;
+  margin-bottom: 2rem;
+  color: #1f2937;
+}
+
+/* ===============================
+   FORMULARIO GENERAL
+================================= */
+.form-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  position: relative;
+}
+
+.label {
+  font-weight: 500;
+  color: #374151;
+}
+
+.input,
+.textarea,
+.select {
+  padding: 0.75rem;
+  border: 1px solid #0c0c0c;
+  border-radius: 0.5rem;
+  transition: all 0.3s ease;
+}
+
+.input:focus,
+.textarea:focus,
+.select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px #bfdbfe;
+}
+
+/* ===============================
+   FECHAS
+================================= */
+.date-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+/* ===============================
+   IMAGEN DE PORTADA
+================================= */
+.image-upload {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border: 2px dashed #d1d5db;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  background-color: #f9fafb;
+}
+
+.upload-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  text-align: center;
+}
+
+.upload-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  color: #9ca3af;
+}
+
+.upload-label {
+  color: #2563eb;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+.upload-label:hover {
+  color: #1d4ed8;
+}
+
+.upload-text {
+  font-size: 1rem;
+}
+
+.upload-note {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.file-hidden {
+  display: none;
+}
+
+.image-preview-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 20rem;
+}
+
+.image-preview {
+  width: 100%;
+  height: 12rem;
+  object-fit: cover;
+  border-radius: 0.5rem;
+}
+
+.remove-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: #ef4444;
+  color: white;
+  padding: 0.25rem;
+  border-radius: 50%;
+}
+
+/* ===============================
+   ÁREAS - DROPDOWN PERSONALIZADO
+================================= */
+.dropdown-container {
+  position: relative;
+}
+
+.dropdown-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.dropdown-wrapper {
+  position: relative;
+}
+
+.dropdown-button {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  background-color: #fff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.3s;
+}
+
+.dropdown-button:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px #3b82f660;
+}
+
+.dropdown-selected {
+  color: #374151;
+}
+
+.chevron-icon {
+  transition: transform 0.3s;
+}
+
+.chevron-icon.rotate {
+  transform: rotate(180deg);
+}
+
+.dropdown-options {
+  position: absolute;
+  z-index: 10;
+  width: 100%;
+  margin-top: 0.5rem;
+  background-color: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  padding: 0.5rem 0;
+  transition: all 0.2s ease-in-out;
+}
+
+.dropdown-option {
+  padding: 0.5rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.dropdown-option:hover {
+  background-color: #f9fafb;
+}
+
+.dropdown-option span {
+  color: #374151;
+}
+
+.checkbox {
+  accent-color: #3b82f6;
+}
+
+/* ===============================
+   ETIQUETAS DE ÁREAS SELECCIONADAS
+================================= */
+.selected-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  background-color: #dbeafe;
+  color: #1d4ed8;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.remove-tag {
+  margin-left: 0.5rem;
+  cursor: pointer;
+}
+
+.remove-tag:hover {
+  color: #1e40af;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ===============================
+   PDF DE DETALLES
+================================= */
+.pdf-upload-container {
+  margin-top: 1rem;
+}
+
+.pdf-upload-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.pdf-upload-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pdf-upload-input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  transition: all 0.3s ease;
+}
+
+.pdf-upload-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+}
+
+.pdf-upload-icon {
+  color: #6b7280;
+}
+
+.pdf-upload-filename {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: #4b5563;
+}
+
+.pdf-upload-filename span {
+  font-weight: 500;
+}
+
+/* ===============================
+   BOTÓN DE ENVÍO
+================================= */
+.submit-btn {
+  width: 100%;
+  background-color: #1b4b91;
+  color: white;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+}
+
+.submit-btn:hover {
+  background-color: #0b2447;
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.asterisco {
+  color: red;
+  font-weight: bold;
+  margin-left: 2px;
+}

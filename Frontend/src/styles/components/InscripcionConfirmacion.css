@@ -1,0 +1,83 @@
+/* Estilo para la transición entre formulario y boleta */
+.inscripcion-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 20px;
+    transition: all 0.3s ease;
+  }
+  
+  .formulario-wrapper {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+  }
+  
+  /* Botón de confirmación más destacado */
+  button[type="submit"] {
+    background-color: #1a4e8e;
+    color: white;
+    padding: 10px 20px;
+    font-weight: bold;
+    transition: background-color 0.3s;
+  }
+  
+  button[type="submit"]:hover {
+    background-color: #123b6b;
+  }
+  
+  /* Estilos para el resumen de inscripción */
+  .resumen-inscripcion {
+    background-color: #f9f9f9;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+  }
+  
+  .titulo-confirmacion {
+    color: #1a4e8e;
+    text-align: center;
+    margin-bottom: 10px;
+  }
+  
+  .subtitulo-confirmacion {
+    text-align: center;
+    color: #666;
+    margin-bottom: 20px;
+  }
+  
+  .bloque-resumen {
+    background-color: white;
+    border: 1px solid #eaeaea;
+    border-radius: 5px;
+    padding: 15px;
+    margin-bottom: 15px;
+  }
+  
+  .bloque-resumen h3 {
+    color: #1a4e8e;
+    margin-top: 0;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #eaeaea;
+    padding-bottom: 8px;
+  }
+  
+  .fila-resumen {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  
+  .etiqueta {
+    font-weight: 500;
+    color: #666;
+  }
+  
+  .valor {
+    font-weight: 400;
+  }
+  
+  /* Estilos para la visualización de boleta */
+  .boleta-container {
+    margin-top: 20px;
+  }

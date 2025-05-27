@@ -1,0 +1,48 @@
+:root {
+    /* Colores principales */
+    --primary-color: #0a3f7d;
+    --primary-light: #0d4b94;
+    --secondary-color: #e41e26;
+    
+    /* Colores de fondo */
+    --bg-color: #f5f5f5;
+    --bg-card: #ffffff;
+    
+    /* Colores de texto */
+    --text-dark: #333;
+    --text-medium: #666;
+    --text-light: #ffffff;
+    
+    /* Bordes y separadores */
+    --border-color: #eaeaea;
+    --border-light: rgba(255, 255, 255, 0.1);
+    
+    /* Sombras */
+    --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    
+    /* Radios de borde */
+    --border-radius: 4px;
+    
+    /* Espaciado */
+    --spacing-xs: 5px;
+    --spacing-sm: 10px;
+    --spacing-md: 15px;
+    --spacing-lg: 20px;
+    --spacing-xl: 24px;
+    
+    /* Dimensiones */
+    --sidebar-width: 230px;
+    --sidebar-collapsed: 60px;
+    
+    /* Fuentes */
+    --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    --font-size-xs: 12px;
+    --font-size-sm: 13px;
+    --font-size-md: 14px;
+    --font-size-lg: 16px;
+    --font-size-xl: 18px;
+    --font-size-xxl: 24px;
+    
+    /* Transiciones */
+    --transition-fast: 0.2s;
+  }
