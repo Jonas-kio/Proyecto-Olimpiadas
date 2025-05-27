@@ -58,53 +58,63 @@ class EnviarNotificacionBoleta implements ShouldQueue
     public function handle(BoletaGenerada $event)
     {
         try {
-            $datosBoleta = $this->boletaService->obtenerDatosBoleta($event->boleta->id);
+            $datosBoleta = $this->boletaService->obtenerDatosBoleta(
+                $event->boleta->registration_process_id,
+                $event->boleta->id
+            );
 
-            $correos = $this->obtenerCorreosDestinatarios($datosBoleta);
+            if (!isset($datosBoleta['data'])) {
+                throw new \Exception('Datos de boleta incompletos');
+            }
+
+            $correos = $this->obtenerCorreosDestinatarios($datosBoleta['data']);
 
             foreach ($correos as $correo) {
-                Mail::to($correo)->queue(new BoletaMail($datosBoleta, $event->boleta));
+                Mail::to($correo)->queue(new BoletaMail($datosBoleta['data'], $event->boleta));
             }
 
             Log::info('Notificación de boleta enviada', [
                 'boleta_id' => $event->boleta->id,
+                'proceso_id' => $event->boleta->registration_process_id,
                 'destinatarios' => count($correos)
             ]);
+
         } catch (\Exception $e) {
             Log::error('Error al enviar notificación de boleta', [
                 'boleta_id' => $event->boleta->id,
-                'error' => $e->getMessage()
+                'proceso_id' => $event->boleta->registration_process_id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
         }
     }
 
-    /**
-     * Obtener lista de correos únicos para enviar notificaciones
-     */
+
     protected function obtenerCorreosDestinatarios(array $datosBoleta)
     {
         $correos = [];
 
-        // Añadir correo del usuario que generó la inscripción
-        if (!empty($datosBoleta['proceso']['usuario_correo'])) {
-            $correos[] = $datosBoleta['proceso']['usuario_correo'];
+        if (!empty($datosBoleta['proceso']['user']['email'])) {
+            $correos[] = $datosBoleta['proceso']['user']['email'];
         }
 
-        // Añadir correos de los competidores
-        foreach ($datosBoleta['competidores'] as $competidor) {
-            if (!empty($competidor['correo'])) {
-                $correos[] = $competidor['correo'];
-            }
+        if (isset($datosBoleta['competidores']) && is_array($datosBoleta['competidores'])) {
+            foreach ($datosBoleta['competidores'] as $competidor) {
+                if (!empty($competidor['correo_electronico'])) {
+                    $correos[] = $competidor['correo_electronico'];
+                }
 
-            // Añadir correos de los tutores
-            foreach ($competidor['tutores'] as $tutor) {
-                if (!empty($tutor['correo'])) {
-                    $correos[] = $tutor['correo'];
+                // Añadir correos de los tutores
+                if (isset($competidor['tutores']) && is_array($competidor['tutores'])) {
+                    foreach ($competidor['tutores'] as $tutor) {
+                        if (!empty($tutor['correo_electronico'])) {
+                            $correos[] = $tutor['correo_electronico'];
+                        }
+                    }
                 }
             }
         }
 
-        // Eliminar duplicados y valores vacíos
         return array_unique(array_filter($correos));
     }
 }

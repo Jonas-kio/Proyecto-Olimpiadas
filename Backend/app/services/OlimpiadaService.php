@@ -541,8 +541,8 @@ class OlimpiadaService
     public function actualizarEstadosOlimpiadas(): void
     {
         $today = Carbon::today();
-        Log::info('Actualizando estados de olimpiadas', ['fecha' => $today->toDateString()]);
 
+        // Actualiza olimpiadas que deben iniciar hoy
         $olimpiadasParaIniciar = Olimpiada::where('estado', OlimpiadaEstado::PENDIENTE->value)
             ->where('fecha_inicio', '<=', $today)
             ->get();
@@ -551,13 +551,9 @@ class OlimpiadaService
             $olimpiada->estado = OlimpiadaEstado::ENPROCESO->value;
             $olimpiada->activo = true;
             $olimpiada->save();
-            Log::info('Olimpiada iniciada', [
-                'id' => $olimpiada->id,
-                'nombre' => $olimpiada->nombre,
-                'activo' => $olimpiada->activo
-            ]);
         }
 
+        // Actualiza olimpiadas que deben terminar hoy
         $olimpiadasParaTerminar = Olimpiada::where('estado', OlimpiadaEstado::ENPROCESO->value)
             ->where('fecha_fin', '<', $today)
             ->get();
@@ -566,11 +562,6 @@ class OlimpiadaService
             $olimpiada->estado = OlimpiadaEstado::TERMINADO->value;
             $olimpiada->activo = false;
             $olimpiada->save();
-            Log::info('Olimpiada terminada', [
-                'id' => $olimpiada->id,
-                'nombre' => $olimpiada->nombre,
-                'activo' => $olimpiada->activo
-            ]);
         }
     }
 }
