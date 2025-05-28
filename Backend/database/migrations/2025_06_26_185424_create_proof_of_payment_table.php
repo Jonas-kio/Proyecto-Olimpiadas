@@ -24,7 +24,7 @@ return new class extends Migration
             $table->boolean('es_pago_grupal')->default(false);
             $table->integer('cantidad_participantes')->nullable();
             $table->integer('intento_numero');
-            $table->json('metadata_ocr')->nullable(); // Para almacenar información adicional del OCR
+            $table->json('metadata_ocr')->nullable();
             $table->timestamps();
 
             $table->foreign('registration_process_id')

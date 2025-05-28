@@ -43,7 +43,6 @@ const DetalleInscripcion = () => {
   useEffect(() => {
     const initWorker = async () => {
       try {
-        console.log("Inicializando worker de Tesseract v6.0.1...");
         
         // API para Tesseract.js v6.0.1
         const worker = await createWorker('spa', {
@@ -56,22 +55,18 @@ const DetalleInscripcion = () => {
         });
         
         workerRef.current = worker;
-        console.log("Worker de Tesseract inicializado correctamente");
       } catch (error) {
-        console.error("Error al inicializar Tesseract worker:", error);
         setErrorArchivo(`Error al inicializar OCR: ${error.message}`);
       }
     };
 
     initWorker();
 
-    // Limpieza al desmontar
     return () => {
       if (workerRef.current) {
         (async () => {
           try {
             await workerRef.current.terminate();
-            console.log("Worker de Tesseract terminado correctamente");
           } catch (error) {
             console.error("Error al terminar el worker:", error);
           }
@@ -112,27 +107,19 @@ const DetalleInscripcion = () => {
   const extraerTextoConOCR = async (imagenData) => {
     try {
       if (!workerRef.current) {
-        console.log("Worker no inicializado, utilizando método alternativo");
         setErrorArchivo("El servicio OCR no está listo. Intentando inicializar...");
         
-        // Versión específica para Tesseract.js v6.0.1
+        
         const worker = await createWorker('spa');
         workerRef.current = worker;
       }
-        
-      console.log("Iniciando reconocimiento OCR...");
-      
-      // En Tesseract.js v6.0.1, recognize devuelve un objeto diferente
+
       const resultado = await workerRef.current.recognize(imagenData);
-      
-      // En v6.0.1, el texto está directamente en resultado.data.text
       const texto = resultado.data.text;
       
-      console.log("Texto extraído:", texto);
       setTextoExtraido(texto);
       return texto;
     } catch (err) {
-      console.error("Error en el procesamiento OCR:", err);
       setErrorArchivo(`Error en el procesamiento OCR: ${err.message || "Error desconocido"}`);
       return null;
     }
@@ -140,23 +127,18 @@ const DetalleInscripcion = () => {
 
   const enviarTextoAlBackend = async (texto, imagenData) => {
     try {
-      console.log("Enviando datos al servicio OCR...");
       
-      // Verificar que procesoId exista y sea un número válido
       if (!procesoIdNumerico || isNaN(procesoIdNumerico)) {
-        console.error("Error: ID del proceso no disponible o inválido:", procesoId);
+
         setErrorArchivo("No se pudo obtener un ID de proceso de inscripción válido");
         return false;
       }
 
-      // Crear el payload con el nombre correcto de la propiedad y asegurando que es un número
       let payload = {
         texto: texto,
-        registration_process_id: procesoIdNumerico, // Asegurar que sea un número
+        registration_process_id: procesoIdNumerico,
         comprobante: null
       };
-
-      console.log("Proceso ID que se enviará (numérico):", procesoIdNumerico);
 
       if (imagenData && imagenData.startsWith('data:')) {
         if (imagenData.length > 1000000) {
@@ -169,13 +151,11 @@ const DetalleInscripcion = () => {
       }
 
       const payloadSize = JSON.stringify(payload).length;
-      console.log(`Tamaño del payload: ${Math.round(payloadSize / 1024)}KB`);
       
       if (payloadSize > 10485760) {
         throw new Error("El archivo es demasiado grande para ser procesado. Intente con una imagen de menor tamaño.");
       }
       
-      // Corregir la validación para que coincida con los nombres de las propiedades del payload
       if (!payload.texto || !payload.comprobante || !payload.registration_process_id) {
         console.error("Faltan datos en el payload:", {
           tieneTexto: !!payload.texto,
@@ -184,27 +164,20 @@ const DetalleInscripcion = () => {
         });
         throw new Error("Faltan datos requeridos para la validación");
       }
-      
-      console.log("Enviando payload OCR con campos:", Object.keys(payload), 
-                  "y proceso ID:", payload.registration_process_id);
 
       const response = await ValidarProcesoOCR(payload);
       
       if (response && response.success) {
-        console.log("Validación exitosa:", response);
         return true;
       } else {
         const errorMsg = response?.mensaje || response?.message || "Error desconocido al validar el comprobante";
-        console.error("Error de validación:", errorMsg);
         setErrorArchivo(errorMsg);
         return false;
       }
     } catch (err) {
-      console.error("Error al enviar datos al backend:", err);
       
       let mensajeError = "Error de conexión al validar el comprobante";
       if (err.response) {
-        console.error("Respuesta del servidor:", err.response.data);
         mensajeError = err.response.data.message || err.response.data.mensaje || 
                       `Error ${err.response.status}: ${err.response.statusText}`;
       } else if (err.message) {

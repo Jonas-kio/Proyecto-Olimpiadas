@@ -52,13 +52,11 @@ class OcrService
                 ];
             }
 
-            // 4. Extraer número de boleta
             $numeroBoleta = $this->extraerNumeroBoleta($textoOCR);
             if (!$numeroBoleta) {
                 throw new \Exception('No se encontró un número de boleta válido.');
             }
 
-            // 5. Buscar la boleta asociada al proceso
             $boleta = Boleta::where('registration_process_id', $registrationProcessId)
                           ->where('numero_boleta', $numeroBoleta)
                           ->where('validado', false)
@@ -71,7 +69,6 @@ class OcrService
                 throw new \Exception('La boleta ya se encuentra en estado PAGADO y no puede ser procesada nuevamente.');
             }
 
-            // 7. Determinar si es grupal basado en el tipo de numero de boleta extraida
             $esGrupal = $this->esBoleraGrupal($numeroBoleta);
             $nombrePagador = null;
 
@@ -88,7 +85,7 @@ class OcrService
             }
 
             $comprobante = ComprobantePago::create([
-                'registration_process_id' => $registrationProcessId, // ¡Campo añadido!
+                'registration_process_id' => $registrationProcessId,
                 'boleta_id' => $boleta->id,
                 'ruta_imagen' => $rutaImagen,
                 'texto_detectado' => $textoOCR,
@@ -103,7 +100,6 @@ class OcrService
                 ])
             ]);
 
-            // 9. Actualizar estados
             $boleta->update([
                 'validado' => true,
                 'estado' => BoletaEstado::PAGADO->value
@@ -112,7 +108,6 @@ class OcrService
                 $registration,
                 EstadoInscripcion::INSCRITO
             );
-            //$registration->update(['status' => EstadoInscripcion::INSCRITO->value]);
 
             DB::commit();
 
@@ -125,9 +120,8 @@ class OcrService
         } catch (\Exception $e) {
             DB::rollBack();
             try {
-                // Aquí está el cambio: Asegurarse de que registration_process_id se incluye
                     ComprobantePago::create([
-                        'registration_process_id' => $registrationProcessId, // ¡Asegúrate de que este campo esté incluido!
+                        'registration_process_id' => $registrationProcessId,
                         'boleta_id' => null,
                         'ruta_imagen' => $imagen ? $this->guardarImagen($imagen) : null,
                         'texto_detectado' => $textoOCR,
@@ -142,7 +136,6 @@ class OcrService
                         ])
                     ]);
                 } catch (\Exception $innerException) {
-                    // Logear el error para depuración
                     Log::error('Error al crear registro de comprobante fallido: ' . $innerException->getMessage());
                 }
             return [
