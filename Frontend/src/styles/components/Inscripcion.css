@@ -154,7 +154,7 @@
 
 .tabla-inscripciones th {
   background-color: #1e40af;
-  color: #333;
+  color: white;
   padding: 16px;
   text-align: left;
   font-size: 15px;
@@ -164,6 +164,7 @@
 .tabla-inscripciones td {
   padding: 16px;
   border-bottom: 1px solid #e5e7eb;
+  color : #374151;
   font-size: 14px;
   padding: 20px;
 }
@@ -208,6 +209,11 @@
 
 .tabla-paginacion {
   background-color: #f9fafb;
+  text-align: center;
+  padding: 16px;
+}
+.tabla-paginacion > button{
+  background-color: #2563eb;
   text-align: center;
   padding: 16px;
 }
