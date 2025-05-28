@@ -12,7 +12,7 @@ class ComprobantePago extends Model
     protected $table = 'proof_of_payment';
 
     protected $fillable = [
-        'registration_id',
+        'registration_process_id',
         'boleta_id',
         'ruta_imagen',
         'texto_detectado',
