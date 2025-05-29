@@ -6,6 +6,8 @@ use App\Enums\EstadoInscripcion;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class RegistrationProcess extends Model
 {
@@ -41,7 +43,18 @@ class RegistrationProcess extends Model
         return $this->hasMany(DetalleInscripcion::class, 'register_process_id');
     }
 
+    //  AGREGAR ESTA RELACIÓN
+    public function detalleInscripcion()
+    {
+        return $this->hasOne(DetalleInscripcion::class, 'register_process_id');
+    }
+
     public function boleta() {
         return $this->hasOne(Boleta::class, 'registration_process_id');
+    }
+    
+    public function participante(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
     }
 }

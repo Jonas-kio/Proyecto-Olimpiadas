@@ -37,9 +37,10 @@ class ReportController extends Controller
             
             // Construye la consulta base con las relaciones correctas
             $query = RegistrationProcess::with([
-                'participante',                           // Relación a Competitor
+                'participante',                           // Relación a User
                 'olimpiada',                             // Relación a Olimpiada
                 'detalleInscripcion',                    // Relación a DetalleInscripcion
+                'detalleInscripcion.competidor',         // Competidor a través del detalle
                 'detalleInscripcion.area',               // Área a través del detalle
                 'detalleInscripcion.nivel_categoria'     // Categoría a través del detalle
             ]);
@@ -82,26 +83,8 @@ class ReportController extends Controller
                         return null;
                     }
 
-                    // Manejo seguro del status
-                    $status = 'N/A';
-                    try {
-                        if ($registration->status) {
-                            if (is_object($registration->status)) {
-                                if (method_exists($registration->status, 'value')) {
-                                    $status = $registration->status->value;
-                                } elseif (method_exists($registration->status, 'name')) {
-                                    $status = $registration->status->name;
-                                } else {
-                                    $status = (string) $registration->status;
-                                }
-                            } else {
-                                $status = (string) $registration->status;
-                            }
-                        }
-                    } catch (\Exception $e) {
-                        Log::warning('Error obteniendo status:', ['error' => $e->getMessage(), 'id' => $registration->id]);
-                        $status = 'Error';
-                    }
+                    // Manejo seguro del status - USAR DIRECTAMENTE EL VALOR RAW
+                    $status = $registration->getRawOriginal('status') ?? 'N/A';
 
                     // Obtener información del detalle
                     $detalle = $registration->detalleInscripcion;
@@ -110,12 +93,12 @@ class ReportController extends Controller
                     return [
                         'id' => $registration->id,
                         'competitor' => [
-                            'id' => $registration->participante->id ?? null,
-                            'name' => $registration->participante->name ?? 'N/A',
-                            'lastname' => $registration->participante->lastname ?? 'N/A',
-                            'dni' => $registration->participante->dni ?? 'N/A',
+                            'id' => $detalle->competidor->id ?? null,
+                            'name' => $detalle->competidor->nombres ?? 'N/A',
+                            'lastname' => $detalle->competidor->apellidos ?? 'N/A',
+                            'dni' => $detalle->competidor->documento_identidad ?? 'N/A',
                         ],
-                        'area' => $detalle->area->name ?? 'N/A',
+                        'area' => $detalle->area->nombre ?? 'N/A',  // ✅ CORREGIDO: 'nombre' en lugar de 'name'
                         'level' => $detalle->nivel_categoria->name ?? 'N/A',
                         'olimpiada' => $registration->olimpiada->nombre ?? 'N/A',
                         'type' => $registration->type ?? 'N/A',
@@ -217,7 +200,7 @@ class ReportController extends Controller
                 $byArea = RegistrationProcess::with('detalleInscripcion.area')
                     ->get()
                     ->groupBy(function($item) {
-                        return $item->detalleInscripcion->area->name ?? 'Sin Área';
+                        return $item->detalleInscripcion->area->nombre ?? 'Sin Área';  // ✅ CORREGIDO: 'nombre'
                     })
                     ->map(function ($group, $areaName) {
                         return [
