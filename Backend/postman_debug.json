@@ -1,0 +1,44 @@
+{
+  "postman_collection": {
+    "name": "Debug Inscripción Grupal",
+    "requests": [
+      {
+        "name": "1. Verificar Estado del Proceso",
+        "method": "GET",
+        "url": "{{BASE_URL}}/api/inscripcion/proceso/1/estado",
+        "headers": {
+          "Authorization": "Bearer {{TOKEN}}",
+          "Accept": "application/json"
+        }
+      },
+      {
+        "name": "2. Registrar Competidores",
+        "method": "POST",
+        "url": "{{BASE_URL}}/api/inscripcion/grupal/proceso/1/competidores",
+        "headers": {
+          "Authorization": "Bearer {{TOKEN}}",
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        "body": {
+          "competidores": [
+            {
+              "nombres": "Juan Carlos",
+              "apellidos": "Pérez González",
+              "documento_identidad": "12345678",
+              "provincia": "La Paz",
+              "fecha_nacimiento": "2010-05-15",
+              "curso": "1ro Secundaria",
+              "correo_electronico": "juan.perez@email.com",
+              "colegio": "Colegio San José"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "environment_variables": {
+    "BASE_URL": "http://127.0.0.1:8000",
+    "TOKEN": "[REEMPLAZA_CON_TU_TOKEN_REAL]"
+  }
+}

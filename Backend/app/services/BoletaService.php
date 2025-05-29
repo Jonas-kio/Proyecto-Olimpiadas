@@ -6,6 +6,7 @@ use App\Enums\BoletaEstado;
 use App\Enums\EstadoInscripcion;
 use App\Events\BoletaGenerada;
 use App\Models\Boleta;
+use App\Models\CompetidorAreaNivel;
 use App\Models\CompetidorTutor;
 use App\Models\Cost;
 use App\Models\DetalleInscripcion;
@@ -33,45 +34,22 @@ class BoletaService
             throw new \Exception('El proceso de inscripción no está en estado válido para generar boleta');
         }
 
-
         $competidoresIds = $this->procesoRepository->obtenerIdsCompetidores($proceso->id);
         if (empty($competidoresIds)) {
             throw new \Exception('El proceso de inscripción no tiene competidores asociados');
         }
 
-        $areaId = $this->procesoRepository->obtenerAreaSeleccionada($proceso->id);
-        $nivelId = $this->procesoRepository->obtenerNivelSeleccionado($proceso->id);
-
-        if (!$areaId || !$nivelId) {
-            throw new \Exception('Debe seleccionar un área y nivel para generar la boleta');
-        }
-
         DB::beginTransaction();
 
         try {
-
-            $costo = Cost::where('area_id', $areaId)
-                ->where('category_id', $nivelId)
-                ->firstOrFail();
-
-            if (!isset($costo->price)) {
-                throw new \Exception('El costo no tiene un precio definido.');
-            }
-
             $montoTotal = 0;
 
-            foreach ($competidoresIds as $competidorId) {
-                DetalleInscripcion::create([
-                    'register_process_id' => $proceso->id,
-                    'competidor_id' => $competidorId,
-                    'area_id' => $areaId,
-                    'categoria_id' => $nivelId,
-                    'monto' => $costo->price,
-                    'status' => true,
-                    'estado' => 'pendiente'
-                ]);
-
-                $montoTotal += $costo->price;
+            if ($proceso->type === 'grupal') {
+                // Para inscripciones grupales, cada competidor puede tener diferente área y nivel
+                $montoTotal = $this->procesarInscripcionGrupal($proceso, $competidoresIds);
+            } else {
+                // Para inscripciones individuales, todos tienen la misma área y nivel
+                $montoTotal = $this->procesarInscripcionIndividual($proceso, $competidoresIds);
             }
 
             $diasExpiracion = config('app.boleta_dias_expiracion', 15);
@@ -117,6 +95,100 @@ class BoletaService
         }
 
         return $codigo;
+    }
+
+    /**
+     * Procesa inscripción individual donde todos los competidores tienen la misma área y nivel
+     */
+    protected function procesarInscripcionIndividual(RegistrationProcess $proceso, array $competidoresIds)
+    {
+        $areaId = $this->procesoRepository->obtenerAreaSeleccionada($proceso->id);
+        $nivelId = $this->procesoRepository->obtenerNivelSeleccionado($proceso->id);
+
+        if (!$areaId || !$nivelId) {
+            throw new \Exception('Debe seleccionar un área y nivel para generar la boleta');
+        }
+
+        $costo = Cost::where('area_id', $areaId)
+            ->where('category_id', $nivelId)
+            ->firstOrFail();
+
+        if (!isset($costo->price)) {
+            throw new \Exception('El costo no tiene un precio definido.');
+        }
+
+        $montoTotal = 0;
+
+        foreach ($competidoresIds as $competidorId) {
+            DetalleInscripcion::create([
+                'register_process_id' => $proceso->id,
+                'competidor_id' => $competidorId,
+                'area_id' => $areaId,
+                'categoria_id' => $nivelId,
+                'monto' => $costo->price,
+                'status' => true,
+                'estado' => 'pendiente'
+            ]);
+
+            $montoTotal += $costo->price;
+        }
+
+        return $montoTotal;
+    }
+
+    /**
+     * Procesa inscripción grupal donde cada competidor puede tener diferentes áreas y niveles
+     */
+    protected function procesarInscripcionGrupal(RegistrationProcess $proceso, array $competidoresIds)
+    {
+        // Obtener las asignaciones de área y nivel para cada competidor
+        $asignaciones = CompetidorAreaNivel::where('registration_process_id', $proceso->id)
+            ->whereIn('competitor_id', $competidoresIds)
+            ->get();
+
+        if ($asignaciones->isEmpty()) {
+            throw new \Exception('No se encontraron asignaciones de área y nivel para los competidores en este proceso de inscripción grupal');
+        }
+
+        // Verificar que todos los competidores tengan asignaciones
+        $competidoresConAsignacion = $asignaciones->pluck('competitor_id')->unique()->toArray();
+        $competidoresSinAsignacion = array_diff($competidoresIds, $competidoresConAsignacion);
+
+        if (!empty($competidoresSinAsignacion)) {
+            throw new \Exception('Los siguientes competidores no tienen asignaciones de área y nivel: ' . implode(', ', $competidoresSinAsignacion));
+        }
+
+        $montoTotal = 0;
+
+        foreach ($asignaciones as $asignacion) {
+            // Obtener el costo para esta combinación específica de área y nivel
+            $costo = Cost::where('area_id', $asignacion->area_id)
+                ->where('category_id', $asignacion->category_level_id)
+                ->first();
+
+            if (!$costo) {
+                throw new \Exception("No se encontró un costo definido para el área {$asignacion->area_id} y nivel {$asignacion->category_level_id}");
+            }
+
+            if (!isset($costo->price)) {
+                throw new \Exception("El costo para área {$asignacion->area_id} y nivel {$asignacion->category_level_id} no tiene un precio definido");
+            }
+
+            // Crear detalle de inscripción con la información específica del competidor
+            DetalleInscripcion::create([
+                'register_process_id' => $proceso->id,
+                'competidor_id' => $asignacion->competitor_id,
+                'area_id' => $asignacion->area_id,
+                'categoria_id' => $asignacion->category_level_id,
+                'monto' => $costo->price,
+                'status' => true,
+                'estado' => 'pendiente'
+            ]);
+
+            $montoTotal += $costo->price;
+        }
+
+        return $montoTotal;
     }
 
     public function obtenerDatosBoleta($boletaId)
