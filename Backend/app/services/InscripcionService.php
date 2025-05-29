@@ -411,7 +411,7 @@ class InscripcionService
 
             $this->procesoRepository->actualizarEstadoActivacion($proceso->id, true);
 
-            $proceso->status = $nuevoEstado;
+            $proceso->status = $nuevoEstado->value;
             $resultado = $proceso->save();
 
             if (!$resultado) {
@@ -422,7 +422,6 @@ class InscripcionService
 
             return true;
         } catch (Exception $e) {
-            // Si hay algún error, nos aseguramos de que el proceso quede desactivado
             $this->procesoRepository->actualizarEstadoActivacion($proceso->id, false);
             throw $e;
         }
@@ -445,13 +444,6 @@ class InscripcionService
         return true;
     }
 
-    /**
-     * Verifica si hay procesos activos para un usuario y olimpiada, y repara problemas si es necesario
-     *
-     * @param int $olimpiadaId ID de la olimpiada
-     * @param int $userId ID del usuario
-     * @return RegistrationProcess|null Proceso activo si existe, null en caso contrario
-     */
     public function verificarYRepararProcesosActivos(int $olimpiadaId, int $userId)
     {
         // Buscar procesos existentes para esta olimpiada y usuario

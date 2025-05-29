@@ -9,17 +9,27 @@ use App\Models\ComprobantePago;
 use App\Models\RegistrationProcess;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use thiagoalessio\TesseractOCR\TesseractOCR;
 
 class OcrService
 {
 
     const MAX_INTENTOS = 3;
+    protected $inscripcionService;
 
-    public function procesarComprobante(UploadedFile $imagen, $registrationProcessId)
+    public function __construct(InscripcionService $inscripcionService)
+    {
+        $this->inscripcionService = $inscripcionService;
+    }
+
+    public function procesarComprobante(string $textoOCR, ?UploadedFile $imagen, $registrationProcessId)
     {
         try {
+            if (!$registrationProcessId) {
+                throw new \Exception('ID del proceso de registro no proporcionado');
+            }
+
             $registration = RegistrationProcess::findOrFail($registrationProcessId);
 
             if ($registration->status === EstadoInscripcion::INSCRITO->value) {
@@ -31,6 +41,7 @@ class OcrService
 
             DB::beginTransaction();
 
+
             $intentosActuales = ComprobantePago::where('registration_process_id', $registrationProcessId)->count();
             if ($intentosActuales >= self::MAX_INTENTOS && $registration->status === EstadoInscripcion::PENDIENTE->value) {
                 $registration->update(['status' => EstadoInscripcion::RECHAZADO->value]);
@@ -41,19 +52,11 @@ class OcrService
                 ];
             }
 
-            // 4. Procesar imagen
-            $resultadoOcr = $this->procesarImagen($imagen);
-            if (!$resultadoOcr['success']) {
-                throw new \Exception('Error al procesar la imagen: ' . $resultadoOcr['error']);
-            }
-
-            // 5. Extraer número de boleta
-            $numeroBoleta = $this->extraerNumeroBoleta($resultadoOcr['texto']);
+            $numeroBoleta = $this->extraerNumeroBoleta($textoOCR);
             if (!$numeroBoleta) {
                 throw new \Exception('No se encontró un número de boleta válido.');
             }
 
-            // 6. Buscar la boleta asociada al proceso
             $boleta = Boleta::where('registration_process_id', $registrationProcessId)
                           ->where('numero_boleta', $numeroBoleta)
                           ->where('validado', false)
@@ -62,28 +65,30 @@ class OcrService
                 throw new \Exception('La boleta no corresponde a esta inscripción o ya fue validada.');
             }
 
-            if ($boleta->estado === BoletaEstado::PENDIENTE->value) {
-                throw new \Exception('Primero debe pagar la boleta antes de validarla.');
+            if ($boleta->estado === BoletaEstado::PAGADO->value) {
+                throw new \Exception('La boleta ya se encuentra en estado PAGADO y no puede ser procesada nuevamente.');
             }
 
-            // 7. Determinar si es grupal basado en el tipo de numero de boleta extraida
             $esGrupal = $this->esBoleraGrupal($numeroBoleta);
             $nombrePagador = null;
 
             if ($esGrupal) {
-                $nombrePagador = $this->extraerNombrePagador($resultadoOcr['texto']);
+                $nombrePagador = $this->extraerNombrePagador($textoOCR);
                 if (!$nombrePagador) {
                     throw new \Exception('No se pudo detectar el nombre del pagador en el comprobante grupal.');
                 }
             }
 
-            // 8. Guardar el comprobante
-            $rutaImagen = $this->guardarImagen($imagen);
+            $rutaImagen = null;
+            if ($imagen) {
+                $rutaImagen = $this->guardarImagen($imagen);
+            }
+
             $comprobante = ComprobantePago::create([
                 'registration_process_id' => $registrationProcessId,
                 'boleta_id' => $boleta->id,
                 'ruta_imagen' => $rutaImagen,
-                'texto_detectado' => $resultadoOcr['texto'],
+                'texto_detectado' => $textoOCR,
                 'numero_boleta_detectado' => $numeroBoleta,
                 'nombre_pagador_detectado' => $nombrePagador,
                 'validacion_exitosa' => true,
@@ -95,9 +100,14 @@ class OcrService
                 ])
             ]);
 
-            // 9. Actualizar estados
-            $boleta->update(['validado' => true]);
-            $registration->update(['status' => EstadoInscripcion::INSCRITO->value]);
+            $boleta->update([
+                'validado' => true,
+                'estado' => BoletaEstado::PAGADO->value
+            ]);
+            $this->inscripcionService->actualizarEstadoProcesoTemporalmente(
+                $registration,
+                EstadoInscripcion::INSCRITO
+            );
 
             DB::commit();
 
@@ -109,20 +119,25 @@ class OcrService
 
         } catch (\Exception $e) {
             DB::rollBack();
-
-            // Registrar el intento fallido
-            ComprobantePago::create([
-                'registration_process_id' => $registrationProcessId, // Campo requerido
-                'texto_detectado' => $resultadoOcr['texto'] ?? null,
-                'validacion_exitosa' => false,
-                'es_pago_grupal' => false,
-                'intento_numero' => ($intentosActuales ?? 0) + 1,
-                'metadata_ocr' => json_encode([
-                    'fecha_procesamiento' => now(),
-                    'error_mensaje' => $e->getMessage(),
-                    'intentos_previos' => $intentosActuales ?? 0
-                ])
-            ]);
+            try {
+                    ComprobantePago::create([
+                        'registration_process_id' => $registrationProcessId,
+                        'boleta_id' => null,
+                        'ruta_imagen' => $imagen ? $this->guardarImagen($imagen) : null,
+                        'texto_detectado' => $textoOCR,
+                        'validacion_exitosa' => false,
+                        'es_pago_grupal' => false,
+                        'intento_numero' => ($intentosActuales ?? 0) + 1,
+                        'metadata_ocr' => json_encode([
+                            'fecha_procesamiento' => now(),
+                            'error_mensaje' => $e->getMessage(),
+                            'intentos_previos' => $intentosActuales ?? 0,
+                            'procesado_en_frontend' => true
+                        ])
+                    ]);
+                } catch (\Exception $innerException) {
+                    Log::error('Error al crear registro de comprobante fallido: ' . $innerException->getMessage());
+                }
             return [
                 'success' => false,
                 'mensaje' => $e->getMessage(),
@@ -170,36 +185,5 @@ class OcrService
             }
         }
         return null;
-    }
-
-    private function procesarImagen(UploadedFile $imagen)
-    {
-        try {
-            $ruta = $imagen->storeAs('temp_ocr', uniqid() . '.' . $imagen->getClientOriginalExtension(), 'public');
-            $rutaCompleta = storage_path('app/public/' . $ruta);
-
-            $ocr = new TesseractOCR($rutaCompleta);
-            $ocr->executable('C:\Program Files\Tesseract-OCR\tesseract.exe');
-            $ocr->lang('spa');
-
-            $texto = $ocr->run();
-
-            Storage::disk('public')->delete($ruta);
-
-            return [
-                'success' => true,
-                'texto' => $texto
-            ];
-
-        } catch (\Exception $e) {
-            if (isset($ruta)) {
-                Storage::disk('public')->delete($ruta);
-            }
-
-            return [
-                'success' => false,
-                'error' => $e->getMessage()
-            ];
-        }
     }
 }

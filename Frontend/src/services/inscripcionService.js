@@ -98,6 +98,38 @@ export const verificarEstadoProceso = async (procesoId) => {
   }
 };
 
+export const ValidarProcesoOCR = async (payload) => {
+  try {
+    console.log("Iniciando solicitud OCR con proceso ID:", payload.registration_process_id);
+    
+    // Ajusta el endpoint según sea necesario
+    const response = await api.post('/ocr/procesar-comprobante', {
+      texto: payload.texto,
+      registration_process_id: payload.registration_process_id,
+      comprobante: payload.comprobante
+    });
+    
+    console.log("Respuesta del servidor OCR:", response.status);
+    
+    if (response.data && response.data.success) {
+      return response.data;
+    } else {
+      throw new Error(
+        response.data.mensaje || response.data.message || "Error al validar el proceso OCR"
+      );
+    }
+  } catch (error) {
+    console.error("Error al validar el proceso OCR:", error);
+    
+    // Mejorar la información de error
+    if (error.response) {
+      console.error("Detalles del error:", error.response.data);
+    }
+    
+    throw error;
+  }
+};
+
 // Función para obtener diagnóstico del proceso de inscripción
 export const diagnosticarProceso = async (procesoId) => {
   try {
