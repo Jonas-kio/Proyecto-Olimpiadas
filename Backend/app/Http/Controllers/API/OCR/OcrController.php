@@ -26,9 +26,14 @@ class OcrController extends Controller
     public function procesarComprobante(ProcesarComprobanteRequest $request)
     {
         try {
+            $textoOCR = $request->getTextoOCR();
+            $procesoId = $request->registration_process_id;
+            $imagen = $request->getImageFile();
+
             $resultado = $this->ocrService->procesarComprobante(
-                $request->file('imagen'),
-                $request->input('registration_process_id')
+                $textoOCR,
+                $imagen,
+                $procesoId
             );
 
             if (!$resultado['success']) {

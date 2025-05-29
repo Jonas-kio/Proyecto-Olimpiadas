@@ -1,19 +1,31 @@
-import React, { useEffect, useState } from "react";
+/* eslint-disable react/prop-types */
+import { useEffect, useState } from "react";
+
 
 const ProcesandoModal = ({
   isOpen = true,
   title = "Procesando Comprobante",
   message = "El sistema está verificando su comprobante de pago.\nPor favor espere un momento...",
+  
+  progreso: progresoExterno = null
 }) => {
-  const [progreso, setProgreso] = useState(0);
+  const [progresoInterno, setProgresoInterno] = useState(0);
+  
+  // Usar progreso externo si está disponible, de lo contrario usar el interno
+  const progreso = progresoExterno !== null ? progresoExterno : progresoInterno;
 
+  // Solo activar la animación automática si no se proporciona progreso externo
   useEffect(() => {
-    const intervalo = setInterval(() => {
-      setProgreso((prev) => (prev >= 100 ? 100 : prev + 2));
-    }, 100);
-    return () => clearInterval(intervalo);
-  }, []);
+    if (progresoExterno === null) {
+      const intervalo = setInterval(() => {
+        setProgresoInterno((prev) => (prev >= 100 ? 100 : prev + 2));
+      }, 100);
+      return () => clearInterval(intervalo);
+    }
+  }, [progresoExterno]);
+
   if (!isOpen) return null;
+  
   return (
     <div
       style={{
@@ -57,7 +69,7 @@ const ProcesandoModal = ({
         >
           {title}
         </h3>
-        <p style={{ fontSize: "14px", color: "#333" }}>{message}</p>
+        <p style={{ fontSize: "14px", color: "#333", whiteSpace: "pre-line" }}>{message}</p>
 
         <div
           style={{
@@ -72,12 +84,19 @@ const ProcesandoModal = ({
           <div
             style={{
               height: "100%",
-              width: `${progreso}%`,
+              width: `${Math.min(progreso, 100)}%`,
               backgroundColor: "#2563eb",
               transition: "width 0.2s ease-in-out",
             }}
           />
         </div>
+        
+        {/* Mostrar porcentaje de progreso */}
+        {progreso > 0 && (
+          <p style={{ fontSize: "12px", color: "#64748b", marginTop: "8px" }}>
+            {Math.round(progreso)}%
+          </p>
+        )}
       </div>
 
       <style>{`
