@@ -7,9 +7,24 @@
 
 .report-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 1.5rem;
 }
+
+/* 🌐 Responsive: Cambiar a 2 columnas en pantallas <= 768px */
+@media (max-width: 768px) {
+  .report-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* 🌐 Opcional: 1 columna para móviles (<= 480px) */
+@media (max-width: 480px) {
+  .report-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 
 .report-label {
   display: block;
