@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\CostController;
 use App\Http\Controllers\API\AreaController;
 use App\Http\Controllers\API\AuthController;
+use App\Http\Controllers\API\boleta\BoletaController;
 use App\Http\Controllers\API\CategoryLevelController;
 use App\Http\Controllers\API\Inscripcion\InscripcionController;
 use App\Http\Controllers\API\Olimpiada\OlimpiadaController;
@@ -85,6 +86,13 @@ Route::middleware([IsUserAuth::class])->group(
                     Route::delete('/{olimpiada}/areas/{area}', [OlimpiadaController::class, 'detachArea']);
                 });
 
+                // rutas para las boletas
+                Route::prefix('boletas')->group(function () {
+                    Route::get('olimpiada/{olimpiadaId}', [BoletaController::class, 'obtenerBoletasPorOlimpiada']);
+                    Route::post('actualizar-estado', [BoletaController::class, 'actualizarEstadoBoletas']);
+                });
+
+
                 // Mas Rutas de Admin ........
             }
         );
@@ -112,9 +120,13 @@ Route::middleware([IsUserAuth::class])->group(
 
             Route::post('/inscripcion/competidor', [CompetitorController::class, 'store']);
 
+
+            // Rutas para obtener información de las inscripciones
+            Route::get('/inscripcion/procesos', [InscripcionController::class, 'obtenerProcesosInscripcion']);
+            Route::get('/inscripcion/proceso/{proceso}', [InscripcionController::class, 'obtenerProcesoCerradoPorId']);
         });
 
-        // FLUJO DE VALIDACION DE COMPROVANTE CON OCR
+        // FLUJO DE INSCRIPCIÓN
         Route::prefix('inscripcion')->name('inscripcion.')->group(function () {
                 // Iniciar proceso
                 Route::post('/olimpiada/{olimpiada}/iniciar', [InscripcionController::class, 'iniciarProceso'])
@@ -156,16 +168,12 @@ Route::middleware([IsUserAuth::class])->group(
             });
 
             // Obtener detalles de boleta (no requiere verificar proceso)
-            Route::get('/boleta/{boleta}', [InscripcionController::class, 'obtenerBoleta'])
+            Route::get('procesos/{procesoId}/boletas/{boletaId}', [BoletaController::class, 'obtenerDatosBoleta'])
                 ->name('boleta.ver');
         });
 
-        Route::prefix('ocr')->name('ocr.')->group(function () {
-
-            Route::put('/proceso/{proceso}/estado', [InscripcionController::class, 'actualizarEstadoProceso'])
-                    ->name('proceso.actualizar.estado');
-        });
-
+        // FLUJO DE VALIDACIÓN DE COMPROBANTE CON OCR
+        Route::post('/ocr/procesar-comprobante', [OcrController::class, 'procesarComprobante']);
     }
 );
 

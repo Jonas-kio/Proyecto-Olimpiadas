@@ -5,14 +5,14 @@ namespace App\Enums;
 enum BoletaEstado: string
 {
     case PENDIENTE = 'pendiente';
-    case PAGADO = 'pagado';
+    case PAGADO = 'Pagado';
 
 
     public function label(): string
     {
         return match ($this) {
-            self::PENDIENTE => 'Pendiente',
-            self::PAGADO => 'pagado'
+            self::PENDIENTE => 'pendiente',
+            self::PAGADO => 'Pagado'
         };
     }
 

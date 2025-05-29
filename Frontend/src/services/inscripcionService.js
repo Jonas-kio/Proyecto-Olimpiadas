@@ -98,6 +98,38 @@ export const verificarEstadoProceso = async (procesoId) => {
   }
 };
 
+export const ValidarProcesoOCR = async (payload) => {
+  try {
+    console.log("Iniciando solicitud OCR con proceso ID:", payload.registration_process_id);
+    
+    // Ajusta el endpoint según sea necesario
+    const response = await api.post('/ocr/procesar-comprobante', {
+      texto: payload.texto,
+      registration_process_id: payload.registration_process_id,
+      comprobante: payload.comprobante
+    });
+    
+    console.log("Respuesta del servidor OCR:", response.status);
+    
+    if (response.data && response.data.success) {
+      return response.data;
+    } else {
+      throw new Error(
+        response.data.mensaje || response.data.message || "Error al validar el proceso OCR"
+      );
+    }
+  } catch (error) {
+    console.error("Error al validar el proceso OCR:", error);
+    
+    // Mejorar la información de error
+    if (error.response) {
+      console.error("Detalles del error:", error.response.data);
+    }
+    
+    throw error;
+  }
+};
+
 // Función para obtener diagnóstico del proceso de inscripción
 export const diagnosticarProceso = async (procesoId) => {
   try {
@@ -115,5 +147,23 @@ export const diagnosticarProceso = async (procesoId) => {
   } catch (error) {
     console.error("Error al diagnosticar el proceso:", error);
     throw error;
+  }
+};
+
+export const inscripcionArea = async () => {
+  return await api.get("/inscripcion/area");
+};
+
+export const optenerInscrion = async () => {
+  return await api.get(`/user/inscripcion/procesos`);
+}
+
+export const optenerInscripcionId = async (procesoId) => {
+  try {
+    const response = await api.get(`/user/inscripcion/proceso/${procesoId}`);
+    return response.data; // Asegúrate de que `response.data` contenga el JSON esperado
+  } catch (error) {
+    console.error("Error al obtener inscripción por ID:", error);
+    throw error; // Lanza el error para que el componente lo maneje
   }
 };
