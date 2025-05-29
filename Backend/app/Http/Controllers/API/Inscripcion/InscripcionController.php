@@ -144,9 +144,9 @@ class InscripcionController extends Controller
         ]);
     }
 
-    public function obtenerBoleta($boletaId)
+    public function obtenerBoleta($procesoId, $boletaId)
     {
-        $datosBoleta = $this->boletaService->obtenerDatosBoleta($boletaId);
+        $datosBoleta = $this->boletaService->obtenerDatosBoleta($procesoId, $boletaId);
 
         return response()->json([
             'success' => true,
@@ -187,12 +187,6 @@ class InscripcionController extends Controller
         }
     }
 
-    /**
-     * Diagnostica por qué un proceso no está activo o no puede ser modificado
-     *
-     * @param RegistrationProcess $proceso Proceso a diagnosticar
-     * @return JsonResponse
-     */
     public function diagnosticarProceso(RegistrationProcess $proceso)
     {
         // Recuperar el proceso de la base de datos para asegurarnos de tener la información actualizada
@@ -229,5 +223,41 @@ class InscripcionController extends Controller
             'razon_inactivo' => !$procesoActualizado->active ?
                 ($boleta ? 'El proceso está inactivo porque ya se generó una boleta' : 'El proceso está inactivo por razones desconocidas') : null
         ]);
+    }
+
+    public function obtenerProcesosInscripcion(): JsonResponse
+    {
+        try {
+            $procesos = $this->inscripcionService->obtenerProcesosCerradosUsuario(Auth::id());
+            return response()->json([
+                'success' => true,
+                'procesos' => $procesos,
+                'total' => count($procesos)
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'mensaje' => 'Error al obtener los procesos de inscripción',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+
+    public function obtenerProcesoCerradoPorId(int $procesoId): JsonResponse
+    {
+        try {
+            $proceso = $this->inscripcionService->obtenerProcesoCerradoPorId($procesoId, Auth::id());
+            return response()->json([
+                'success' => true,
+                'proceso' => $proceso
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'mensaje' => 'Error al obtener el proceso de inscripción',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 }

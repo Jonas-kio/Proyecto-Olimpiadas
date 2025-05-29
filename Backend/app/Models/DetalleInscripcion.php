@@ -23,25 +23,31 @@ class DetalleInscripcion extends Model
 
     protected $casts = [
         'monto' => 'decimal:2',
+        'status'=> 'boolean'
     ];
 
     public function proceso_inscripcion()
     {
-        return $this->belongsTo(RegistrationProcess::class);
+        return $this->belongsTo(RegistrationProcess::class, 'register_process_id');
     }
 
     public function competidor()
     {
-        return $this->belongsTo(Competitor::class);
+        return $this->belongsTo(Competitor::class, 'competidor_id');
     }
 
     public function area()
     {
-        return $this->belongsTo(Area::class);
+        return $this->belongsTo(Area::class, 'area_id');
     }
 
     public function nivel_categoria()
     {
-        return $this->belongsTo(CategoryLevel::class);
+        return $this->belongsTo(CategoryLevel::class, 'categoria_id');
+    }
+
+    public function scopeActivo($query)
+    {
+        return $query->where('status', true);
     }
 }

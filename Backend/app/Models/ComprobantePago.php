@@ -9,26 +9,35 @@ class ComprobantePago extends Model
 {
     use HasFactory;
 
-    protected $table = 'comprobante_pago';
+    protected $table = 'proof_of_payment';
 
     protected $fillable = [
+        'registration_process_id',
         'boleta_id',
-        'nro_comprobante',
-        'monto',
-        'fecha_pago',
-        'ruta_archivo',
-        'verificado_ocr',
-        'datos_extraidos_ocr',
-        'estado'
+        'ruta_imagen',
+        'texto_detectado',
+        'numero_boleta_detectado',
+        'nombre_pagador_detectado',
+        'monto_detectado',
+        'validacion_exitosa',
+        'es_pago_grupal',
+        'cantidad_participantes',
+        'intento_numero',
+        'metadata_ocr'
     ];
 
     protected $casts = [
-        'monto' => 'decimal:2',
-        'fecha_pago' => 'datetime',
-        'verificado_ocr' => 'boolean',
+        'metadata_ocr' => 'array',
+        'es_pago_grupal' => 'boolean',
+        'validacion_exitosa' => 'boolean',
     ];
 
-    public function boleta_pago()
+    public function registration()
+    {
+        return $this->belongsTo(RegistrationProcess::class);
+    }
+
+    public function boleta()
     {
         return $this->belongsTo(Boleta::class);
     }

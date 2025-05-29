@@ -28,18 +28,20 @@ class RegistrationProcess extends Model
         'active' => 'boolean'
     ];
 
-    public function olimpiada(): BelongsTo
+    public function user()
     {
+        return $this->belongsTo(User::class);
+    }
+
+    public function olimpiada() {
         return $this->belongsTo(Olimpiada::class);
     }
 
-    public function participante(): BelongsTo
-    {
-        return $this->belongsTo(Competitor::class);
+    public function detalles() {
+        return $this->hasMany(DetalleInscripcion::class, 'register_process_id');
     }
 
-    public function area(): BelongsTo
-    {
-        return $this->belongsTo(Area::class);
+    public function boleta() {
+        return $this->hasOne(Boleta::class, 'registration_process_id');
     }
 }

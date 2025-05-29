@@ -3,62 +3,50 @@
 namespace App\Http\Controllers\API\OCR;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\OCR\ProcesarComprobanteRequest;
+use App\Jobs\ProcesarComprobante;
 use Illuminate\Http\Request;
 use App\Models\Boleta;
+use App\Services\OcrService;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
 use thiagoalessio\TesseractOCR\TesseractOCR;
 
 
 class OcrController extends Controller
 {
-    public function extraerYValidarComprobante(Request $request)
+
+    protected $ocrService;
+
+    public function __construct(OcrService $ocrService)
     {
-        // Validar que venga la imagen
-        $request->validate([
-            'imagen' => 'required|image|mimes:jpeg,png,jpg|max:2048',
-        ]);
+        $this->ocrService = $ocrService;
+    }
 
-        // Guardar temporalmente la imagen
-        $imagen = $request->file('imagen');
-        $ruta = $imagen->storeAs('ocr', uniqid() . '.' . $imagen->getClientOriginalExtension(), 'public');
-        $rutaCompleta = storage_path('app/public/' . $ruta);
+    public function procesarComprobante(ProcesarComprobanteRequest $request)
+    {
+        try {
+            $textoOCR = $request->getTextoOCR();
+            $procesoId = $request->registration_process_id;
+            $imagen = $request->getImageFile();
 
-        // Ejecutar OCR con Tesseract
-        $texto = (new TesseractOCR($rutaCompleta))->lang('spa')->run();
+            $resultado = $this->ocrService->procesarComprobante(
+                $textoOCR,
+                $imagen,
+                $procesoId
+            );
 
-        // Eliminar imagen después de usar
-        Storage::disk('public')->delete($ruta);
+            if (!$resultado['success']) {
+                return response()->json($resultado, Response::HTTP_UNPROCESSABLE_ENTITY);
+            }
 
-        // Buscar número de boleta en el texto
-        preg_match('/boleta[:\s\-]*([0-9]+)/i', $texto, $coincidencias);
+            return response()->json($resultado, Response::HTTP_OK);
 
-        if (!isset($coincidencias[1])) {
+        } catch (\Exception $e) {
             return response()->json([
-                'valido' => false,
-                'mensaje' => 'No se encontró un número de boleta en el texto.',
-                'texto_detectado' => $texto,
-            ], 422);
+                'success' => false,
+                'mensaje' => 'Error al procesar el comprobante: ' . $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-
-        $numeroBoleta = $coincidencias[1];
-
-        // Verificar si la boleta existe
-        $boleta = Boleta::where('numero_boleta', $numeroBoleta)->first();
-
-        if (!$boleta) {
-            return response()->json([
-                'valido' => false,
-                'mensaje' => 'Número de boleta no válido.',
-                'numero_boleta_detectado' => $numeroBoleta,
-                'texto_detectado' => $texto,
-            ]);
-        }
-
-        return response()->json([
-            'valido' => true,
-            'mensaje' => 'Boleta válida.',
-            'numero_boleta' => $numeroBoleta,
-            'boleta_id' => $boleta->id,
-        ]);
     }
 }
