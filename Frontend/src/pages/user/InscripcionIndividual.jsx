@@ -112,9 +112,7 @@ const InscripcionIndividual = () => {
         }
 
         const areasLimpias = responseAreas.map((area) => ({
-          id: area.id,
-          nombre: area.nombre,
-          descripcion: area.descripcion,
+          ...area,
         }));
 
         console.log("Áreas mapeadas limpias:", areasLimpias);

@@ -58,14 +58,15 @@ const FormAreasCategorias = ({
     }
 
     // Validación del máximo de áreas permitidas
-    if (areasSeleccionadas.length >= maximoAreas) {
-      setMensajeError(`Solo se permiten ${maximoAreas} áreas.`);
+    if (
+      areaSeleccionada.area_exclusiva &&
+      areasSeleccionadas.length > maximoAreas
+    ) {
+      setMensajeError(
+        `El área ${areaSeleccionada.nombre} es exclusiva. No puedes seleccionar más áreas.`
+      );
       e.target.value = "";
-
-      // Ocultar el mensaje después de 5 segundos
-      setTimeout(() => {
-        setMensajeError("");
-      }, 3000);
+      setTimeout(() => setMensajeError(""), 3000);
       return;
     }
 
@@ -167,6 +168,8 @@ const FormAreasCategorias = ({
               .map((area) => (
                 <option key={area.id} value={area.id}>
                   {area.nombre}
+                  {area.nivel_unico ? " (Nivel Único)" : ""}
+                  {area.area_exclusiva ? " (Área Exclusiva)" : ""}
                 </option>
               ))}
           </select>
@@ -175,22 +178,27 @@ const FormAreasCategorias = ({
             {areasSeleccionadas.map((area) => (
               <span className="etiqueta-area" key={area.id}>
                 {area.nombre}
+                {area.nivel_unico && (
+                  <span style={{ color: "green", marginLeft: "5px" }}>
+                    Nivel Único
+                  </span>
+                )}
+                {area.area_exclusiva && (
+                  <span style={{ color: "red", marginLeft: "5px" }}>
+                    Área Exclusiva
+                  </span>
+                )}
                 <button
                   type="button"
                   onClick={() => {
-                    // 1️⃣ Elimina el área de la lista de seleccionadas
                     setAreasSeleccionadas(
                       areasSeleccionadas.filter((a) => a.id !== area.id)
                     );
-
-                    // 2️⃣ Filtra las categorías filtradas para eliminar las de esta área
                     setCategoriasFiltradas(
                       categoriasFiltradas.filter(
                         (cat) => cat.area_id !== area.id
                       )
                     );
-
-                    // 3️⃣ Filtra las categorías seleccionadas para eliminar las de esta área
                     setCategoriasSeleccionadas(
                       categoriasSeleccionadas.filter(
                         (cat) => cat.area_id !== area.id
