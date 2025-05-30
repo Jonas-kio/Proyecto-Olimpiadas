@@ -8,6 +8,8 @@ use App\Models\RegistrationProcess;
 use App\Models\Competitor;
 use App\Models\Area;
 use App\Models\DetalleInscripcion;
+use App\Models\Olimpiada;
+use App\Models\CategoryLevel;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
@@ -28,6 +30,41 @@ class ReportController extends Controller
     }
 
     /**
+     * Obtiene las opciones para los filtros del frontend
+     */
+    public function getFilterOptions()
+    {
+        try {
+            Log::info('Obteniendo opciones de filtros');
+            
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'olimpiadas' => Olimpiada::select('id', 'nombre as name')->where('activo', true)->get(),
+                    'areas' => Area::select('id', 'nombre as name')->where('activo', true)->get(),
+                    'niveles' => CategoryLevel::select('id', 'name')->get(),
+                    'estados_proceso' => [
+                        ['value' => 'pending', 'label' => 'Pendiente'],
+                        ['value' => 'approved', 'label' => 'Aprobado'],
+                        ['value' => 'rejected', 'label' => 'Rechazado']
+                    ],
+                    'estados_pago' => [
+                        ['value' => 'verified', 'label' => 'Verificado'],
+                        ['value' => 'pending', 'label' => 'Pendiente']
+                    ]
+                ]
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error obteniendo opciones de filtros: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener opciones de filtros',
+                'error' => config('app.debug') ? $e->getMessage() : 'Error interno del servidor'
+            ], 500);
+        }
+    }
+
+    /**
      * Obtiene el reporte detallado de inscripciones con filtros opcionales
      */
     public function getInscriptionReport(Request $request)
@@ -45,11 +82,18 @@ class ReportController extends Controller
                 'detalleInscripcion.nivel_categoria'     // Categoría a través del detalle
             ]);
 
+            // Aplica filtro por olimpiada si se proporciona
+            if ($request->has('olimpiada_id') && !empty($request->olimpiada_id)) {
+                $query->where('olimpiada_id', $request->olimpiada_id);
+                Log::info('Aplicando filtro por olimpiada:', ['olimpiada_id' => $request->olimpiada_id]);
+            }
+
             // Aplica filtro por área si se proporciona
             if ($request->has('area_id') && !empty($request->area_id)) {
                 $query->whereHas('detalleInscripcion', function($q) use ($request) {
                     $q->where('area_id', $request->area_id);
                 });
+                Log::info('Aplicando filtro por área:', ['area_id' => $request->area_id]);
             }
 
             // Aplica filtro por nivel/categoría si se proporciona
@@ -57,11 +101,22 @@ class ReportController extends Controller
                 $query->whereHas('detalleInscripcion', function($q) use ($request) {
                     $q->where('categoria_id', $request->level_id);
                 });
+                Log::info('Aplicando filtro por nivel:', ['level_id' => $request->level_id]);
             }
 
-            // Aplica filtro por status si se proporciona
+            // Aplica filtro por status del proceso si se proporciona
             if ($request->has('status') && !empty($request->status)) {
                 $query->where('status', $request->status);
+                Log::info('Aplicando filtro por status:', ['status' => $request->status]);
+            }
+
+            // Aplica filtro por estado de pago si se proporciona
+            if ($request->has('payment_status') && !empty($request->payment_status)) {
+                $paymentStatus = $request->payment_status === 'verified' ? true : false;
+                $query->whereHas('detalleInscripcion', function($q) use ($paymentStatus) {
+                    $q->where('status', $paymentStatus);
+                });
+                Log::info('Aplicando filtro por estado de pago:', ['payment_status' => $request->payment_status]);
             }
 
             // Ejecuta la consulta
@@ -83,28 +138,42 @@ class ReportController extends Controller
                         return null;
                     }
 
-                    // Manejo seguro del status - USAR DIRECTAMENTE EL VALOR RAW
-                    $status = $registration->getRawOriginal('status') ?? 'N/A';
-
                     // Obtener información del detalle
                     $detalle = $registration->detalleInscripcion;
 
-                    // Retorna el formato estructurado
+                    // Mapear estados según el diseño del Figma
+                    $estadoProceso = match($registration->getRawOriginal('status')) {
+                        'pending' => 'Pendiente',
+                        'approved' => 'Inscrito', 
+                        'rejected' => 'Rechazado',
+                        default => 'Pendiente'
+                    };
+
+                    $estadoPago = match($detalle->status) {
+                        true => 'Verificado',
+                        false => 'Pendiente', 
+                        default => 'Pendiente'
+                    };
+
+                    // Retorna el formato estructurado para el Figma
                     return [
                         'id' => $registration->id,
+                        'participante' => trim(($detalle->competidor->nombres ?? 'N/A') . ' ' . ($detalle->competidor->apellidos ?? '')),
                         'competitor' => [
                             'id' => $detalle->competidor->id ?? null,
                             'name' => $detalle->competidor->nombres ?? 'N/A',
                             'lastname' => $detalle->competidor->apellidos ?? 'N/A',
                             'dni' => $detalle->competidor->documento_identidad ?? 'N/A',
                         ],
-                        'area' => $detalle->area->nombre ?? 'N/A',  // ✅ CORREGIDO: 'nombre' en lugar de 'name'
-                        'level' => $detalle->nivel_categoria->name ?? 'N/A',
+                        'area' => $detalle->area->nombre ?? 'N/A',
+                        'nivel' => $detalle->nivel_categoria->name ?? 'N/A',
                         'olimpiada' => $registration->olimpiada->nombre ?? 'N/A',
                         'type' => $registration->type ?? 'N/A',
-                        'status' => $status,
+                        'estado' => $estadoProceso,
+                        'payment_status' => $estadoPago,
                         'monto' => $detalle->monto ?? 0,
-                        'payment_status' => $detalle->status ? 'Pagado' : 'Pendiente',
+                        'fecha' => $registration->created_at ? $registration->created_at->format('Y-m-d') : null,
+                        'fecha_completa' => $registration->created_at ? $registration->created_at->format('Y-m-d H:i:s') : null,
                         'start_date' => $registration->start_date ? $registration->start_date->format('Y-m-d H:i:s') : null,
                         'created_at' => $registration->created_at ? $registration->created_at->format('Y-m-d H:i:s') : null,
                         'updated_at' => $registration->updated_at ? $registration->updated_at->format('Y-m-d H:i:s') : null
@@ -119,11 +188,18 @@ class ReportController extends Controller
                 }
             })->filter()->values();
 
+            // Agrupar por olimpiada para el frontend
+            $groupedByOlimpiada = $formattedRegistrations->groupBy('olimpiada');
+
             Log::info('Registros formateados:', ['count' => $formattedRegistrations->count()]);
 
             return response()->json([
                 'success' => true,
-                'data' => $formattedRegistrations
+                'data' => $formattedRegistrations,
+                'grouped_data' => $groupedByOlimpiada,
+                'total_records' => $formattedRegistrations->count(),
+                'message' => "Se encontraron {$formattedRegistrations->count()} registros con los filtros seleccionados",
+                'filters_applied' => $request->only(['olimpiada_id', 'area_id', 'level_id', 'status', 'payment_status'])
             ]);
         } catch (\Exception $e) {
             Log::error('Error en getInscriptionReport: ' . $e->getMessage(), [
@@ -162,9 +238,11 @@ class ReportController extends Controller
                         'by_area' => [],
                         'by_level' => [],
                         'by_type' => [],
+                        'by_olimpiada' => [],
                         'payment_summary' => [
                             'total_recaudado' => 0,
                             'pagos_pendientes_count' => 0,
+                            'pagos_verificados_count' => 0,
                             'pagos_verificados_porcentaje' => 0,
                             'total_detalles' => 0
                         ],
@@ -183,8 +261,16 @@ class ReportController extends Controller
                 ");
                 
                 $byStatus = collect($statusResults)->map(function ($item) {
+                    $label = match($item->status) {
+                        'pending' => 'Pendiente',
+                        'approved' => 'Aprobado',
+                        'rejected' => 'Rechazado',
+                        default => $item->status
+                    };
+                    
                     return [
                         'status' => (string) $item->status,
+                        'label' => $label,
                         'total' => (int) $item->total
                     ];
                 });
@@ -199,8 +285,11 @@ class ReportController extends Controller
             try {
                 $byArea = RegistrationProcess::with('detalleInscripcion.area')
                     ->get()
+                    ->filter(function($item) {
+                        return $item->detalleInscripcion && $item->detalleInscripcion->area;
+                    })
                     ->groupBy(function($item) {
-                        return $item->detalleInscripcion->area->nombre ?? 'Sin Área';  // ✅ CORREGIDO: 'nombre'
+                        return $item->detalleInscripcion->area->nombre ?? 'Sin Área';
                     })
                     ->map(function ($group, $areaName) {
                         return [
@@ -219,6 +308,9 @@ class ReportController extends Controller
             try {
                 $byLevel = RegistrationProcess::with('detalleInscripcion.nivel_categoria')
                     ->get()
+                    ->filter(function($item) {
+                        return $item->detalleInscripcion && $item->detalleInscripcion->nivel_categoria;
+                    })
                     ->groupBy(function($item) {
                         return $item->detalleInscripcion->nivel_categoria->name ?? 'Sin Nivel';
                     })
@@ -232,6 +324,28 @@ class ReportController extends Controller
                 Log::info('Agrupación por nivel exitosa:', ['count' => $byLevel->count()]);
             } catch (\Exception $e) {
                 Log::error('Error en agrupación por nivel:', ['error' => $e->getMessage()]);
+            }
+
+            // Agrupación por olimpiada
+            $byOlimpiada = collect();
+            try {
+                $olimpiadaResults = DB::select("
+                    SELECT o.nombre, COUNT(rp.id) as total 
+                    FROM {$tableName} rp
+                    JOIN olimpiadas o ON rp.olimpiada_id = o.id
+                    GROUP BY o.id, o.nombre
+                ");
+                
+                $byOlimpiada = collect($olimpiadaResults)->map(function ($item) {
+                    return [
+                        'name' => (string) $item->nombre,
+                        'total' => (int) $item->total
+                    ];
+                });
+                
+                Log::info('Agrupación por olimpiada exitosa:', ['count' => $byOlimpiada->count()]);
+            } catch (\Exception $e) {
+                Log::error('Error en agrupación por olimpiada:', ['error' => $e->getMessage()]);
             }
 
             // Agrupación por tipo
@@ -260,6 +374,7 @@ class ReportController extends Controller
             $paymentSummary = [
                 'total_recaudado' => 0,
                 'pagos_pendientes_count' => 0,
+                'pagos_verificados_count' => 0,
                 'pagos_verificados_porcentaje' => 0,
                 'total_detalles' => 0
             ];
@@ -271,16 +386,20 @@ class ReportController extends Controller
                 // Conteo de pagos pendientes (status = false)
                 $pagosPendientesCount = DetalleInscripcion::where('status', false)->count();
 
+                // Conteo de pagos verificados (status = true)
+                $pagosVerificadosCount = DetalleInscripcion::where('status', true)->count();
+
                 // Total de detalles de inscripción
                 $totalDetalles = DetalleInscripcion::count();
 
                 // Calcula porcentaje de pagos verificados
                 $pagosVerificadosPorcentaje = $totalDetalles > 0 ? 
-                    (($totalDetalles - $pagosPendientesCount) / $totalDetalles * 100) : 0;
+                    ($pagosVerificadosCount / $totalDetalles * 100) : 0;
 
                 $paymentSummary = [
                     'total_recaudado' => (float) $totalRecaudado,
                     'pagos_pendientes_count' => $pagosPendientesCount,
+                    'pagos_verificados_count' => $pagosVerificadosCount,
                     'pagos_verificados_porcentaje' => round($pagosVerificadosPorcentaje, 2),
                     'total_detalles' => $totalDetalles
                 ];
@@ -299,6 +418,7 @@ class ReportController extends Controller
                 'by_area' => $byArea,
                 'by_level' => $byLevel,
                 'by_type' => $byType,
+                'by_olimpiada' => $byOlimpiada,
                 'payment_summary' => $paymentSummary
             ];
 
@@ -323,5 +443,17 @@ class ReportController extends Controller
                 'error' => config('app.debug') ? $e->getMessage() : 'Error interno del servidor'
             ], 500);
         }
+    }
+
+    /**
+     * Exporta el reporte a diferentes formatos (futuro)
+     */
+    public function exportReport(Request $request)
+    {
+        // TODO: Implementar exportación a Excel/PDF
+        return response()->json([
+            'success' => false,
+            'message' => 'Funcionalidad de exportación en desarrollo'
+        ], 501);
     }
 }
