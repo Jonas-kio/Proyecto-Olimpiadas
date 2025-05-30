@@ -98,6 +98,8 @@ Route::middleware([IsUserAuth::class])->group(
                 Route::prefix('reports')->group(function () {
                     Route::get('/inscriptions', [ReportController::class, 'getInscriptionReport']);
                     Route::get('/summary', [ReportController::class, 'getReportSummary']);
+                    Route::get('/filter-options', [ReportController::class, 'getFilterOptions']);
+                    Route::post('/export', [ReportController::class, 'exportReport']); // Opcional
                 });
 
                 // Mas Rutas de Admin ........

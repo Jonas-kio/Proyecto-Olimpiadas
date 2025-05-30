@@ -155,7 +155,7 @@ class ReportController extends Controller
                         default => 'Pendiente'
                     };
 
-                    // Retorna el formato estructurado para el Figma
+                    // Retorna el formato estructurado 
                     return [
                         'id' => $registration->id,
                         'participante' => trim(($detalle->competidor->nombres ?? 'N/A') . ' ' . ($detalle->competidor->apellidos ?? '')),
