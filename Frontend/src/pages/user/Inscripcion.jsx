@@ -1,5 +1,5 @@
 import "../../styles/components/Inscripcion.css";
-
+import { iniciarProceso } from "../../services/inscripcionService";
 // import "./styles/Inscripcion.css";
 
 import { useNavigate } from "react-router-dom";
@@ -31,10 +31,34 @@ const Inscripcion = () => {
           </ul>
           <button
             className="btn-primario"
-            onClick={() => {
-              const id = localStorage.getItem("idOlimpiada");
-              // const tipo = localStorage.getItem("tipoInscripcion");
-              navigate(`/user/inscripcion/inscripcion-individual/${id}`);
+            onClick={async () => {
+              try {
+                const id = localStorage.getItem("idOlimpiada"); // Asegúrate de que este valor se haya seteado antes
+                const tipoInscripcion = "individual"; // O usa localStorage si lo manejas así
+
+                if (!id) {
+                  alert("ID de Olimpiada no encontrado");
+                  return;
+                }
+
+                // Llamada al backend para iniciar proceso
+                const respuesta = await iniciarProceso(id, tipoInscripcion);
+                const procesoId = respuesta.data?.proceso_id;
+                console.log("Proceso iniciado con ID:", procesoId);
+
+                // Guardar en localStorage
+                localStorage.setItem("procesoId", procesoId);
+                localStorage.setItem("idOlimpiada", id);
+                localStorage.setItem("tipoInscripcion", tipoInscripcion);
+
+                // Redirigir
+                navigate(`/user/inscripcion/inscripcion-individual/${id}`);
+              } catch (error) {
+                console.error("Error al iniciar proceso:", error);
+                alert(
+                  "Error al iniciar proceso de inscripción. Inténtelo más tarde."
+                );
+              }
             }}
           >
             Inscripción Individual
