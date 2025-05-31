@@ -39,14 +39,31 @@ class BoletaService
             throw new \Exception('El proceso de inscripción no está en estado válido para generar boleta');
         }
 
+
         $competidoresIds = $this->procesoRepository->obtenerIdsCompetidores($proceso->id);
         if (empty($competidoresIds)) {
             throw new \Exception('El proceso de inscripción no tiene competidores asociados');
         }
 
+        $areaId = $this->procesoRepository->obtenerAreaSeleccionada($proceso->id);
+        $nivelId = $this->procesoRepository->obtenerNivelSeleccionado($proceso->id);
+
+        if (!$areaId || !$nivelId) {
+            throw new \Exception('Debe seleccionar un área y nivel para generar la boleta');
+        }
+
         DB::beginTransaction();
 
         try {
+
+            $costo = Cost::where('area_id', $areaId)
+                ->where('category_id', $nivelId)
+                ->firstOrFail();
+
+            if (!isset($costo->price)) {
+                throw new \Exception('El costo no tiene un precio definido.');
+            }
+
             $montoTotal = 0;
             $fechaExpiracion = $proceso->olimpiada->fecha_fin;
             if (!$fechaExpiracion) {
@@ -123,6 +140,7 @@ class BoletaService
                 'registrationProcess.olimpiada',
                 'registrationProcess.user',
                 'registrationProcess.detalles.competidor',
+                'registrationProcess.detalles.competidor.tutores',
                 'registrationProcess.detalles.area',
                 'registrationProcess.detalles.nivel_categoria'
             ])
@@ -184,25 +202,23 @@ class BoletaService
                     ],
                     'nivel' => [
                         'id' => $detalle->nivel_categoria->id,
-                        'nombre' => $detalle->nivel_categoria->nombre
+                        'nombre' => $detalle->nivel_categoria->name
                     ],
                     'monto' => $detalle->monto
                 ];
 
-                // Obtener tutores si existen
-                if ($detalle->competidor->tutores) {
-                    $datosCompetidor['tutores'] = $detalle->competidor->tutores->map(function ($tutor) {
-                        return [
-                            'id' => $tutor->id,
-                            'nombres' => $tutor->nombres,
-                            'apellidos' => $tutor->apellidos,
-                            'correo_electronico' => $tutor->correo_electronico,
-                            'telefono' => $tutor->telefono,
-                            'es_principal' => (bool) ($tutor->pivot->es_principal ?? false),
-                            'relacion' => $tutor->pivot->relacion ?? null
-                        ];
-                    })->toArray();
-                }
+                // Obtener tutores (siempre incluir array, incluso si está vacío)
+                $datosCompetidor['tutores'] = $detalle->competidor->tutores->map(function ($tutor) {
+                    return [
+                        'id' => $tutor->id,
+                        'nombres' => $tutor->nombres,
+                        'apellidos' => $tutor->apellidos,
+                        'correo_electronico' => $tutor->correo_electronico,
+                        'telefono' => $tutor->telefono,
+                        'es_principal' => (bool) ($tutor->pivot->es_principal ?? false),
+                        'relacion' => $tutor->pivot->relacion ?? null
+                    ];
+                })->toArray();
 
                 return $datosCompetidor;
             })->filter()->values()->toArray();

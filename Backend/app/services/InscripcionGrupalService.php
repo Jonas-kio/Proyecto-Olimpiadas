@@ -218,6 +218,11 @@ class InscripcionGrupalService
                 'registration_process_id' => $proceso->id
             ]);
 
+            // CREAR LAS RELACIONES TUTOR-COMPETIDOR FALTANTES
+            // Como se prometió en el comentario de registrarMultiplesTutores (líneas 97-98),
+            // aquí es donde se deben crear las relaciones entre tutores y competidores
+            $this->crearRelacionesTutorCompetidor($proceso, $competidorId);
+
             $resultados[] = [
                 'competidor_id' => $competidorId,
                 'area_id' => $areaId,
@@ -370,5 +375,72 @@ class InscripcionGrupalService
         }
 
         return $competidoresRegistrados;
+    }
+
+    /**
+     * Crea las relaciones faltantes entre tutores y competidores para un proceso de inscripción grupal
+     *
+     * @param RegistrationProcess $proceso Proceso de inscripción
+     * @param int $competidorId ID del competidor
+     * @return void
+     */
+    private function crearRelacionesTutorCompetidor(RegistrationProcess $proceso, int $competidorId)
+    {
+        // Obtener todos los tutores registrados para este proceso
+        // Los tutores se registran a nivel de proceso, no de competidor específico en inscripciones grupales
+        $tutores = Tutor::whereHas('competidores', function ($query) use ($proceso) {
+            $query->whereHas('detallesInscripcion', function ($subQuery) use ($proceso) {
+                $subQuery->where('register_process_id', $proceso->id);
+            });
+        })->get();
+
+        // Si no hay tutores asociados al proceso, buscar todos los tutores del proceso
+        if ($tutores->isEmpty()) {
+            // Obtener todos los competidores del proceso
+            $competidoresDelProceso = $this->procesoRepository->obtenerCompetidores($proceso->id);
+            $idsCompetidoresDelProceso = $competidoresDelProceso->pluck('id')->toArray();
+
+            // Buscar tutores que tengan relación con cualquier competidor del proceso
+            $tutores = Tutor::whereHas('competidores', function ($query) use ($idsCompetidoresDelProceso) {
+                $query->whereIn('competitor.id', $idsCompetidoresDelProceso);
+            })->get();
+        }
+
+        // Si aún no hay tutores, obtener todos los tutores creados recientemente para este proceso
+        // (esto maneja el caso donde los tutores se registraron sin competidores específicos)
+        if ($tutores->isEmpty()) {
+            $tutores = Tutor::where('created_at', '>=', $proceso->created_at)->get();
+        }
+
+        foreach ($tutores as $tutor) {
+            // Verificar si ya existe una relación entre este tutor y competidor
+            $relacionExistente = CompetidorTutor::where('competidor_id', $competidorId)
+                ->where('tutor_id', $tutor->id)
+                ->first();
+
+            if (!$relacionExistente) {
+                // Crear la relación faltante
+                CompetidorTutor::create([
+                    'competidor_id' => $competidorId,
+                    'tutor_id' => $tutor->id,
+                    'es_principal' => true, // El primer tutor se marca como principal
+                    'relacion' => 'Tutor',
+                    'activo' => true
+                ]);
+            }
+        }
+    }
+
+    /**
+     * Crea las relaciones faltantes entre tutores y competidores para la carga CSV
+     * Método público para ser llamado desde ExcelProcessorService
+     *
+     * @param RegistrationProcess $proceso Proceso de inscripción
+     * @param int $competidorId ID del competidor
+     * @return void
+     */
+    public function crearRelacionesTutorCompetidorParaCSV(RegistrationProcess $proceso, int $competidorId)
+    {
+        $this->crearRelacionesTutorCompetidor($proceso, $competidorId);
     }
 }

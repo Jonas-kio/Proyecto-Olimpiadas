@@ -360,6 +360,11 @@ class ExcelProcessorService
                 'registration_process_id' => $proceso->id
             ]);
 
+            // CREAR LAS RELACIONES TUTOR-COMPETIDOR AUTOMÁTICAMENTE
+            // Usar el servicio de inscripción grupal para crear las relaciones automáticas
+            $inscripcionGrupalService = app(\App\Services\InscripcionGrupalService::class);
+            $inscripcionGrupalService->crearRelacionesTutorCompetidorParaCSV($proceso, $competidor->id);
+
             $competidoresCreados[] = [
                 'id' => $competidor->id,
                 'nombres' => $competidor->nombres,
