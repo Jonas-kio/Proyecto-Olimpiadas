@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 
 import "../../styles/components/InscripcionIndividual.css";
+import { obtenerResumenInscripcion } from "../../services/inscripcionService";
 
 const FormResumen = ({
   estudiante,
@@ -8,9 +9,27 @@ const FormResumen = ({
   areasSeleccionadas,
   categoriasElegidas,
 }) => {
-  
-  const precioPorArea = 50;
-  const total = areasSeleccionadas.length * precioPorArea;
+  // const precioPorArea = 50;
+  // const total = areasSeleccionadas.length * precioPorArea;
+  const [costosResumen, setCostosResumen] = useState(null);
+  const procesoId = localStorage.getItem("procesoId");
+
+  useEffect(() => {
+    const fetchResumen = async () => {
+      try {
+        if (!procesoId) {
+          console.warn("No se encontró el ID del proceso");
+          return;
+        }
+        const response = await obtenerResumenInscripcion(procesoId);
+        console.log("Resumen de inscripción obtenido:", response.data);
+        setCostosResumen(response.data?.resumen?.costo || null);
+      } catch (error) {
+        console.error("Error al obtener el resumen:", error);
+      }
+    };
+    fetchResumen();
+  }, [procesoId]);
 
   return (
     <div className="formulario confirmacion">
@@ -113,18 +132,26 @@ const FormResumen = ({
       {/* Sección: Costos */}
       <div className="seccion">
         <h3>Costo de Inscripción</h3>
-        {areasSeleccionadas.map((area, i) => (
-          <div className="fila-resumen" key={i}>
-            <span className="etiqueta">
-              {typeof area === "object" ? area.nombre : area}:
-            </span>
-            <span className="valor">Bs. {precioPorArea}</span>
-          </div>
-        ))}
-        <div className="fila-resumen total">
-          <span className="etiqueta">Total:</span>
-          <span className="valor">Bs. {total}</span>
-        </div>
+        {costosResumen ? (
+          <>
+            <div className="fila-resumen">
+              <span className="etiqueta">Cantidad de Competidores:</span>
+              <span className="valor">
+                {costosResumen.cantidad_competidores}
+              </span>
+            </div>
+            <div className="fila-resumen">
+              <span className="etiqueta">Monto Unitario:</span>
+              <span className="valor">Bs. {costosResumen.monto_unitario}</span>
+            </div>
+            <div className="fila-resumen total">
+              <span className="etiqueta">Total:</span>
+              <span className="valor">Bs. {costosResumen.monto_total}</span>
+            </div>
+          </>
+        ) : (
+          <p>Cargando resumen de costos...</p>
+        )}
       </div>
 
       {/* Aceptar términos */}

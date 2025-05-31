@@ -92,19 +92,30 @@ function FormularioOlimpiada() {
           const data = res.data?.olimpiada;
           if (!data) return;
 
-          setFormData({
-            name: data.nombre || "",
-            description: data.descripcion || "",
-            startDate: data.fecha_inicio?.split("T")[0] || "",
-            endDate: data.fecha_fin?.split("T")[0] || "",
-            selectedAreas: Array.isArray(data.areas)
-              ? data.areas.map((a) => a.id)
-              : [],
-            minParticipants: data.cupo_minimo || "",
-            modality: data.modalidad || "",
-            pdfFile: null, // PDF no obligatorio al editar
-            coverImage: null,
-            maxAreas: data.maximo_areas || "", // NUEVO CAMPO
+          const areaIds = Array.isArray(data.areas)
+            ? data.areas.map((a) => a.id)
+            : [];
+
+          setFormData((prev) => {
+            const updated = {
+              ...prev,
+              name: data.nombre || "",
+              description: data.descripcion || "",
+              startDate: data.fecha_inicio?.split("T")[0] || "",
+              endDate: data.fecha_fin?.split("T")[0] || "",
+              selectedAreas: areaIds,
+              minParticipants: data.cupo_minimo || "",
+              modality: data.modalidad || "",
+              pdfFile: null,
+              coverImage: null,
+              maxAreas: data.maximo_areas || "",
+            };
+            data.areas?.forEach((a) => {
+              updated[`nivel_unico_${a.id}`] = a.pivot?.nivel_unico || false;
+              updated[`area_exclusiva_${a.id}`] =
+                a.pivot?.area_exclusiva || false;
+            });
+            return updated;
           });
 
           if (data.ruta_imagen_portada) {
@@ -123,12 +134,19 @@ function FormularioOlimpiada() {
   }, [id]);
 
   const handleAreaToggle = (areaId) => {
-    setFormData((prev) => ({
-      ...prev,
-      selectedAreas: prev.selectedAreas.includes(areaId)
-        ? prev.selectedAreas.filter((a) => a !== areaId)
-        : [...prev.selectedAreas, areaId],
-    }));
+    setFormData((prev) => {
+      const updated = { ...prev };
+      if (prev.selectedAreas.includes(areaId)) {
+        updated.selectedAreas = prev.selectedAreas.filter((a) => a !== areaId);
+        delete updated[`nivel_unico_${areaId}`];
+        delete updated[`area_exclusiva_${areaId}`];
+      } else {
+        updated.selectedAreas = [...prev.selectedAreas, areaId];
+        updated[`nivel_unico_${areaId}`] = false;
+        updated[`area_exclusiva_${areaId}`] = false;
+      }
+      return updated;
+    });
   };
 
   const handleImageChange = (e) => {
@@ -228,6 +246,31 @@ function FormularioOlimpiada() {
     if (formData.coverImage) data.append("imagen_portada", formData.coverImage);
     data.append("areas", JSON.stringify(formData.selectedAreas));
     data.append("maximo_areas", formData.maxAreas);
+
+    // 🚀 NUEVO: Crear el array de condiciones [{area_id, nivel_unico, area_exclusiva}]
+    const condiciones = formData.selectedAreas.map((areaId) => ({
+      area_id: areaId,
+      nivel_unico: !!formData[`nivel_unico_${areaId}`], // Aseguramos boolean
+      area_exclusiva: !!formData[`area_exclusiva_${areaId}`],
+    }));
+
+    data.append("condiciones", JSON.stringify(condiciones));
+
+    // 🚨 Elimina las líneas anteriores de envío de nivel_unico[7], etc.
+    /*
+    formData.selectedAreas.forEach((areaId) => {
+      const nivelUnico = String(!!formData[`nivel_unico_${areaId}`]);
+      const areaExclusiva = String(!!formData[`area_exclusiva_${areaId}`]);
+      data.append(`nivel_unico[${areaId}]`, nivelUnico);
+      data.append(`area_exclusiva[${areaId}]`, areaExclusiva);
+    });
+    */
+
+    // 🔍 LOG general para revisar toda la información
+    console.log("📢 Data completa antes del envío (FormData):");
+    for (let pair of data.entries()) {
+      console.log(`${pair[0]}:`, pair[1]);
+    }
 
     try {
       if (id) {
@@ -454,6 +497,55 @@ function FormularioOlimpiada() {
                   ))}
                 </div>
               )}
+            </div>
+
+            <div className="tabla-areas-wrapper">
+              <h2>Áreas seleccionadas</h2>
+              <table className="tabla-areas">
+                <thead>
+                  <tr>
+                    <th>Área</th>
+                    <th>Nivel Único</th>
+                    <th>Área Exclusiva</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {formData.selectedAreas.map((areaId) => {
+                    const area = areasDisponibles.find((a) => a.id === areaId);
+                    const nivelKey = `nivel_unico_${areaId}`;
+                    const exclusivaKey = `area_exclusiva_${areaId}`;
+                    return (
+                      <tr key={areaId}>
+                        <td>{area?.name || "Área desconocida"}</td>
+                        <td>
+                          <input
+                            type="checkbox"
+                            checked={!!formData[nivelKey]}
+                            onChange={() =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                [nivelKey]: !prev[nivelKey],
+                              }))
+                            }
+                          />
+                        </td>
+                        <td>
+                          <input
+                            type="checkbox"
+                            checked={!!formData[exclusivaKey]}
+                            onChange={() =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                [exclusivaKey]: !prev[exclusivaKey],
+                              }))
+                            }
+                          />
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
 
             <div className="input-group">

@@ -133,7 +133,7 @@ const FormEstudiantes = ({
           {!fechaNacimientoValida(estudiante.fecha_nacimiento) &&
             estudiante.fecha_nacimiento && (
               <span className="mensaje-error">
-                La fecha no puede ser futura
+                La fecha debe estar entre 2005 y 2015
               </span>
             )}
         </div>
