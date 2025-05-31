@@ -7,13 +7,8 @@ import "../../../styles/reportes/ReportPanel.css";
 const ReportPanel = () => {
   const [participants] = useState([
     {
-      Participante: "Ismael",
-      Área: "Informática",
-      Nivel: "Londra",
-      Estado: "Inscrito",
-      Fecha: "2024-01-15",
-    },
-    {
+      OlimpiadaId: 1,
+      Olimpiada: "Olimpiada Nacional de Matemáticas 2024",
       Participante: "Roxana",
       Área: "Biologia",
       Nivel: "Básico",
@@ -21,12 +16,41 @@ const ReportPanel = () => {
       Fecha: "2024-01-20",
     },
     {
+      OlimpiadaId: 1,
+      Olimpiada: "Olimpiada Nacional de Matemáticas 2024",
       Participante: "Juan Pérez",
       Área: "Matemáticas",
       Nivel: "3S",
       Estado: "Pendiente",
       Fecha: "2024-01-15"
     },
+    {
+      OlimpiadaId: 2,
+      Olimpiada: "Olimpiada Nacional de Robótica 2025",
+      Participante: "Ana García",
+      Área: "Robótica",
+      Nivel: "Builders P",
+      Estado: "Inscrito",
+      Fecha: "2025-02-10"
+    },
+    {
+      OlimpiadaId: 2,
+      Olimpiada: "Olimpiada Nacional de Robótica 2025",
+      Participante: "Carlos Mendoza",
+      Área: "Robótica",
+      Nivel: "Builders S",
+      Estado: "Pendiente",
+      Fecha: "2025-02-15"
+    },
+    {
+      OlimpiadaId: 3,
+      Olimpiada: "holaaaaa",
+      Participante: "Isma",
+      Área: "Informática",
+      Nivel: "Londra",
+      Estado: "Inscrito",
+      Fecha: "2025-02-15"
+    }
   ]);
 
   const [filteredData, setFilteredData] = useState(participants);
