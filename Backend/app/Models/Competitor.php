@@ -24,4 +24,9 @@ class Competitor extends Model
         return $this->belongsToMany(Tutor::class, 'competidor_tutor', 'competidor_id', 'tutor_id')
             ->withPivot('es_principal', 'relacion', 'activo');
     }
+
+    public function detallesInscripcion()
+    {
+        return $this->hasMany(DetalleInscripcion::class, 'competidor_id');
+    }
 }

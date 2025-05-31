@@ -8,6 +8,7 @@ use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\API\boleta\BoletaController;
 use App\Http\Controllers\API\CategoryLevelController;
 use App\Http\Controllers\API\Inscripcion\InscripcionController;
+use App\Http\Controllers\API\Inscripcion\InscripcionGrupalController;
 use App\Http\Controllers\API\Olimpiada\OlimpiadaController;
 use App\Http\Controllers\CompetitorController;
 use App\Http\Controllers\TutorController;
@@ -170,6 +171,47 @@ Route::middleware([IsUserAuth::class])->group(
             // Obtener detalles de boleta (no requiere verificar proceso)
             Route::get('procesos/{procesoId}/boletas/{boletaId}', [BoletaController::class, 'obtenerDatosBoleta'])
                 ->name('boleta.ver');
+
+            // Rutas para inscripción grupal
+            Route::prefix('grupal')->name('grupal.')->group(function () {
+                // Descargar plantilla Excel (no requiere proceso)
+                Route::get('/plantilla-excel', [InscripcionGrupalController::class, 'descargarPlantilla'])
+                    ->name('plantilla.descargar');
+
+                Route::middleware([VerificarProcesoInscripcion::class])->group(function () {
+                    // Registrar múltiples tutores
+                    Route::post('/proceso/{proceso}/tutores', [InscripcionGrupalController::class, 'registrarTutores'])
+                        ->name('tutores.registrar');
+
+                    // Cargar archivo Excel
+                    Route::post('/proceso/{proceso}/excel', [InscripcionGrupalController::class, 'cargarArchivoExcel'])
+                        ->name('excel.cargar');
+
+                    // Registrar competidores manualmente
+                    Route::post('/proceso/{proceso}/competidores', [InscripcionGrupalController::class, 'registrarCompetidores'])
+                        ->name('competidores.registrar');
+
+                    // Asignar áreas y niveles
+                    Route::post('/proceso/{proceso}/areas-niveles', [InscripcionGrupalController::class, 'asignarAreaNivel'])
+                        ->name('areas-niveles.asignar');
+
+                    // Crear grupo de competidores
+                    Route::post('/proceso/{proceso}/grupo', [InscripcionGrupalController::class, 'crearGrupo'])
+                        ->name('grupo.crear');
+
+                    // Obtener grupos de competidores
+                    Route::get('/proceso/{proceso}/grupos', [InscripcionGrupalController::class, 'obtenerGrupos'])
+                        ->name('grupos.listar');
+
+                    // Obtener resumen de inscripción grupal
+                    Route::get('/proceso/{proceso}/resumen', [InscripcionGrupalController::class, 'obtenerResumenGrupal'])
+                        ->name('resumen');
+
+                    // Generar boleta
+                    Route::post('/proceso/{proceso}/boleta', [InscripcionGrupalController::class, 'generarBoleta'])
+                        ->name('boleta.generar');
+                });
+            });
         });
 
         // FLUJO DE VALIDACIÓN DE COMPROBANTE CON OCR

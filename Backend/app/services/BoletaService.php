@@ -6,6 +6,7 @@ use App\Enums\BoletaEstado;
 use App\Enums\EstadoInscripcion;
 use App\Events\BoletaGenerada;
 use App\Models\Boleta;
+use App\Models\CompetidorAreaNivel;
 use App\Models\CompetidorTutor;
 use App\Models\Cost;
 use App\Models\DetalleInscripcion;
@@ -139,6 +140,7 @@ class BoletaService
                 'registrationProcess.olimpiada',
                 'registrationProcess.user',
                 'registrationProcess.detalles.competidor',
+                'registrationProcess.detalles.competidor.tutores',
                 'registrationProcess.detalles.area',
                 'registrationProcess.detalles.nivel_categoria'
             ])
@@ -200,25 +202,23 @@ class BoletaService
                     ],
                     'nivel' => [
                         'id' => $detalle->nivel_categoria->id,
-                        'nombre' => $detalle->nivel_categoria->nombre
+                        'nombre' => $detalle->nivel_categoria->name
                     ],
                     'monto' => $detalle->monto
                 ];
 
-                // Obtener tutores si existen
-                if ($detalle->competidor->tutores) {
-                    $datosCompetidor['tutores'] = $detalle->competidor->tutores->map(function ($tutor) {
-                        return [
-                            'id' => $tutor->id,
-                            'nombres' => $tutor->nombres,
-                            'apellidos' => $tutor->apellidos,
-                            'correo_electronico' => $tutor->correo_electronico,
-                            'telefono' => $tutor->telefono,
-                            'es_principal' => (bool) ($tutor->pivot->es_principal ?? false),
-                            'relacion' => $tutor->pivot->relacion ?? null
-                        ];
-                    })->toArray();
-                }
+                // Obtener tutores (siempre incluir array, incluso si está vacío)
+                $datosCompetidor['tutores'] = $detalle->competidor->tutores->map(function ($tutor) {
+                    return [
+                        'id' => $tutor->id,
+                        'nombres' => $tutor->nombres,
+                        'apellidos' => $tutor->apellidos,
+                        'correo_electronico' => $tutor->correo_electronico,
+                        'telefono' => $tutor->telefono,
+                        'es_principal' => (bool) ($tutor->pivot->es_principal ?? false),
+                        'relacion' => $tutor->pivot->relacion ?? null
+                    ];
+                })->toArray();
 
                 return $datosCompetidor;
             })->filter()->values()->toArray();

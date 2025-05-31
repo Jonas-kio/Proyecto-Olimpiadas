@@ -62,7 +62,7 @@ const Tickets = () => {
 
   return (
     <div className="space-y-8">
-      <FileUpload onFileUpload={handleFileUpload} uploadedFile={uploadedFile} />
+      {/* <FileUpload onFileUpload={handleFileUpload} uploadedFile={uploadedFile} /> */}
       <PaymentReceiptsList paymentReceipts={paymentReceipts} />
     </div>
   );
