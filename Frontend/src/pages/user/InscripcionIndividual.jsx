@@ -174,7 +174,13 @@ const InscripcionIndividual = () => {
   const correoValido = (correo) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo);
   const telefonoValido = (tel) => /^\d+$/.test(tel);
   const documentoValido = (doc) => /^\d+$/.test(doc);
-  const fechaNacimientoValida = (fecha) => new Date(fecha) <= new Date();
+  const fechaNacimientoValida = (fecha) => {
+    const fechaIngresada = new Date(fecha);
+    const anioIngresado = fechaIngresada.getFullYear();
+
+    return anioIngresado >= 2005 && anioIngresado <= 2015;
+  };
+
   const categoriasSeleccionadasValida = () =>
     categoriasSeleccionadas.length > 0;
 
@@ -261,13 +267,13 @@ const InscripcionIndividual = () => {
       try {
         const areaIds = areasSeleccionadas.map((a) => a.id);
         const payloadAreas = { area_id: areaIds };
-        console.log("📤 Payload áreas:", payloadAreas); // 📤 Log detallado
+        console.log("📤 Payload áreas:", payloadAreas); //  Log detallado
         await guardarSeleccionArea(procesoId, payloadAreas);
         console.log("✅ Áreas guardadas:", areaIds);
 
         const nivelIds = categoriasSeleccionadas.map((c) => c.id);
         const payloadNiveles = { nivel_id: nivelIds };
-        console.log("📤 Payload categorías/niveles:", payloadNiveles); // 📤 Log detallado
+        console.log("📤 Payload categorías/niveles:", payloadNiveles); // Log detallado
         await guardarSeleccionNivel(procesoId, payloadNiveles);
         console.log("✅ Categorías/niveles guardadas:", nivelIds);
 

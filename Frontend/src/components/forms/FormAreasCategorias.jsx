@@ -11,35 +11,13 @@ const FormAreasCategorias = ({
   categoriasDisponibles,
   setCategoriasFiltradas,
   obtenerCategoriasPorArea,
-  maximoAreas, // 🔥 Lo recibimos aquí
+  maximoAreas,
 }) => {
-  const [mensajeError, setMensajeError] = useState("");
-  // const [categoriasSeleccionadas, setCategoriasSeleccionadas] = useState([]);
+  const [mensajeErrorAreas, setMensajeErrorAreas] = useState("");
+  const [mensajeErrorNiveles, setMensajeErrorNiveles] = useState("");
+
   console.log("Áreas disponibles recibidas:", areasDisponibles);
 
-  // const handleAreaChange = (e) => {
-  //   const valor = parseInt(e.target.value);
-  //   if (valor) {
-  //     setAreasSeleccionadas([valor]);
-  //     setCategoriaSeleccionada("");
-  //   }
-  //   e.target.value = "";
-  // };
-  // const handleAreaChange = (e) => {
-  //   const idSeleccionado = parseInt(e.target.value);
-  //   const areaSeleccionada = areasDisponibles.find(
-  //     (a) => a.id === idSeleccionado
-  //   );
-  //   if (
-  //     areaSeleccionada &&
-  //     !areasSeleccionadas.some((a) => a.id === idSeleccionado)
-  //   ) {
-  //     setAreasSeleccionadas([...areasSeleccionadas, areaSeleccionada]); //para multiples areas
-  //     // setAreasSeleccionadas([areaSeleccionada]);
-  //     setCategoriaSeleccionada(""); // Resetear categoría al seleccionar nueva área
-  //   }
-  //   e.target.value = "";
-  // };
   const handleAreaChange = async (e) => {
     const idSeleccionado = parseInt(e.target.value);
     const areaSeleccionada = areasDisponibles.find(
@@ -57,25 +35,44 @@ const FormAreasCategorias = ({
       return;
     }
 
-    // Validación del máximo de áreas permitidas
-    if (
-      areaSeleccionada.area_exclusiva &&
-      areasSeleccionadas.length > maximoAreas
-    ) {
-      setMensajeError(
-        `El área ${areaSeleccionada.nombre} es exclusiva. No puedes seleccionar más áreas.`
+    // 🔍 Primero validamos si ya hay un área exclusiva seleccionada
+    const yaTieneExclusiva = areasSeleccionadas.some((a) => a.area_exclusiva);
+    if (yaTieneExclusiva) {
+      setMensajeErrorAreas(
+        "Ya has seleccionado un área exclusiva. No puedes elegir más áreas."
       );
       e.target.value = "";
-      setTimeout(() => setMensajeError(""), 3000);
+      setTimeout(() => setMensajeErrorAreas(""), 3000);
       return;
     }
 
-    // Continúa normalmente si pasa todas las validaciones
+    //  Validación general del máximo permitido
+    if (areasSeleccionadas.length >= maximoAreas) {
+      setMensajeErrorAreas(
+        `Solo puedes seleccionar un máximo de ${maximoAreas} áreas.`
+      );
+      e.target.value = "";
+      setTimeout(() => setMensajeErrorAreas(""), 3000);
+      return;
+    }
+
+    // Validación específica si el área seleccionada es exclusiva
+    if (areaSeleccionada.area_exclusiva && areasSeleccionadas.length > 0) {
+      setMensajeErrorAreas(
+        `El área "${areaSeleccionada.nombre}" es exclusiva y no puede combinarse con otras áreas.`
+      );
+      e.target.value = "";
+      setTimeout(() => setMensajeErrorAreas(""), 3000);
+      return;
+    }
+
+    //Si pasa todas las validaciones, agregar el área
     const nuevasAreas = [...areasSeleccionadas, areaSeleccionada];
     setAreasSeleccionadas(nuevasAreas);
     setCategoriasSeleccionadas([]);
     setCategoriasFiltradas([]);
 
+    // Obtener categorías válidas
     const cursoSeleccionado = localStorage.getItem("cursoSeleccionado");
     const cursosOrdenados = [
       "3ro Primaria",
@@ -123,7 +120,6 @@ const FormAreasCategorias = ({
             indexSeleccionado <= indexMax
           );
         });
-
         todasLasCategorias = [...todasLasCategorias, ...filtradas];
       } catch (error) {
         console.error(
@@ -156,7 +152,6 @@ const FormAreasCategorias = ({
             name="area"
             onChange={handleAreaChange}
             defaultValue=""
-            // disabled={areasSeleccionadas.length >= 2}
           >
             <option value="" disabled>
               Selecciona un área
@@ -212,8 +207,10 @@ const FormAreasCategorias = ({
             ))}
           </div>
           {/* Mensaje de error debajo de las etiquetas */}
-          {mensajeError && (
-            <p style={{ color: "red", marginTop: "8px" }}>{mensajeError}</p>
+          {mensajeErrorAreas && (
+            <p style={{ color: "red", marginTop: "8px" }}>
+              {mensajeErrorAreas}
+            </p>
           )}
         </div>
 
@@ -233,6 +230,26 @@ const FormAreasCategorias = ({
               );
               if (!nivelObj) return;
 
+              const area = areasDisponibles.find(
+                (a) => a.id === nivelObj.area_id
+              );
+              const nombreArea = area ? area.nombre : "Área desconocida";
+
+              if (area?.nivel_unico) {
+                const yaExiste = categoriasSeleccionadas.some(
+                  (cat) => cat.area_id === nivelObj.area_id
+                );
+                if (yaExiste) {
+                  setMensajeErrorNiveles(
+                    `El área "${nombreArea}" solo permite un nivel.`
+                  );
+                  setTimeout(() => setMensajeErrorNiveles(""), 3000);
+                  e.target.value = "";
+                  return;
+                }
+              }
+
+              // Si pasa las validaciones, agrega la categoría
               if (!categoriasSeleccionadas.some((cat) => cat.id === nivelId)) {
                 setCategoriasSeleccionadas([
                   ...categoriasSeleccionadas,
@@ -290,6 +307,11 @@ const FormAreasCategorias = ({
                 );
               })}
             </div>
+          )}
+          {mensajeErrorNiveles && (
+            <p style={{ color: "red", marginTop: "8px" }}>
+              {mensajeErrorNiveles}
+            </p>
           )}
         </div>
       </div>
