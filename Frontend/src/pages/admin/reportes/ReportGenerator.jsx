@@ -3,34 +3,38 @@ import { ChevronDownIcon } from "lucide-react";
 import ExportDropdown from "./ExportDropdown";
 import { getAllAreas } from "../../../services/areasService";
 import { getLevels } from "../../../services/nivelesService"; 
+import { getOlimpiadas } from "../../../services/olimpiadaService";
 import "../../../styles/reportes/ReportGenerator.css";
 
 const ReportGenerator = ({ data, onFilter }) => {
+  const [olimpiadas, setOlimpiadas] = useState([]);
   const [areas, setAreas] = useState([]);
   const [niveles, setNiveles] = useState([]);
-  const [nivelesFiltrados, setNivelesFiltrados] = useState([]);
 
+  const [selectedOlimpiada, setSelectedOlimpiada] = useState("Todas");
   const [selectedArea, setSelectedArea] = useState("Todos");
   const [selectedNivel, setSelectedNivel] = useState("Todos los niveles");
   const [selectedEstado, setSelectedEstado] = useState("Todos los estados");
+  const [nivelesFiltrados, setNivelesFiltrados] = useState([]);
 
   const [filteredData, setFilteredData] = useState([]);
 
-  // Cargar áreas y niveles desde la base de datos
+  // Cargar Olimpiadas, Áreas y Niveles desde backend
   useEffect(() => {
     const cargarDatos = async () => {
       try {
-        const [areasFromDB, nivelesFromDB] = await Promise.all([
+        const [resOlimpiadas, areasFromDB, nivelesFromDB] = await Promise.all([
+          getOlimpiadas(),
           getAllAreas(),
           getLevels()
         ]);
+        setOlimpiadas(resOlimpiadas.data?.data?.olimpiadas?.data || []);
         setAreas(areasFromDB);
         setNiveles(nivelesFromDB);
       } catch (error) {
-        console.error("Error al cargar áreas o niveles:", error);
+        console.error("Error al cargar datos:", error);
       }
     };
-
     cargarDatos();
   }, []);
 
@@ -39,16 +43,18 @@ const ReportGenerator = ({ data, onFilter }) => {
     if (selectedArea === "Todos") {
       setNivelesFiltrados([]);
     } else {
-      const filtrados = niveles.filter(
-        (nivel) => nivel.area?.name === selectedArea
-      );
+      const filtrados = niveles.filter((nivel) => nivel.area?.name === selectedArea);
       setNivelesFiltrados(filtrados);
     }
   }, [selectedArea, niveles]);
 
-  // Aplicar filtros a los datos
+  // Aplicar todos los filtros a los datos recibidos del padre
   useEffect(() => {
     let resultados = [...data];
+
+    if (selectedOlimpiada !== "Todas") {
+      resultados = resultados.filter(p => p.Olimpiada === selectedOlimpiada);
+    }
 
     if (selectedArea !== "Todos") {
       resultados = resultados.filter(p => p.Área === selectedArea);
@@ -64,16 +70,36 @@ const ReportGenerator = ({ data, onFilter }) => {
 
     setFilteredData(resultados);
     if (onFilter) {
-      onFilter(resultados);
+      onFilter(resultados);  // enviar al padre
     }
-  }, [selectedArea, selectedNivel, selectedEstado, data]);
+  }, [selectedOlimpiada, selectedArea, selectedNivel, selectedEstado, data]);
 
   return (
     <div>
       <h2 className="report-title">Generar Reporte</h2>
 
       <div className="report-grid">
-        {/* Select Área */}
+        {/* Olimpiada */}
+        <div>
+          <label className="report-label">Olimpiada</label>
+          <div className="select-wrapper">
+            <select
+              className="report-select"
+              value={selectedOlimpiada}
+              onChange={(e) => setSelectedOlimpiada(e.target.value)}
+            >
+              <option value="Todas">Todas las olimpiadas</option>
+              {olimpiadas.map((ol) => (
+                <option key={ol.id} value={ol.nombre}>
+                  {ol.nombre}
+                </option>
+              ))}
+            </select>
+            <ChevronDownIcon size={16} className="select-icon" />
+          </div>
+        </div>
+
+        {/* Área */}
         <div>
           <label className="report-label">Área</label>
           <div className="select-wrapper">
@@ -82,7 +108,7 @@ const ReportGenerator = ({ data, onFilter }) => {
               value={selectedArea}
               onChange={(e) => {
                 setSelectedArea(e.target.value);
-                setSelectedNivel("Todos los niveles"); // reiniciar nivel al cambiar área
+                setSelectedNivel("Todos los niveles");
               }}
             >
               <option value="Todos">Todas las áreas</option>
@@ -96,7 +122,7 @@ const ReportGenerator = ({ data, onFilter }) => {
           </div>
         </div>
 
-        {/* Select Nivel */}
+        {/* Nivel */}
         <div>
           <label className="report-label">Nivel</label>
           <div className="select-wrapper">
@@ -108,7 +134,7 @@ const ReportGenerator = ({ data, onFilter }) => {
               <option>Todos los niveles</option>
               {nivelesFiltrados.map((nivel) => (
                 <option key={nivel.id} value={nivel.name}>
-                  {nivel.name} {/*({nivel.gradeMin}° a {nivel.gradeMax}°) */}
+                  {nivel.name}
                 </option>
               ))}
             </select>
@@ -116,7 +142,7 @@ const ReportGenerator = ({ data, onFilter }) => {
           </div>
         </div>
 
-        {/* Select Estado */}
+        {/* Estado */}
         <div>
           <label className="report-label">Estado de Pago</label>
           <div className="select-wrapper">
