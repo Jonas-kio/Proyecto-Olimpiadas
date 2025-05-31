@@ -64,7 +64,7 @@ class InscripcionGrupalController extends Controller
     }
 
     /**
-     * Procesa un archivo Excel para carga masiva de competidores
+     * Procesa un archivo Excel para carga masiva de competidores el formato es CSV
      *
      * @param CargaMasivaExcelRequest $request
      * @param RegistrationProcess $proceso
