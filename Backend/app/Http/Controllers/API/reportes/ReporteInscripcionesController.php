@@ -24,7 +24,7 @@ class ReporteInscripcionesController extends Controller
                 'nivel_categoria'
             ])
             ->whereHas('proceso_inscripcion', function ($q) {
-                $q->where('active', true);
+                $q->where('active', false);
             });
 
         if ($request->has('olimpiada_id') && $request->olimpiada_id !== 'Todos') {
@@ -75,7 +75,7 @@ class ReporteInscripcionesController extends Controller
         $query = DetalleInscripcion::query()
             ->with(['proceso_inscripcion', 'area'])
             ->whereHas('proceso_inscripcion', function($q) {
-                $q->where('active', true);
+                $q->where('active', false);
             });
 
         // Filtros dinámicos
