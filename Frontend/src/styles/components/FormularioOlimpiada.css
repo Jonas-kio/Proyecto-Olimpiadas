@@ -345,3 +345,25 @@
   font-weight: bold;
   margin-left: 2px;
 }
+
+.tabla-areas-wrapper {
+  color: #0b2447;
+  margin-top: 2rem;
+}
+
+.tabla-areas {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tabla-areas th,
+.tabla-areas td {
+  border: 1px solid #ccc;
+  padding: 0.75rem;
+  text-align: left;
+}
+
+.tabla-areas th {
+  background-color: #f5f5f5;
+  color: #333;
+}

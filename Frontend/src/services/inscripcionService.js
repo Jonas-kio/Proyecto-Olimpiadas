@@ -24,63 +24,43 @@ export const inscripcionTutor = async (procesoId, formularioTutor) => {
     formularioTutor
   );
 };
-export const obtenerAreasPorOlimpiada = async (id) => {
-  //ya ta
-  const response = await api.get(`/libre/olimpiadas/${id}`);
+export const obtenerAreasPorOlimpiada = async (olimpiadaId) => {
+  try {
+    const response = await api.get(`/user/olimpiadas/${olimpiadaId}/areas`);
+    const areasObtenidas = response.data;
+    console.log("Areas obtenidas correctamente: ", areasObtenidas);
 
-  console.log("Respuesta cruda del backend:", response.data);
-  const areas = response.data?.data?.olimpiada?.areas || [];
-
-  console.log("Áreas extraídas correctamente:", areas);
-
-  return areas;
+    return areasObtenidas;
+  } catch (error) {
+    console.error(
+      `Error al obtener las áreas de la olimpiada ${olimpiadaId}:`,
+      error
+    );
+    throw error;
+  }
 };
 
 export const obtenerCategoriasPorArea = async (areaId) => {
-  //ya ta
   return await api.get(`/user/categoryLevel/area/${areaId}`);
 };
 
 export const guardarSeleccionArea = async (procesoId, payload) => {
-  //ya ta
   return await api.post(`/inscripcion/proceso/${procesoId}/area`, payload);
 };
 
 export const guardarSeleccionNivel = async (procesoId, payload) => {
-  //ya ta
   return await api.post(`/inscripcion/proceso/${procesoId}/nivel`, payload);
 };
 
+// generar boleta
+export const generarBoleta = async (procesoId) => {
+  return await api.post(`/inscripcion/proceso/${procesoId}/boleta`);
+};
+
 export const obtenerResumenInscripcion = async (procesoId) => {
-  //ya ta
   return await api.get(`/inscripcion/proceso/${procesoId}/resumen`);
 };
 
-// export const inscripcionArea = async () => {
-//   return await api.get("/inscripcion/area");
-// };
-
-export const inscripcionCategoryLevel = async () => {
-  //ya ta
-  return await api.get("/categoryLevelUser");
-};
-
-// Función para obtener todos los costos
-export const getPublicCosts = async () => {
-  try {
-    const response = await api.get("/public/costs"); // Llamada a tu nueva ruta
-    if (response.data.success) {
-      return response.data.data;
-    } else {
-      throw new Error(
-        response.data.message || "Error al obtener los costos públicos"
-      );
-    }
-  } catch (error) {
-    console.error("Error al obtener los costos públicos:", error);
-    throw error;
-  }
-};
 
 export const verificarEstadoProceso = async (procesoId) => {
   try {
