@@ -17,6 +17,7 @@ use App\Http\Controllers\API\OCR\OcrController;
 use App\Http\Middleware\IsAdmin;
 use App\Http\Middleware\IsUserAuth;
 use App\Http\Middleware\VerificarProcesoInscripcion;
+use App\Http\Controllers\API\reportes\ReporteInscripcionesController;
 
 //TODO: Rutas Publicas
 
@@ -93,6 +94,10 @@ Route::middleware([IsUserAuth::class])->group(
                     Route::post('actualizar-estado', [BoletaController::class, 'actualizarEstadoBoletas']);
                 });
 
+
+               // Rutas para reportes
+                Route::get('/reporte-inscripciones', [ReporteInscripcionesController::class, 'obtenerReporte']);
+                Route::get('/reporte-inscripciones/resumen', [ReporteInscripcionesController::class, 'resumen']);
 
                 // Mas Rutas de Admin ........
             }
