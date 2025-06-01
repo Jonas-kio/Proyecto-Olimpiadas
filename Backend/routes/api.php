@@ -16,7 +16,7 @@ use App\Http\Controllers\API\OCR\OcrController;
 use App\Http\Middleware\IsAdmin;
 use App\Http\Middleware\IsUserAuth;
 use App\Http\Middleware\VerificarProcesoInscripcion;
-use App\Http\Controllers\API\ReportController;
+use App\Http\Controllers\API\reportes\ReporteInscripcionesController;
 
 //TODO: Rutas Publicas
 
@@ -95,12 +95,8 @@ Route::middleware([IsUserAuth::class])->group(
 
 
                // Rutas para reportes
-                Route::prefix('reports')->group(function () {
-                    Route::get('/inscriptions', [ReportController::class, 'getInscriptionReport']);
-                    Route::get('/summary', [ReportController::class, 'getReportSummary']);
-                    Route::get('/filter-options', [ReportController::class, 'getFilterOptions']);
-                    Route::post('/export', [ReportController::class, 'exportReport']); // Opcional
-                });
+                Route::get('/reporte-inscripciones', [ReporteInscripcionesController::class, 'obtenerReporte']);
+                Route::get('/reporte-inscripciones/resumen', [ReporteInscripcionesController::class, 'resumen']);
 
                 // Mas Rutas de Admin ........
             }
