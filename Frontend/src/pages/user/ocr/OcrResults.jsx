@@ -1,13 +1,11 @@
 import React from 'react'
-import { EditIcon } from 'lucide-react'
+import { FaUserCircle } from "react-icons/fa";
 import StudentList from './StudentList';
 import "../../../styles/ocr/OcrResults.css";
 
 const OcrResults = ({
   detectedName,
-  setDetectedName,
   students,
-  onConfirm,
 }) => {
   return (
     <div className="ocr-container">
@@ -22,16 +20,15 @@ const OcrResults = ({
               type="text"
               id="detected-name"
               value={detectedName}
-              onChange={(e) => setDetectedName(e.target.value)}
+              readOnly
               className="ocr-input"
-              placeholder="Nombre del pagador"
             />
             <div className="ocr-icon-container">
-              <EditIcon className="ocr-icon" />
+              <FaUserCircle className="ocr-icon" />
             </div>
           </div>
           <p className="ocr-help-text">
-            El nombre ha sido extraído automáticamente. Puede editarlo si es necesario.
+            El nombre ha sido extraído automáticamente.
           </p>
         </div>
         <div className="ocr-section">
@@ -42,8 +39,8 @@ const OcrResults = ({
           <StudentList students={students} />
         </div>
         <div className="ocr-footer">
-          <button onClick={onConfirm} className="ocr-confirm-button">
-            Confirmar Asociación
+          <button onClick={() => window.history.back()} className="ocr-confirm-button">
+            Volver a la anterior pagina
           </button>
         </div>
       </div>

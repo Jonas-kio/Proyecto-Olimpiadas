@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from "react";
 import { ChevronDownIcon, DownloadIcon } from "lucide-react";
-import { exportToExcel, exportToPDF } from "../../../utils/reportes/exportUtils";
+import { exportToPDF } from "../../../utils/reportes/exportPDF";
+import { exportToExcel } from "../../../utils/reportes/exportExcel";
 import "../../../styles/reportes/ExportDropdown.css";
 
-const ExportDropdown = ({ data }) => {
+const ExportDropdown = ({ data, resumen }) => {
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef();
 
@@ -27,24 +28,11 @@ const ExportDropdown = ({ data }) => {
 
       {open && (
         <div className="export-menu">
-          <button
-            onClick={() => {
-              exportToExcel(data);
-              setOpen(false); // 👈 Cierra después de exportar
-            }}
-            className="export-option"
-          >
-            Exportar como Excel
-          </button>
-
-          <button
-            onClick={() => {
-              exportToPDF(data);
-              setOpen(false); // 👈 Cierra después de exportar
-            }}
-            className="export-option"
-          >
+          <button onClick={() => { exportToPDF(data, resumen); setOpen(false); }} className="export-option">
             Exportar como PDF
+          </button>
+          <button onClick={() => { exportToExcel(data, resumen); setOpen(false); }} className="export-option">
+            Exportar como Excel
           </button>
         </div>
       )}
