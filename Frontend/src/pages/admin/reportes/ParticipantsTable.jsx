@@ -1,34 +1,51 @@
 import React from 'react';
 import "../../../styles/reportes/ParticipantsTable.css";
 
-const ParticipantsTable = ({ data }) => {
+const ParticipantsTable = ({ data,loading }) => {
   const getEstadoClass = (estado) => {
     switch (estado.toLowerCase()) {
-      case "inscrito": return "badge badge-green";
-      case "pendiente": return "badge badge-yellow";
-      case "verificado": return "badge badge-blue";
+      case "approved": return "badge badge-green";
+      case "pending": return "badge badge-yellow";
+      case "rejected": return "badge badge-red";
       default: return "badge";
     }
   };
 
-  // 🔎 Agrupar data por OlimpiadaId
+  const mostrarEstado = (estado) => {
+    switch (estado.toLowerCase()) {
+      case "approved": return "Verificado";
+      case "pending": return "Pendiente";
+      case "rejected": return "Rechazado";
+      default: return estado;
+    }
+  };
+  
+  // console.log("Datos recibidos en ParticipantsTable:", data); // Para depuración
+  //Agrupar por combinación única de ID y nombre
   const groupedByOlimpiada = data.reduce((acc, item) => {
-    const key = item.OlimpiadaId || 'Sin Olimpiada';
-    if (!acc[key]) acc[key] = { olimpiada: item.Olimpiada || "Olimpiada Desconocida", participantes: [] };
+    const key = `${item.OlimpiadaId}-${item.Olimpiada || "Olimpiada Desconocida"}`;
+    if (!acc[key]) {
+      acc[key] = {
+        olimpiada: item.Olimpiada || "Olimpiada Desconocida",
+        participantes: []
+      };
+    }
     acc[key].participantes.push(item);
     return acc;
   }, {});
 
   return (
     <div className="participants-container">
-      {Object.keys(groupedByOlimpiada).length > 0 ? (
+      {loading ? (
+        <p className="loading-message">Cargando datos...</p>
+      ) :
+      Object.keys(groupedByOlimpiada).length > 0 ? (
         Object.entries(groupedByOlimpiada).map(([id, group]) => (
           <div key={id} className="olimpiada-group">
             <div className="olimpiada-header222">
               <h3 className="olimpiada-title222">{group.olimpiada}</h3>
-              <span className="olimpiada-count222">({group.participantes.length} Participantes)</span>
+              <span className="olimpiada-count222">{group.participantes.length} Participante(s)</span>
             </div>
-
             <div className="table-wrapper">
               <table className="participants-table">
                 <thead className="table-header">
@@ -44,10 +61,10 @@ const ParticipantsTable = ({ data }) => {
                   {group.participantes.map((item, idx) => (
                     <tr key={idx} className="table-row">
                       <td className="table-cell">{item.Participante}</td>
-                      <td className="table-cell">{item.Área}</td>
+                      <td className="table-cell">{item.Área || item.Area || item.area}</td>
                       <td className="table-cell">{item.Nivel}</td>
                       <td className="table-cell">
-                        <span className={getEstadoClass(item.Estado)}>{item.Estado}</span>
+                        <span className={getEstadoClass(item.Estado)}>{mostrarEstado(item.Estado)}</span>
                       </td>
                       <td className="table-cell">{item.Fecha}</td>
                     </tr>

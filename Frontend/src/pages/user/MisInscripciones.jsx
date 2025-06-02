@@ -173,7 +173,7 @@ const MisInscripciones = () => {
               <th>Monto</th>
               <th>Estado</th>
               <th>Validar</th>
-              <th>Estudiantes</th>
+              <th>Estudiante(s)</th>
             </tr>
           </thead>
           <tbody>
@@ -222,7 +222,7 @@ const MisInscripciones = () => {
                   </td>
                   <td>
                     <button 
-                      className="btn-descargar" 
+                      className="btn-ver" 
                       onClick={() => navigate("/user/ocr", {
                         state: { 
                           procesoId: item.procesoId,
@@ -239,8 +239,8 @@ const MisInscripciones = () => {
           </tbody>
         </table>
         <div className="tabla-paginacion">
-          <span>1 de 2</span>
-          <button>{">"}</button>
+          <span className="num_pag">1 de 2</span>
+          <button className ="btn-ver" >{">"}</button>
         </div>
       </div>
     </div>
