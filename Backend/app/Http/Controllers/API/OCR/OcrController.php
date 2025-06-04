@@ -49,4 +49,21 @@ class OcrController extends Controller
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
+    public function obtenerCompetidoresAsociados($registrationProcessId)
+    {
+        try {
+            $response = $this->ocrService->obtenerCompetidoresAsociadosPorNombrePAgador($registrationProcessId);
+
+            return response()->json([
+                'success' => true,
+                'data' => $response
+            ], Response::HTTP_OK);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'mensaje' => 'Error al obtener los competidores: ' . $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
 }

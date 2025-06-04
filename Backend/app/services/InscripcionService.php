@@ -385,7 +385,20 @@ class InscripcionService
 
     public function obtenerProcesoPorId($procesoId)
     {
-        return 0;
+        try {
+            $proceso = RegistrationProcess::with([
+                'olimpiada',
+                'user',
+                'detalles.competidor',
+                'detalles.area',
+                'detalles.nivel_categoria',
+                'boleta'
+            ])->findOrFail($procesoId);
+
+            return $proceso;
+        } catch (ModelNotFoundException $e) {
+            throw new Exception("El proceso de inscripción con ID {$procesoId} no existe");
+        }
     }
 
     public function obtenerEstadoProceso($procesoId)
