@@ -165,7 +165,7 @@ class InscripcionService
             }
         }
 
-        // Si todas las validaciones pasan, guardar todas las áreas
+
         $guardadas = true;
         foreach ($areaIds as $areaId) {
             if (!in_array($areaId, $areasSeleccionadas)) {
