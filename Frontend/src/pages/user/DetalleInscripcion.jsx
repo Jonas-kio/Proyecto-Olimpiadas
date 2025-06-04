@@ -519,7 +519,8 @@ const DetalleInscripcion = () => {
               marginBottom: "24px",
               display: "flex",
               justifyContent: "space-between",
-              gap: "20px"
+              gap: "20px",
+              color : "black"
             }}>
               <div>
                 <p><strong>Número de Comprobante:</strong> 2172394108</p>

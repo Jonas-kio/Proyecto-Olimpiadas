@@ -199,6 +199,21 @@ select.error {
   gap: 1rem;
   font-size: 15px;
 }
+.fila-resumen .etiqueta.indentado {
+  padding-left: 20px;
+  position: relative;
+}
+
+.fila-resumen .etiqueta.indentado::before {
+  content: "•";
+  position: absolute;
+  left: 5px;
+  color: #1a62ac;
+}
+
+.desglose-costos {
+  margin: 5px 0;
+}
 .seccion,
 .bloque-resumen {
   text-align: left; /* asegura que no se centre el texto dentro de los bloques */

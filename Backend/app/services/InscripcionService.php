@@ -323,7 +323,7 @@ class InscripcionService
                 $nivelesData = $niveles->map(function ($nivel) {
                     return [
                         'id' => $nivel->id,
-                        'nombre' => $nivel->nombre,
+                        'nombre' => $nivel->name,  // Cambio: usando 'name' en lugar de 'nombre' para consistencia
                         'descripcion' => $nivel->descripcion
                     ];
                 })->toArray();
@@ -333,19 +333,42 @@ class InscripcionService
                     'niveles' => $nivelesData
                 ];
 
-                // Para el costo, sumamos el costo de cada combinación área-nivel
+                // Desglose detallado de costos por combinación área-nivel
                 $costoTotal = 0;
-                $costoUnitario = 0;
+                $cantidadCompetidores = count($competidores);
+                $desglosePorCombinacion = [];
 
-                foreach ($areasSeleccionadas as $areaId) {
-                    foreach ($nivelesSeleccionados as $nivelId) {
+                foreach ($areas as $area) {
+                    foreach ($niveles as $nivel) {
                         try {
-                            // Verificar si esta combinación área-nivel es válida
-                            $this->categoryLevelService->getCategoryByIdAndAreaId($nivelId, $areaId);
 
-                            $costoPorArea = $this->calcularCosto($areaId, $nivelId, count($competidores));
-                            $costoUnitario += $costoPorArea['unitario'];
-                            $costoTotal += $costoPorArea['total'];
+                            $this->categoryLevelService->getCategoryByIdAndAreaId($nivel->id, $area->id);
+
+                            $costo = Cost::where('area_id', $area->id)
+                                ->where('category_id', $nivel->id)
+                                ->first();
+
+                            if ($costo && isset($costo->price)) {
+                                $costoUnitario = $costo->price;
+                                $costoTotalCombinacion = $costoUnitario * $cantidadCompetidores;
+
+                                $desglosePorCombinacion[] = [
+                                    'area' => [
+                                        'id' => $area->id,
+                                        'nombre' => $area->nombre
+                                    ],
+                                    'nivel' => [
+                                        'id' => $nivel->id,
+                                        'nombre' => $nivel->name
+                                    ],
+                                    'costo_unitario' => $costoUnitario,
+                                    'costo_unitario_formateado' => number_format($costoUnitario, 2),
+                                    'subtotal' => $costoTotalCombinacion,
+                                    'subtotal_formateado' => number_format($costoTotalCombinacion, 2)
+                                ];
+
+                                $costoTotal += $costoTotalCombinacion;
+                            }
                         } catch (Exception $e) {
                             continue;
                         }
@@ -353,9 +376,10 @@ class InscripcionService
                 }
 
                 $resumen['costo'] = [
-                    'monto_unitario' => $costoUnitario,
-                    'cantidad_competidores' => count($competidores),
-                    'monto_total' => $costoTotal
+                    'cantidad_competidores' => $cantidadCompetidores,
+                    'monto_total' => $costoTotal,
+                    'monto_total_formateado' => number_format($costoTotal, 2),
+                    'desglose_combinaciones' => $desglosePorCombinacion
                 ];
             } catch (ModelNotFoundException $e) {
                 $resumen['seleccion'] = null;

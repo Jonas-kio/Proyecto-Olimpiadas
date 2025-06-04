@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+/* eslint-disable react/prop-types */
+import { useState, useEffect } from "react";
 
 import "../../styles/components/InscripcionIndividual.css";
 import { obtenerResumenInscripcion } from "../../services/inscripcionService";
@@ -147,13 +148,27 @@ const FormResumen = ({
                 {costosResumen.cantidad_competidores}
               </span>
             </div>
-            <div className="fila-resumen">
-              <span className="etiqueta">Monto Unitario:</span>
-              <span className="valor">Bs. {costosResumen.monto_unitario}</span>
-            </div>
+            {costosResumen.desglose_combinaciones && costosResumen.desglose_combinaciones.length > 0 && (
+              <div className="desglose-costos">
+                <div className="fila-resumen">
+                  <span className="etiqueta">Desglose por área:</span>
+                </div>
+                
+                {costosResumen.desglose_combinaciones.map((item, index) => (
+                  <div className="fila-resumen" key={index}>
+                    <span className="etiqueta indentado">
+                      {item.area.nombre} - {item.nivel.nombre}:
+                    </span>
+                    <span className="valor">
+                      Bs. {item.costo_unitario_formateado}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
             <div className="fila-resumen total">
               <span className="etiqueta">Total:</span>
-              <span className="valor">Bs. {costosResumen.monto_total}</span>
+              <span className="valor">Bs. {costosResumen.monto_total_formateado}</span>
             </div>
           </>
         ) : (

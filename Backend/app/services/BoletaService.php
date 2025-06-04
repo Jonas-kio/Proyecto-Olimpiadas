@@ -234,16 +234,42 @@ class BoletaService
             // Datos de selección y costos
             $areasSeleccionadas = collect($competidores)->pluck('area')->unique('id')->values()->toArray();
             $nivelesSeleccionados = collect($competidores)->pluck('nivel')->unique('id')->values()->toArray();
+            $costosPorCombinacion = [];
+            foreach ($areasSeleccionadas as $area) {
+                foreach ($nivelesSeleccionados as $nivel) {
+                    $costo = Cost::where('area_id', $area['id'])
+                        ->where('category_id', $nivel['id'])
+                        ->first();
+
+                    if ($costo && isset($costo->price)) {
+                        $costosPorCombinacion[] = [
+                            'area' => [
+                                'id' => $area['id'],
+                                'nombre' => $area['nombre']
+                            ],
+                            'nivel' => [
+                                'id' => $nivel['id'],
+                                'nombre' => $nivel['nombre']
+                            ],
+                            'costo_unitario' => $costo->price,
+                            'costo_unitario_formateado' => number_format($costo->price, 2)
+                        ];
+                    }
+                }
+            }
 
             $resumen['seleccion'] = [
                 'areas' => $areasSeleccionadas,
-                'niveles' => $nivelesSeleccionados
+                'niveles' => $nivelesSeleccionados,
+                'costos_combinaciones' => $costosPorCombinacion
             ];
 
+            $cantidadCompetidores = count(array_unique(array_column($competidores, 'id')));
             $resumen['costo'] = [
                 'monto_total' => $boleta->monto_total,
                 'monto_total_formateado' => number_format($boleta->monto_total, 2),
-                'cantidad_competidores' => count($competidores)
+                'cantidad_competidores' => $cantidadCompetidores,
+                'desglose_costos' => $costosPorCombinacion
             ];
 
             return [

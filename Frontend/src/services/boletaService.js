@@ -48,8 +48,10 @@ export const generarBoletaPDF = async (
     ).toLocaleDateString("es-BO");
 
     // Calcular total usando el costo proporcionado
-    const precioArea = costoPorArea;
     const resumen = JSON.parse(localStorage.getItem("costosResumen"));
+
+    
+    const precioArea = costoPorArea;
     const totalPago =
       resumen?.monto_total ?? areasSeleccionadas.length * precioArea;
 
@@ -151,11 +153,11 @@ export const generarBoletaPDF = async (
     doc.setFont("helvetica", "normal");
     doc.setTextColor(0, 0, 0);
 
-    areasSeleccionadas.forEach((area) => {
-      const nombre = typeof area === "object" ? area.nombre : String(area);
+    resumen.desglose_combinaciones.forEach((item) => {
+      const nombre = item.area.nombre;
       doc.text(nombre, 20, yPos + 6);
-      doc.text(`Bs. ${precioArea}`, pageWidth / 2 - 10, yPos + 6);
-      doc.text(`Bs. ${precioArea}`, pageWidth - 40, yPos + 6);
+      doc.text(`Bs. ${item.costo_unitario_formateado}`, pageWidth / 2 - 10, yPos + 6);
+      doc.text(`Bs. ${item.subtotal_formateado}`, pageWidth - 40, yPos + 6);
       doc.setDrawColor(220, 220, 220);
       doc.line(15, yPos + 8, pageWidth - 15, yPos + 8);
       yPos += 10;
