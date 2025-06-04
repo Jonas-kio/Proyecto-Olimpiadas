@@ -70,6 +70,7 @@ class AuthController extends Controller
         ], 401);
     }
 
+    /*
     public function crearAdmin()
     {
         $result = $this->authService->createAdmin();
@@ -87,5 +88,5 @@ class AuthController extends Controller
                 'user' => $result['user'] ?? null
             ], 400);
         }
-    }
+    }*/
 }

@@ -29,7 +29,7 @@ Route::get('/categoryLevelUser', [CategoryLevelController::class, 'indexUser']);
 
 // Rutas públicas de olimpiadas (visibles sin autenticación)
 
-Route::get('crear-admin', [AuthController::class, 'crearAdmin']);
+//Route::get('crear-admin', [AuthController::class, 'crearAdmin']);
 Route::get('/libre/olimpiadas/', [OlimpiadaController::class, 'index'])->name('olimpiadas.index');
 Route::get('/libre/olimpiadas/{olimpiada}', [OlimpiadaController::class, 'show']);
 
