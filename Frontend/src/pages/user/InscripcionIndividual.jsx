@@ -19,6 +19,7 @@ import {
   diagnosticarProceso,
 } from "../../services/inscripcionService";
 import { getOlimpiadaDetail } from "../../services/olimpiadaService";
+import useNavigationWarning from "../../services/useNavigationWarning";
 // Componentes comunes
 import SuccessModal from "../../components/common/SuccessModal";
 import ErrorModal from "../../components/common/ErrorModal";
@@ -134,16 +135,16 @@ const InscripcionIndividual = () => {
     fetchData();
   }, [idOlimpiada, navigate]);
 
-  //Datos
-  useEffect(() => {
-    const id = localStorage.getItem("idOlimpiada");
-    const tipo = localStorage.getItem("tipoInscripcion");
+  // //Datos
+  // useEffect(() => {
+  //   const id = localStorage.getItem("idOlimpiada");
+  //   const tipo = localStorage.getItem("tipoInscripcion");
 
-    if (!id || !tipo) {
-      alert("Datos de inscripción no encontrados. Serás redirigido.");
-      navigate("/inscripcion");
-    }
-  }, []);
+  //   if (!id || !tipo) {
+  //     alert("Datos de inscripción no encontrados. Serás redirigido.");
+  //     navigate("/inscripcion");
+  //   }
+  // }, []);
 
   useEffect(() => {
     const fetchMaximoAreas = async () => {
@@ -169,6 +170,22 @@ const InscripcionIndividual = () => {
   useEffect(() => {
     console.log("Áreas seleccionadas:", areasSeleccionadas);
   }, [areasSeleccionadas]);
+
+  useEffect(() => {
+    const handleBeforeUnload = (event) => {
+      event.preventDefault();
+      event.returnValue = ""; // Para que algunos navegadores muestren el mensaje
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, []);
+
+  const hasUnsavedChanges = true; // O pon lógica para saber si hay datos ingresados
+  useNavigationWarning(hasUnsavedChanges);
 
   const textoValido = (texto) => /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$/.test(texto);
   const correoValido = (correo) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo);
@@ -519,11 +536,13 @@ const InscripcionIndividual = () => {
       setMostrarBoleta(true);
       setModalAbierto(true);
 
-      // Limpiar localStorage si es necesario
-      localStorage.removeItem("idOlimpiada");
-      localStorage.removeItem("tipoInscripcion");
-      localStorage.removeItem("cursoSeleccionado");
-      localStorage.removeItem("procesoId");
+      setTimeout(() => {
+        localStorage.removeItem("idOlimpiada");
+        localStorage.removeItem("tipoInscripcion");
+        localStorage.removeItem("cursoSeleccionado");
+        localStorage.removeItem("procesoId");
+        console.log("Datos de inscripción eliminados del localStorage");
+      }, 10000); // 10000 ms = 10 segundos
     } catch (error) {
       console.error("Error en handleSubmit:", error);
       const mensajeErrorBase =

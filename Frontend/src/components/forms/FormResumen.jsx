@@ -23,7 +23,14 @@ const FormResumen = ({
         }
         const response = await obtenerResumenInscripcion(procesoId);
         console.log("Resumen de inscripción obtenido:", response.data);
-        setCostosResumen(response.data?.resumen?.costo || null);
+
+        const costos = response.data?.resumen?.costo || null;
+        setCostosResumen(costos);
+
+        // 🔹 Guardar en localStorage:
+        if (costos) {
+          localStorage.setItem("costosResumen", JSON.stringify(costos));
+        }
       } catch (error) {
         console.error("Error al obtener el resumen:", error);
       }
