@@ -1,5 +1,5 @@
+/* eslint-disable react/prop-types */
 import "../../../styles/ocr/StudentList.css";
-import React from 'react'
 import { UserIcon, BookOpenIcon } from 'lucide-react'
 
 const StudentList = ({ students }) => {

@@ -29,7 +29,8 @@ const AppRouter = () => {
       <Route path="/inscripcion" element={<ListaOlimpiadas />} />
       <Route path="/ListaOlimpiadas" element={<Inscripcion />} />
       <Route path="/inscripcion/opciones" element={<Inscripcion />} />
-      <Route path="/ocr" element={<OcrPaymentFlow />} />
+      <Route path="/ocr/:procesoId" element={<OcrPaymentFlow />} />
+      <Route path="/ocr/" element={<OcrPaymentFlow />} />
 
       <Route
         path="/inscripcion/inscripcion-individual/:idOlimpiada"

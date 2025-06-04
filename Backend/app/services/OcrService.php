@@ -224,21 +224,48 @@ class OcrService
 
             $nombrePagador = trim($nombrePagador);
             $palabras = explode(' ', $nombrePagador);
+            $totalPalabras = count($palabras);
 
-            $mitad = ceil(count($palabras) / 2);
-            $posiblesNombres = implode(' ', array_slice($palabras, 0, $mitad));
-            $posiblesApellidos = implode(' ', array_slice($palabras, $mitad));
+            // Iniciar con ningún tutor encontrado
+            $tutor = null;
 
-            $tutor = Tutor::where(function($query) use ($posiblesNombres, $posiblesApellidos) {
-                $query->where(function($q) use ($posiblesNombres, $posiblesApellidos) {
-                    $q->where('nombres', 'LIKE', '%' . $posiblesNombres . '%')
-                    ->where('apellidos', 'LIKE', '%' . $posiblesApellidos . '%');
-                })
-                ->orWhere(function($q) use ($posiblesNombres, $posiblesApellidos) {
-                    $q->where('nombres', 'LIKE', '%' . $posiblesApellidos . '%')
-                    ->where('apellidos', 'LIKE', '%' . $posiblesNombres . '%');
-                });
-            })->first();
+            // Probar diferentes combinaciones de nombres y apellidos
+            for ($i = 1; $i < $totalPalabras && !$tutor; $i++) {
+                // Para cada división posible, crear posibles nombres y apellidos
+                $posiblesNombres = implode(' ', array_slice($palabras, 0, $i));
+                $posiblesApellidos = implode(' ', array_slice($palabras, $i));
+
+                // Buscar con esta combinación
+                $tutor = Tutor::where(function($query) use ($posiblesNombres, $posiblesApellidos) {
+                    $query->where(function($q) use ($posiblesNombres, $posiblesApellidos) {
+                        $q->where('nombres', 'LIKE', '%' . $posiblesNombres . '%')
+                        ->where('apellidos', 'LIKE', '%' . $posiblesApellidos . '%');
+                    });
+                })->first();
+
+                // Si no encontramos, probar al revés (por si los apellidos están primero)
+                if (!$tutor) {
+                    $tutor = Tutor::where(function($query) use ($posiblesNombres, $posiblesApellidos) {
+                        $query->where(function($q) use ($posiblesNombres, $posiblesApellidos) {
+                            $q->where('apellidos', 'LIKE', '%' . $posiblesNombres . '%')
+                            ->where('nombres', 'LIKE', '%' . $posiblesApellidos . '%');
+                        });
+                    })->first();
+                }
+            }
+
+            // Si todavía no encontramos, intentar buscar por palabras individuales
+            if (!$tutor) {
+                $tutor = Tutor::where(function($query) use ($palabras) {
+                    foreach ($palabras as $palabra) {
+                        if (strlen($palabra) > 3) { // Ignorar palabras muy cortas
+                            $query->orWhere('nombres', 'LIKE', '%' . $palabra . '%')
+                                ->orWhere('apellidos', 'LIKE', '%' . $palabra . '%');
+                        }
+                    }
+                })->first();
+            }
+
 
             if (!$tutor) {
                 throw new \Exception('No se encontró un tutor que coincida con el nombre "' . $nombrePagador . '" en nuestros registros.');
@@ -262,7 +289,12 @@ class OcrService
             ]);
 
             return [
-                'tutor' => $tutor->nombres . ' ' . $tutor->apellidos,
+                'tutor' => [
+                    'id' => $tutor->id,
+                    'nombres' => $tutor->nombres,
+                    'apellidos' => $tutor->apellidos,
+                    'nombre_completo' => $tutor->nombres . ' ' . $tutor->apellidos
+                ],
                 'competidores' => $competidores
             ];
         } catch (\Exception $e) {
