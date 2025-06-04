@@ -536,11 +536,13 @@ const InscripcionIndividual = () => {
       setMostrarBoleta(true);
       setModalAbierto(true);
 
-      // Limpiar localStorage si es necesario
-      localStorage.removeItem("idOlimpiada");
-      localStorage.removeItem("tipoInscripcion");
-      localStorage.removeItem("cursoSeleccionado");
-      localStorage.removeItem("procesoId");
+      setTimeout(() => {
+        localStorage.removeItem("idOlimpiada");
+        localStorage.removeItem("tipoInscripcion");
+        localStorage.removeItem("cursoSeleccionado");
+        localStorage.removeItem("procesoId");
+        console.log("Datos de inscripción eliminados del localStorage");
+      }, 10000); // 10000 ms = 10 segundos
     } catch (error) {
       console.error("Error en handleSubmit:", error);
       const mensajeErrorBase =
