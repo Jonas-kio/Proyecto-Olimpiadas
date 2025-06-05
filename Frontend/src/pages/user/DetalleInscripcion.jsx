@@ -519,7 +519,8 @@ const DetalleInscripcion = () => {
               marginBottom: "24px",
               display: "flex",
               justifyContent: "space-between",
-              gap: "20px"
+              gap: "20px",
+              color : "black"
             }}>
               <div>
                 <p><strong>Número de Comprobante:</strong> 2172394108</p>
@@ -553,7 +554,7 @@ const DetalleInscripcion = () => {
                 <FaPrint className="icono" /> IMPRIMIR
               </button>
 
-              <button className="btn-descargar" onClick={() => navigate('/user/ocr')}>
+              <button className="btn-descargar" onClick={() => navigate(`/user/ocr/${procesoId}`)}>
                 VER ESTUDIANTES ASOCIADOS
               </button>
             </div>

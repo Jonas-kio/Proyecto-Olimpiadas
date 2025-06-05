@@ -1,7 +1,6 @@
 // src/services/authService.js
 import api from './apiConfig';
 
-// Login de usuario
 export const loginUser = async (credentials) => {
     try {
       const response = await api.post('/login', credentials);
@@ -9,11 +8,9 @@ export const loginUser = async (credentials) => {
       console.log('Respuesta del backend:', response.data);
       
       if (response.data.success) {
-        // Guardar token y datos de usuario en localStorage
         localStorage.setItem('token', response.data.token);
         localStorage.setItem('user', JSON.stringify(response.data.user));
         
-        // Asegurarnos que role está correctamente guardado
         const userRole = response.data.user.role;
         console.log('Rol del usuario:', userRole);
         localStorage.setItem('userRole', userRole);
@@ -38,7 +35,6 @@ export const loginUser = async (credentials) => {
     }
   };
 
-// Registro de usuario
 export const registerUser = async (userData) => {
     try {
       const backendData = {
@@ -46,7 +42,6 @@ export const registerUser = async (userData) => {
         email: userData.email,
         password: userData.password,
         password_confirmation: userData.password_confirmation
-        // Ya no es necesario enviar el rol explícitamente
       };
       
       console.log('Datos enviados al backend:', backendData);
@@ -74,12 +69,10 @@ export const registerUser = async (userData) => {
     }
   };
 
-// Cerrar sesión
 export const logoutUser = async () => {
   try {
     const response = await api.post('/logout');
     
-    // Limpiar localStorage independientemente de la respuesta
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     localStorage.removeItem('userRole');
@@ -100,7 +93,6 @@ export const logoutUser = async () => {
   }
 };
 
-// Obtener usuario actual desde la API
 export const fetchCurrentUser = async () => {
   try {
     const response = await api.get('/me');
@@ -126,7 +118,6 @@ export const fetchCurrentUser = async () => {
   }
 };
 
-// Obtener usuario actual desde localStorage
 export const getCurrentUser = () => {
   const userJSON = localStorage.getItem('user');
   if (userJSON) {
@@ -140,18 +131,15 @@ export const getCurrentUser = () => {
   return null;
 };
 
-// Verificar si el usuario está autenticado
 export const isAuthenticated = () => {
   return localStorage.getItem('token') !== null;
 };
 
-// Verificar si el usuario tiene cierto rol
 export const hasRole = (role) => {
   const userRole = localStorage.getItem('userRole');
   return userRole === role;
 };
 
-// Verificar si el usuario es administrador
 export const isAdmin = () => {
   return hasRole('admin');
 };

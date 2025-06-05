@@ -1,5 +1,6 @@
+/* eslint-disable react/prop-types */
 // components/boleta/BoletaPago.jsx
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   generarBoletaPDF,
   generarEnlacesCorreo,
@@ -17,14 +18,12 @@ import {
 } from "react-icons/fa";
 
 // Costo predeterminado por área
-const COSTO_POR_AREA = 50;
 
 const BoletaPago = ({
   estudiante,
   tutores,
   areasSeleccionadas,
   numeroBoleta,
-  registration_process_id,
   onVolver,
 }) => {
   const [correoDestino, setCorreoDestino] = useState("");
@@ -39,12 +38,10 @@ const BoletaPago = ({
   const resumenCostos = JSON.parse(localStorage.getItem("costosResumen"));
 
   // Usar el monto del resumen si existe, si no usar el default
-  const precioArea = resumenCostos?.monto_unitario ?? COSTO_POR_AREA;
-  const totalPago =
-    resumenCostos?.monto_total ?? areasSeleccionadas.length * precioArea;
 
-  // Obtener el tutor principal
-  const tutorPrincipal = tutores[0];
+  const totalPago =
+    resumenCostos?.monto_total
+
 
   // Determinar nivel basado en el curso
   const nivel = estudiante.curso?.includes("Primaria")
@@ -78,7 +75,6 @@ const BoletaPago = ({
         tutores,
         areasSeleccionadas,
         numeroBoleta,
-        precioArea
       );
 
       // Crear URL para descargar el PDF
@@ -124,8 +120,7 @@ const BoletaPago = ({
         tutores,
         areasSeleccionadas,
         numeroBoleta,
-        correoDestino,
-        precioArea
+        correoDestino
       );
 
       // Si llegamos aquí, el envío tuvo éxito (ya sea por backend o método alternativo)
@@ -154,7 +149,6 @@ const BoletaPago = ({
           areasSeleccionadas,
           numeroBoleta,
           correoDestino,
-          precioArea
         );
 
         setEnlacesCorreo(resultado);
@@ -274,11 +268,11 @@ const BoletaPago = ({
             </tr>
           </thead>
           <tbody>
-            {areasSeleccionadas.map((area, index) => (
+            {resumenCostos.desglose_combinaciones.map((item, index) => (
               <tr key={index}>
-                <td>{area.nombre}</td>
-                <td>Bs. {precioArea}</td>
-                <td>Bs. {precioArea}</td>
+                <td>{item.area.nombre}</td>
+                <td>Bs. {item.costo_unitario_formateado}</td>
+                <td>Bs. {item.subtotal_formateado}</td>
               </tr>
             ))}
           </tbody>

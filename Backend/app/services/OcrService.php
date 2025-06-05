@@ -5,8 +5,11 @@ namespace App\Services;
 use App\Enums\BoletaEstado;
 use App\Enums\EstadoInscripcion;
 use App\Models\Boleta;
+use App\Models\Competitor;
 use App\Models\ComprobantePago;
 use App\Models\RegistrationProcess;
+use App\Models\Tutor;
+use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -16,7 +19,7 @@ class OcrService
 {
 
     const MAX_INTENTOS = 3;
-    protected $inscripcionService;
+    protected InscripcionService $inscripcionService;
 
     public function __construct(InscripcionService $inscripcionService)
     {
@@ -120,24 +123,24 @@ class OcrService
         } catch (\Exception $e) {
             DB::rollBack();
             try {
-                    ComprobantePago::create([
-                        'registration_process_id' => $registrationProcessId,
-                        'boleta_id' => null,
-                        'ruta_imagen' => $imagen ? $this->guardarImagen($imagen) : null,
-                        'texto_detectado' => $textoOCR,
-                        'validacion_exitosa' => false,
-                        'es_pago_grupal' => false,
-                        'intento_numero' => ($intentosActuales ?? 0) + 1,
-                        'metadata_ocr' => json_encode([
-                            'fecha_procesamiento' => now(),
-                            'error_mensaje' => $e->getMessage(),
-                            'intentos_previos' => $intentosActuales ?? 0,
-                            'procesado_en_frontend' => true
-                        ])
-                    ]);
-                } catch (\Exception $innerException) {
-                    Log::error('Error al crear registro de comprobante fallido: ' . $innerException->getMessage());
-                }
+                ComprobantePago::create([
+                    'registration_process_id' => $registrationProcessId,
+                    'boleta_id' => null,
+                    'ruta_imagen' => $imagen ? $this->guardarImagen($imagen) : null,
+                    'texto_detectado' => $textoOCR,
+                    'validacion_exitosa' => false,
+                    'es_pago_grupal' => false,
+                    'intento_numero' => ($intentosActuales ?? 0) + 1,
+                    'metadata_ocr' => json_encode([
+                        'fecha_procesamiento' => now(),
+                        'error_mensaje' => $e->getMessage(),
+                        'intentos_previos' => $intentosActuales ?? 0,
+                        'procesado_en_frontend' => true
+                    ])
+                ]);
+            } catch (\Exception $innerException) {
+                Log::error('Error al crear registro de comprobante fallido: ' . $innerException->getMessage());
+            }
             return [
                 'success' => false,
                 'mensaje' => $e->getMessage(),
@@ -145,6 +148,7 @@ class OcrService
             ];
         }
     }
+
 
     private function guardarImagen(UploadedFile $imagen): string
     {
@@ -176,7 +180,9 @@ class OcrService
         $patrones = [
             '/depositante[:\s]*([A-Za-záéíóúÁÉÍÓÚñÑ\s]+)(?:\s|$)/i',
             '/pagador[:\s]*([A-Za-záéíóúÁÉÍÓÚñÑ\s]+)(?:\s|$)/i',
-            '/nombre[:\s]*([A-Za-záéíóúÁÉÍÓÚñÑ\s]+)(?:\s|$)/i'
+            '/nombre[:\s]*([A-Za-záéíóúÁÉÍÓÚñÑ\s]+)(?:\s|$)/i',
+            '/Tutor[:\s]*([A-Za-záéíóúÁÉÍÓÚñÑ\s]+)(?:\s|$)/i',
+            '/Responsable[:\s]*([A-Za-záéíóúÁÉÍÓÚñÑ\s]+)(?:\s|$)/i'
         ];
 
         foreach ($patrones as $patron) {
@@ -185,5 +191,119 @@ class OcrService
             }
         }
         return null;
+    }
+
+
+    public function obtenerCompetidoresAsociadosPorNombrePAgador($registrationProcessId):array
+    {
+        try {
+
+            if (!$registrationProcessId) {
+                throw new \Exception('ID del proceso de registro no proporcionado');
+            }
+
+            $registrationProcess = $this->inscripcionService->obtenerProcesoPorId($registrationProcessId);
+            if (!$registrationProcess) {
+                throw new \Exception('Proceso de inscripción no encontrado');
+            }
+
+            $comprobante = ComprobantePago::where('registration_process_id', $registrationProcessId)
+                ->where('validacion_exitosa', true)
+                ->first();
+
+            if (!$comprobante) {
+                throw new \Exception('No se encontró un comprobante de pago válido para este proceso de inscripción.');
+            }
+
+            $texto = $comprobante->texto_detectado;
+
+            $nombrePagador = $this->extraerNombrePagador($texto);
+            if (!$nombrePagador) {
+                throw new \Exception('No se pudo extraer el nombre del pagador del comprobante de pago.');
+            }
+
+            $nombrePagador = trim($nombrePagador);
+            $palabras = explode(' ', $nombrePagador);
+            $totalPalabras = count($palabras);
+
+            // Iniciar con ningún tutor encontrado
+            $tutor = null;
+
+            // Probar diferentes combinaciones de nombres y apellidos
+            for ($i = 1; $i < $totalPalabras && !$tutor; $i++) {
+                // Para cada división posible, crear posibles nombres y apellidos
+                $posiblesNombres = implode(' ', array_slice($palabras, 0, $i));
+                $posiblesApellidos = implode(' ', array_slice($palabras, $i));
+
+                // Buscar con esta combinación
+                $tutor = Tutor::where(function($query) use ($posiblesNombres, $posiblesApellidos) {
+                    $query->where(function($q) use ($posiblesNombres, $posiblesApellidos) {
+                        $q->where('nombres', 'LIKE', '%' . $posiblesNombres . '%')
+                        ->where('apellidos', 'LIKE', '%' . $posiblesApellidos . '%');
+                    });
+                })->first();
+
+                // Si no encontramos, probar al revés (por si los apellidos están primero)
+                if (!$tutor) {
+                    $tutor = Tutor::where(function($query) use ($posiblesNombres, $posiblesApellidos) {
+                        $query->where(function($q) use ($posiblesNombres, $posiblesApellidos) {
+                            $q->where('apellidos', 'LIKE', '%' . $posiblesNombres . '%')
+                            ->where('nombres', 'LIKE', '%' . $posiblesApellidos . '%');
+                        });
+                    })->first();
+                }
+            }
+
+            // Si todavía no encontramos, intentar buscar por palabras individuales
+            if (!$tutor) {
+                $tutor = Tutor::where(function($query) use ($palabras) {
+                    foreach ($palabras as $palabra) {
+                        if (strlen($palabra) > 3) { // Ignorar palabras muy cortas
+                            $query->orWhere('nombres', 'LIKE', '%' . $palabra . '%')
+                                ->orWhere('apellidos', 'LIKE', '%' . $palabra . '%');
+                        }
+                    }
+                })->first();
+            }
+
+
+            if (!$tutor) {
+                throw new \Exception('No se encontró un tutor que coincida con el nombre "' . $nombrePagador . '" en nuestros registros.');
+            }
+
+            $competidores = Competitor::join('competidor_tutor as ct', 'competitor.id', '=', 'ct.competidor_id')
+                ->join('registration_detail as di', 'competitor.id', '=', 'di.competidor_id')
+                ->where('ct.tutor_id', $tutor->id)
+                ->where('di.register_process_id', $registrationProcessId)
+                ->select('competitor.*', 'ct.es_principal', 'ct.relacion')
+                ->distinct()
+                ->get();
+
+            if ($competidores->isEmpty()) {
+                throw new \Exception('No se encontraron competidores asociados al tutor "' . $nombrePagador . '" en este proceso de inscripción.');
+            }
+
+            $comprobante->update([
+                'nombre_pagador_detectado' => $tutor->nombres . ' ' . $tutor->apellidos,
+                'tutor_id' => $tutor->id
+            ]);
+
+            return [
+                'tutor' => [
+                    'id' => $tutor->id,
+                    'nombres' => $tutor->nombres,
+                    'apellidos' => $tutor->apellidos,
+                    'nombre_completo' => $tutor->nombres . ' ' . $tutor->apellidos
+                ],
+                'competidores' => $competidores
+            ];
+        } catch (\Exception $e) {
+            Log::error('Error al obtener competidores asociados: ' . $e->getMessage());
+            return [
+                'success' => false,
+                'mensaje' => $e->getMessage()
+            ];
+        }
+
     }
 }
