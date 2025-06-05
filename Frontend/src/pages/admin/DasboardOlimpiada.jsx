@@ -6,6 +6,7 @@ import { obtenerOlimpiadas, eliminarOlimpiada } from "../../services/apiConfig";
 import DeleteConfirmationModal from "../../components/common/DeleteConfirmationModal";
 import SuccessModal from "../../components/common/SuccessModal";
 import LoadingModal from "../../components/modals/LoadingModal";
+import {getInscritosPorOlimpiada} from "../../services/reportesService";
 import "../../styles/components/DasboardOlimpiada.css";
 
 function DasboardOlimpiada() {
@@ -28,21 +29,26 @@ function DasboardOlimpiada() {
     try {
       const res = await obtenerOlimpiadas();
       const lista = res.data?.data?.olimpiadas?.data || [];
-      const parsed = lista.map((item) => ({
-        id: item.id,
-        title: item.nombre,
-        status: item.estado,
-        statusColor:
-          item.estado === "En Proceso"
-            ? "text-green-600 bg-green-100"
-            : item.estado === "Terminado"
-            ? "text-red-600 bg-red-100"
-            : "text-blue-600 bg-blue-100",
-        areas: item.areas.map((a) => a.nombre).join(", "),
-        participants: 0, // valor fijo por ahora
-        modality: item.modalidad,
-        imageUrl: `http://localhost:8000/storage/${item.ruta_imagen_portada}`,
-      }));
+      const parsed = await Promise.all(
+        lista.map(async (item) => {
+          const inscritos = await getInscritosPorOlimpiada(item.id);
+          return {
+            id: item.id,
+            title: item.nombre,
+            status: item.estado,
+            statusColor:
+              item.estado === "En Proceso"
+                ? "text-green-600 bg-green-100"
+                : item.estado === "Terminado"
+                ? "text-red-600 bg-red-100"
+                : "text-blue-600 bg-blue-100",
+            areas: item.areas.map((a) => a.nombre).join(", "),
+            participants: inscritos,
+            modality: item.modalidad,
+            imageUrl: `http://localhost:8000/storage/${item.ruta_imagen_portada}`,
+          };
+        })
+      );
       setOlympicsData(parsed);
     } catch (err) {
       console.error("Error al obtener olimpiadas:", err);
