@@ -21,22 +21,34 @@ use Illuminate\Foundation\Auth\EmailVerificationRequest;
 class AuthService
 {
 
-    public function createAdmin(array $data = null)
+    public function createAdmin(array $data)
     {
         try {
             DB::beginTransaction();
 
-            $adminData = $data ?? [
-                'full_name' => 'Administrador Principal',
-                'email' => 'admin@admin.com',
-                'password' => 'admin123',
-            ];
+            $adminData = $data ?? [];
+            if (empty($adminData['full_name']) || empty($adminData['email']) || empty($adminData['password'])) {
+                return [
+                    'success' => false,
+                    'message' => 'Los datos del administrador son incompletos',
+                ];
+            }
+
             $existingUser = User::where('email', $adminData['email'])->first();
             if ($existingUser) {
                 return [
                     'success' => false,
                     'message' => 'Ya existe un usuario con ese correo electrónico',
                     'user' => $existingUser
+                ];
+            }
+
+            $adminCount = User::where('role', UserRoles::ADMIN->value)->count();
+            if ($adminCount > 0) {
+                return [
+                    'success' => false,
+                    'message' => 'Ya existe al menos un administrador en el sistema',
+                    'adminExists' => true
                 ];
             }
 

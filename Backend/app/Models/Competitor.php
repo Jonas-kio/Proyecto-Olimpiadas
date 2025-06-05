@@ -19,6 +19,7 @@ class Competitor extends Model
         'correo_electronico',
         'colegio',
     ];
+
     public function tutores()
     {
         return $this->belongsToMany(Tutor::class, 'competidor_tutor', 'competidor_id', 'tutor_id')

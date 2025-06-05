@@ -1,6 +1,7 @@
 /* styles/components/BoletaPago.css */
 
 .boleta-contenedor {
+  text-align: start;
   max-width: 800px;
   margin: 0 auto;
   padding: 20px;
@@ -58,6 +59,11 @@
   border-radius: 6px;
 }
 
+.boleta-seccion p {
+  /* background-color: #059669; */
+  margin: 10px;
+}
+
 .boleta-seccion h2 {
   margin-top: 0;
   margin-bottom: 15px;
@@ -73,7 +79,8 @@
   margin-top: 10px;
 }
 
-.boleta-tabla th, .boleta-tabla td {
+.boleta-tabla th,
+.boleta-tabla td {
   padding: 12px;
   text-align: left;
   border-bottom: 1px solid #e2e8f0;
@@ -110,7 +117,8 @@
   font-size: 14px;
 }
 
-.boleta-btn-enviar, .boleta-btn-pdf {
+.boleta-btn-enviar,
+.boleta-btn-pdf {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -141,7 +149,8 @@
   background-color: #059669;
 }
 
-.boleta-btn-enviar:disabled, .boleta-btn-pdf:disabled {
+.boleta-btn-enviar:disabled,
+.boleta-btn-pdf:disabled {
   opacity: 0.7;
   cursor: not-allowed;
 }
@@ -267,7 +276,7 @@
   .boleta-email {
     flex-direction: column;
   }
-  
+
   .servicios-correo {
     flex-direction: column;
   }

@@ -117,6 +117,7 @@ const CostConfiguracion = () => {
     }
 
     try {
+      setLoading(true);
       const validationResult = validateCostForm(
         newCost, 
         categories, 
@@ -131,6 +132,7 @@ const CostConfiguracion = () => {
           validationResult.errors.categoryArea || 
           "Por favor complete todos los campos requeridos"
         );
+        setLoading(false);
         setErrorModalOpen(true);
         return;
       }
@@ -152,7 +154,7 @@ const CostConfiguracion = () => {
       }
 
       await refreshCostsList();
-      
+      setLoading(false);
       setSuccessModalOpen(true);
     } catch (error) {
       console.error("Error al guardar el costo:", error);

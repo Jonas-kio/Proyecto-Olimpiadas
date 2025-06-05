@@ -45,46 +45,52 @@ class BoletaService
             throw new \Exception('El proceso de inscripción no tiene competidores asociados');
         }
 
-        $areaId = $this->procesoRepository->obtenerAreaSeleccionada($proceso->id);
-        $nivelId = $this->procesoRepository->obtenerNivelSeleccionado($proceso->id);
+        $areasIds = $this->procesoRepository->obtenerAreasSeleccionadas($proceso->id);
+        $nivelesIds = $this->procesoRepository->obtenerNivelesSeleccionados($proceso->id);
 
-        if (!$areaId || !$nivelId) {
-            throw new \Exception('Debe seleccionar un área y nivel para generar la boleta');
+        if (empty($areasIds) || empty($nivelesIds)) {
+            throw new \Exception('Debe seleccionar al menos un área y un nivel para generar la boleta');
         }
 
         DB::beginTransaction();
 
         try {
 
-            $costo = Cost::where('area_id', $areaId)
-                ->where('category_id', $nivelId)
-                ->firstOrFail();
-
-            if (!isset($costo->price)) {
-                throw new \Exception('El costo no tiene un precio definido.');
-            }
-
             $montoTotal = 0;
             $fechaExpiracion = $proceso->olimpiada->fecha_fin;
             if (!$fechaExpiracion) {
                 throw new \Exception('La olimpiada no tiene definida una fecha de finalización');
             }
-            foreach ($competidoresIds as $competidorId) {
-                DetalleInscripcion::create([
-                    'register_process_id' => $proceso->id,
-                    'competidor_id' => $competidorId,
-                    'area_id' => $areaId,
-                    'categoria_id' => $nivelId,
-                    'monto' => $costo->price,
-                    'status' => true
-                ]);
 
-                $montoTotal += $costo->price;
+            foreach ($areasIds as $areaId) {
+                foreach ($nivelesIds as $nivelId) {
+                    try {
+                        $costo = Cost::where('area_id', $areaId)
+                            ->where('category_id', $nivelId)
+                            ->firstOrFail();
+                        if (!isset($costo->price)) {
+                            continue;
+                        }
+
+                        foreach ($competidoresIds as $competidorId) {
+                            DetalleInscripcion::create([
+                                'register_process_id' => $proceso->id,
+                                'competidor_id' => $competidorId,
+                                'area_id' => $areaId,
+                                'categoria_id' => $nivelId,
+                                'monto' => $costo->price,
+                                'status' => true
+                            ]);
+                            $montoTotal += $costo->price;
+                        }
+                    } catch (\Exception $e) {
+                        continue;
+                    }
+                }
             }
 
-            $fechaExpiracion = $proceso->olimpiada->fecha_fin;
-            if (!$fechaExpiracion) {
-                throw new \Exception('La olimpiada no tiene definida una fecha de finalización');
+            if ($montoTotal == 0) {
+                throw new \Exception('No se encontraron combinaciones válidas de área y nivel para generar la boleta');
             }
 
             $boleta = Boleta::create([
@@ -228,16 +234,42 @@ class BoletaService
             // Datos de selección y costos
             $areasSeleccionadas = collect($competidores)->pluck('area')->unique('id')->values()->toArray();
             $nivelesSeleccionados = collect($competidores)->pluck('nivel')->unique('id')->values()->toArray();
+            $costosPorCombinacion = [];
+            foreach ($areasSeleccionadas as $area) {
+                foreach ($nivelesSeleccionados as $nivel) {
+                    $costo = Cost::where('area_id', $area['id'])
+                        ->where('category_id', $nivel['id'])
+                        ->first();
+
+                    if ($costo && isset($costo->price)) {
+                        $costosPorCombinacion[] = [
+                            'area' => [
+                                'id' => $area['id'],
+                                'nombre' => $area['nombre']
+                            ],
+                            'nivel' => [
+                                'id' => $nivel['id'],
+                                'nombre' => $nivel['nombre']
+                            ],
+                            'costo_unitario' => $costo->price,
+                            'costo_unitario_formateado' => number_format($costo->price, 2)
+                        ];
+                    }
+                }
+            }
 
             $resumen['seleccion'] = [
                 'areas' => $areasSeleccionadas,
-                'niveles' => $nivelesSeleccionados
+                'niveles' => $nivelesSeleccionados,
+                'costos_combinaciones' => $costosPorCombinacion
             ];
 
+            $cantidadCompetidores = count(array_unique(array_column($competidores, 'id')));
             $resumen['costo'] = [
                 'monto_total' => $boleta->monto_total,
                 'monto_total_formateado' => number_format($boleta->monto_total, 2),
-                'cantidad_competidores' => count($competidores)
+                'cantidad_competidores' => $cantidadCompetidores,
+                'desglose_costos' => $costosPorCombinacion
             ];
 
             return [

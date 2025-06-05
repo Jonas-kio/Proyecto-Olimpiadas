@@ -110,6 +110,22 @@ export const ValidarProcesoOCR = async (payload) => {
   }
 };
 
+export const obtenerAsociadosPagador = async (procesoId) => {
+  try {
+    const response = await api.get(`/ocr/competidores/${procesoId}`);
+    if (response.data.success) {
+      return response.data;
+    } else {
+      throw new Error(
+        response.data.message || "Error al obtener los asociados del pagador"
+      );
+    }
+  } catch (error) {
+    console.error("Error al obtener los asociados del pagador:", error);
+    throw error;
+  }
+}
+
 // Función para obtener diagnóstico del proceso de inscripción
 export const diagnosticarProceso = async (procesoId) => {
   try {

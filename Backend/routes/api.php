@@ -30,7 +30,7 @@ Route::get('/categoryLevelUser', [CategoryLevelController::class, 'indexUser']);
 
 // Rutas públicas de olimpiadas (visibles sin autenticación)
 
-Route::get('crear-admin', [AuthController::class, 'crearAdmin']);
+//Route::get('crear-admin', [AuthController::class, 'crearAdmin']);
 Route::get('/libre/olimpiadas/', [OlimpiadaController::class, 'index'])->name('olimpiadas.index');
 Route::get('/libre/olimpiadas/{olimpiada}', [OlimpiadaController::class, 'show']);
 
@@ -70,7 +70,8 @@ Route::middleware([IsUserAuth::class])->group(
                 Route::controller(CostController::class)->group(function () {
                     Route::get('/costs', 'index');
                     Route::post('/costs', 'store');
-                    Route::put('/costs/{cost}', 'update');
+                    Route::match(['put', 'patch'], '/costs/{cost}', 'update')->name('cost.update');
+                    //Route::put('/costs/{cost}', 'update');
                     Route::delete('/costs/{cost}', 'destroy');
                 });
 
@@ -227,6 +228,7 @@ Route::middleware([IsUserAuth::class])->group(
 
         // FLUJO DE VALIDACIÓN DE COMPROBANTE CON OCR
         Route::post('/ocr/procesar-comprobante', [OcrController::class, 'procesarComprobante']);
+        Route::get('/ocr/competidores/{registrationProcessId}', [OcrController::class, 'obtenerCompetidoresAsociados']);
     }
 );
 

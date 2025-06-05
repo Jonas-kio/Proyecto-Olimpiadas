@@ -222,13 +222,18 @@ const MisInscripciones = () => {
                   </td>
                   <td>
                     <button 
-                      className="btn-ver" 
-                      onClick={() => navigate("/user/ocr", {
-                        state: { 
-                          procesoId: item.procesoId,
-                          cantidadEstudiantes: item.cantidadEstudiantes 
+                      className={item.estado === "INSCRITO" ? "btn-ver" : "btn-ver disabled"}
+                      onClick={() => {
+                        if (item.estado === "INSCRITO") {
+                          navigate(`/user/ocr/${item.procesoId}`, {
+                            state: { 
+                              procesoId: item.procesoId,
+                              cantidadEstudiantes: item.cantidadEstudiantes 
+                            }
+                          });
                         }
-                      })}
+                      }}
+                      disabled={item.estado !== "INSCRITO"}
                     >
                       VER ({item.cantidadEstudiantes || 0})
                     </button>

@@ -1,4 +1,5 @@
-import React from 'react'
+/* eslint-disable react/prop-types */
+
 import { FaUserCircle } from "react-icons/fa";
 import StudentList from './StudentList';
 import "../../../styles/ocr/OcrResults.css";
