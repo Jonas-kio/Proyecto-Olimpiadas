@@ -18,6 +18,7 @@ use App\Http\Middleware\IsAdmin;
 use App\Http\Middleware\IsUserAuth;
 use App\Http\Middleware\VerificarProcesoInscripcion;
 use App\Http\Controllers\API\reportes\ReporteInscripcionesController;
+use App\Http\Controllers\API\reportes\DashboardController;
 
 //TODO: Rutas Publicas
 
@@ -95,10 +96,15 @@ Route::middleware([IsUserAuth::class])->group(
                     Route::post('actualizar-estado', [BoletaController::class, 'actualizarEstadoBoletas']);
                 });
 
-
                // Rutas para reportes
                 Route::get('/reporte-inscripciones', [ReporteInscripcionesController::class, 'obtenerReporte']);
                 Route::get('/reporte-inscripciones/resumen', [ReporteInscripcionesController::class, 'resumen']);
+
+                // Rutas para el dashboard del admin
+                Route::get('/dashboard/summary', [DashboardController::class, 'getSummary']);
+                Route::get('/dashboard/recent-registrations', [DashboardController::class, 'getRecentRegistrations']);
+                Route::get('/dashboard/payment-summary', [DashboardController::class, 'getPaymentSummary']);
+                Route::get('/olimpiadas/{id}/inscritos', [DashboardController::class, 'getInscritosPorOlimpiada']);
 
                 // Mas Rutas de Admin ........
             }

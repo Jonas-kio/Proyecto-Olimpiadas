@@ -1,5 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { LayoutGrid, Settings, FileText, Users, LogOut, Trophy, ReceiptIcon} from 'lucide-react';
+import { FaRegUserCircle } from "react-icons/fa";
 import { useState, useEffect } from "react";
 import "../styles/Sidebar.css";
 
@@ -49,7 +50,7 @@ const Sidebar = () => {
       </div>
       
       <div className="user-container">
-        <div className="user-avatar"></div>
+        <div className="user-avatar"><FaRegUserCircle size={24} /></div>
         <div className="user-info">
           <div className="user-name">Admin User</div>
           <div className="user-role">Administrador</div>
@@ -106,16 +107,6 @@ const Sidebar = () => {
             >
               <ReceiptIcon size={20} />
               <span>Boletas</span>
-            </Link>
-          </li>
-          <li>
-            <Link 
-              to="/app/participantes" 
-              className={`nav-item ${activeItem === "participantes" ? "active" : ""}`}
-              onClick={() => setActiveItem("participantes")}
-            >
-              <Users size={20} />
-              <span>Participantes</span>
             </Link>
           </li>
         </ul>
