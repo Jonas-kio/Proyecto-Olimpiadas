@@ -5,7 +5,6 @@ import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 //importando servicios
 import {
-  iniciarProceso,
   inscripcionCompetidor,
   inscripcionTutor,
   obtenerAreasPorOlimpiada,
@@ -15,8 +14,7 @@ import {
   generarBoleta,
   obtenerResumenInscripcion,
   obtenerCategoriasPorArea,
-  verificarEstadoProceso,
-  diagnosticarProceso,
+  inscripcionDirecta,
 } from "../../services/inscripcionService";
 import { getOlimpiadaDetail } from "../../services/olimpiadaService";
 import useNavigationWarning from "../../services/useNavigationWarning";
@@ -83,7 +81,7 @@ const InscripcionIndividual = () => {
   const [procesando, setProcesando] = useState(false);
   const [mensajeDeError, setMensajeDeError] = useState("");
   const [camposConError, setCamposConError] = useState([]);
-  const [usarBackend, setUsarBackend] = useState(true); // Bandera para cambiar entre modos
+  const [usarBackend, setUsarBackend] = useState(true); 
   const [maximoAreas, setMaximoAreas] = useState(0);
   const [competidorId, setCompetidorId] = useState(null);
 
@@ -234,7 +232,7 @@ const InscripcionIndividual = () => {
     return true;
   };
 
-  const siguiente = async () => {
+/*   const siguiente = async () => {
     if (!puedeAvanzar()) return;
 
     const procesoId = localStorage.getItem("procesoId");
@@ -245,7 +243,7 @@ const InscripcionIndividual = () => {
 
     if (paso === 1) {
       try {
-        console.log("Payload estudiante:", estudiante); // 📤 Log detallado
+        console.log("Payload estudiante:", estudiante);
         const respuesta = await inscripcionCompetidor(procesoId, estudiante);
         const idCompetidor = respuesta.data?.competidor_id;
         setCompetidorId(idCompetidor);
@@ -304,8 +302,31 @@ const InscripcionIndividual = () => {
     }
   };
 
-  const anterior = () => setPaso((prev) => Math.max(prev - 1, 1));
+  const anterior = () => setPaso((prev) => Math.max(prev - 1, 1)); */
 
+  const siguiente = () => {
+    if (!puedeAvanzar()) {
+      if (paso === 1 && !camposEstudianteCompletos()) {
+        alert("Por favor, complete todos los datos del estudiante correctamente");
+      } else if (paso === 2 && !camposTutoresCompletos()) {
+        alert("Por favor, complete todos los datos de los tutores correctamente");
+      } else if (paso === 3 && (!camposAreasCompletos() || !categoriasSeleccionadasValida())) {
+        alert("Debe seleccionar al menos un área y una categoría");
+      }
+      return;
+    }
+
+    // Solo avanzamos el paso en la interfaz sin enviar datos al backend
+    if (paso < 4) {
+      console.log(`Avanzando al paso ${paso + 1}`);
+      setPaso(paso + 1);
+    }
+  };
+
+  const anterior = () => {
+    // Simplemente retrocedemos en la interfaz
+    setPaso((prev) => Math.max(prev - 1, 1));
+  };
   const handleEstudianteChange = (e) => {
     const { name, value } = e.target;
     // Guardar curso seleccionado en localStorage si es "curso"
@@ -342,33 +363,10 @@ const InscripcionIndividual = () => {
     setTutorActivo(idx);
   };
 
-  const categoriasElegidas = categoriasDisponibles.filter((cat) =>
-    categoriasSeleccionadas.some((sel) => sel.id === cat.id)
-  );
 
   const volverDesdeBoletaPago = () => {
     setMostrarBoleta(false);
     setPaso(1);
-  };
-
-  // Modo Simulación (cuando no hay conexión al backend)
-  const manejarModoSimulacion = async () => {
-    console.log("Simulando registro exitoso del estudiante:", estudiante);
-    console.log("Simulando registro exitoso de tutores:", tutores);
-    console.log("Simulando registro de áreas:", areasSeleccionadas);
-
-    // Generar número de boleta
-    const nuevoBoleta = generarNumeroBoleta();
-    console.log("NÚMERO DE BOLETA GENERADO:", nuevoBoleta);
-
-    // Simular una pequeña demora para dar impresión de procesamiento
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-
-    return {
-      success: true,
-      nuevoBoleta,
-      estudianteId: `sim-${Date.now()}`, // ID simulado
-    };
   };
 
   // Modo Backend (cuando hay conexión al backend)
@@ -451,7 +449,7 @@ const InscripcionIndividual = () => {
   //   }
   // };
 
-  const handleSubmit = async (e) => {
+  /* const handleSubmit = async (e) => {
     e.preventDefault();
     setProcesando(true);
 
@@ -486,6 +484,146 @@ const InscripcionIndividual = () => {
       setInscripcionId(procesoId); // Puedes usar procesoId como ID de referencia
 
       // Paso 7: Generar el PDF de la boleta
+      try {
+        const boletaPDF = await generarBoletaPDF(
+          estudiante,
+          tutores,
+          areasSeleccionadas,
+          numeroBoletaGenerado
+        );
+
+        // Descargar automáticamente el PDF
+        const url = URL.createObjectURL(boletaPDF);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `Boleta_${numeroBoletaGenerado}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        // Envío automático al correo
+        if (estudiante.correo_electronico) {
+          try {
+            console.log(
+              "Enviando boleta automáticamente al correo:",
+              estudiante.correo_electronico
+            );
+            await enviarBoletaPorEmail(
+              estudiante,
+              tutores,
+              areasSeleccionadas,
+              numeroBoletaGenerado,
+              estudiante.correo_electronico
+            );
+            console.log("Boleta enviada automáticamente con éxito");
+          } catch (errorEnvio) {
+            console.error(
+              "Error al enviar boleta automáticamente:",
+              errorEnvio
+            );
+            // No detenemos el flujo
+          }
+        }
+      } catch (errorPDF) {
+        console.error("Error al generar o descargar el PDF:", errorPDF);
+      }
+
+      // Marcar como completado y mostrar boleta
+      setInscripcionCompletada(true);
+      setMostrarBoleta(true);
+      setModalAbierto(true);
+
+      setTimeout(() => {
+        localStorage.removeItem("idOlimpiada");
+        localStorage.removeItem("tipoInscripcion");
+        localStorage.removeItem("cursoSeleccionado");
+        localStorage.removeItem("procesoId");
+        console.log("Datos de inscripción eliminados del localStorage");
+      }, 10000); // 10000 ms = 10 segundos
+    } catch (error) {
+      console.error("Error en handleSubmit:", error);
+      const mensajeErrorBase =
+        error.response?.data?.message ||
+        error.message ||
+        "Error al procesar la inscripción. Por favor, verifique los campos.";
+
+      const camposErrores = error.response?.data?.errors;
+      if (camposErrores) {
+        const campos = Object.keys(camposErrores);
+        setCamposConError(campos);
+        setMensajeDeError(mensajeErrorBase);
+      } else {
+        setCamposConError([]);
+        setMensajeDeError(mensajeErrorBase);
+      }
+      setErrorModalAbierto(true);
+    } finally {
+      setProcesando(false);
+    }
+  }; */
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setProcesando(true);
+
+    try {
+      // Obtener procesoId previamente guardado en localStorage
+      const procesoId = localStorage.getItem("procesoId");
+      const idOlimpiada = localStorage.getItem("idOlimpiada");
+
+      if (!procesoId || !idOlimpiada) {
+        throw new Error("No se encontró información completa del proceso de inscripción.");
+      }
+
+      console.log("Preparando datos para inscripción directa...");
+      
+      // Preparar objeto de datos para enviar al endpoint de inscripción directa
+      const datosInscripcion = {
+        proceso_id: procesoId,
+        olimpiada_id: idOlimpiada,
+        tipo_inscripcion: "individual",
+        // Datos del competidor
+        nombres: estudiante.nombres,
+        apellidos: estudiante.apellidos,
+        documento_identidad: estudiante.documento_identidad,
+        correo_electronico: estudiante.correo_electronico,
+        fecha_nacimiento: estudiante.fecha_nacimiento,
+        provincia: estudiante.provincia,
+        curso: estudiante.curso,
+        colegio: estudiante.colegio,
+        // Áreas seleccionadas
+        areas: areasSeleccionadas.map(area => area.id),
+        // Niveles seleccionados
+        niveles: categoriasSeleccionadas.map(nivel => nivel.id),
+        // Tutores
+        tutores: tutores.map((tutor, idx) => ({
+          nombres: tutor.nombres,
+          apellidos: tutor.apellidos,
+          correo_electronico: tutor.correo_electronico,
+          telefono: tutor.telefono,
+          es_principal: idx === 0, // El primer tutor es el principal
+          relacion: "Tutor" // Establecemos una relación por defecto
+        }))
+      };
+
+      console.log("📤 Enviando datos para inscripción directa:", datosInscripcion);
+      
+      // Realizar la llamada a la API
+      const respuestaInscripcion = await inscripcionDirecta(datosInscripcion);
+      console.log("✅ Respuesta de inscripción directa:", respuestaInscripcion.data);
+      
+      // Extraer datos de la boleta generada
+      const datosBoleta = respuestaInscripcion.data.data;
+      const numeroBoletaGenerado = datosBoleta.numero_boleta;
+      const boletaId = datosBoleta.boleta_id;
+      
+      console.log(`Boleta generada exitosamente: ${numeroBoletaGenerado}`);
+      
+      setNumeroBoleta(numeroBoletaGenerado);
+      setInscripcionId(procesoId);
+
+      // Generar el PDF de la boleta
       try {
         const boletaPDF = await generarBoletaPDF(
           estudiante,
@@ -626,7 +764,7 @@ const InscripcionIndividual = () => {
                 maximoAreas={maximoAreas} // 🔥 Aquí lo pasas
               />
             )}
-
+            
             {paso === 4 && (
               <FormResumen
                 estudiante={estudiante}

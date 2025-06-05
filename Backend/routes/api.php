@@ -8,6 +8,7 @@ use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\API\boleta\BoletaController;
 use App\Http\Controllers\API\CategoryLevelController;
 use App\Http\Controllers\API\Inscripcion\InscripcionController;
+use App\Http\Controllers\API\Inscripcion\InscripcionDirectaController;
 use App\Http\Controllers\API\Inscripcion\InscripcionGrupalController;
 use App\Http\Controllers\API\Olimpiada\OlimpiadaController;
 use App\Http\Controllers\CompetitorController;
@@ -136,11 +137,13 @@ Route::middleware([IsUserAuth::class])->group(
         // FLUJO DE INSCRIPCIÓN
         Route::prefix('inscripcion')->name('inscripcion.')->group(function () {
                 // Iniciar proceso
-                Route::post('/olimpiada/{olimpiada}/iniciar', [InscripcionController::class, 'iniciarProceso'])
+            Route::post('/olimpiada/{olimpiada}/iniciar', [InscripcionController::class, 'iniciarProceso'])
                     ->name('iniciar');
 
             // Rutas que requieren un proceso de inscripción activo
             Route::middleware([VerificarProcesoInscripcion::class])->group(function () {
+                Route::post('/proceso/{proceso}/inscripcion-directa', [InscripcionDirectaController::class, 'inscripcionDirecta'])
+                    ->name('inscripcion.directa');
                 // Competidores
                 Route::post('/proceso/{proceso}/competidor', [InscripcionController::class, 'registrarCompetidor'])
                     ->name('competidor.registrar');
@@ -172,6 +175,7 @@ Route::middleware([IsUserAuth::class])->group(
                 // Generar boleta
                 Route::post('/proceso/{proceso}/boleta', [InscripcionController::class, 'generarBoleta'])
                     ->name('boleta.generar');
+
             });
 
             // Obtener detalles de boleta (no requiere verificar proceso)
