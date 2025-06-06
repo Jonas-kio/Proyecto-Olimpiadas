@@ -1,10 +1,12 @@
 import { useState,useEffect } from 'react'
 import OcrResults from './OcrResults'
-import { Navigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 
 import { obtenerAsociadosPagador } from '../../../services/inscripcionService';
 import LoadingModal from '../../../components/modals/LoadingModal';
 import ErrorModal from '../../../components/common/ErrorModal';
+
+
 
 const OcrPaymentFlow = () => {
 
@@ -14,6 +16,7 @@ const OcrPaymentFlow = () => {
   const [tutor, setTutor] = useState(null);
   const [competidores, setCompetidores] = useState([]);
   const { procesoId } = useParams();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const cargarDatosAsociados = async () => {
@@ -46,6 +49,7 @@ const OcrPaymentFlow = () => {
         }
         setLoading(false);
       } catch (error) {
+        console.error('Error al cargar los datos asociados:', error);
         setError(error.message || 'No se pudieron cargar los datos asociados. Por favor, inténtalo nuevamente.');
         setLoading(false);
         setShowError(true);
@@ -59,7 +63,7 @@ const OcrPaymentFlow = () => {
 
   const handleCloseError = () => {
     setShowError(false);
-    Navigate('/user/mis-inscripciones'); 
+    navigate('/user/mis-inscripciones'); 
   };
 
   const handleRetry = () => {

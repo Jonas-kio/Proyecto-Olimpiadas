@@ -227,7 +227,7 @@ Route::middleware([IsUserAuth::class])->group(
 
         // FLUJO DE VALIDACIÓN DE COMPROBANTE CON OCR
         Route::post('/ocr/procesar-comprobante', [OcrController::class, 'procesarComprobante']);
-        Route::get('/ocr/competidores/{registrationProcessId}', [OcrController::class, 'obtenerCompetidoresAsociados']);
+        Route::get('/ocr/competidores/{proceso}', [OcrController::class, 'obtenerCompetidoresAsociados']);
     }
 );
 

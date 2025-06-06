@@ -19,10 +19,7 @@ import ProcesandoModal from "../../components/common/ProcesandoModal";
 
 // Boletas
 import BoletaPago from "../user/BoletaPago";
-import {
-  generarBoletaPDF,
-  enviarBoletaPorEmail,
-} from "../../services/boletaService";
+
 
 // Formularios divididos
 import FormEstudiantes from "../../components/forms/FormEstudiantes";
@@ -165,7 +162,7 @@ const InscripcionIndividual = () => {
     };
   }, []);
 
-  const hasUnsavedChanges = true; // O pon lógica para saber si hay datos ingresados
+  const hasUnsavedChanges = true; 
   useNavigationWarning(hasUnsavedChanges);
 
   const textoValido = (texto) => /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$/.test(texto);
@@ -414,7 +411,7 @@ const InscripcionIndividual = () => {
       setNumeroBoleta(numeroBoletaGenerado);
       setInscripcionId(procesoId);
 
-      try {
+      /* try {
         const boletaPDF = await generarBoletaPDF(
           estudiante,
           tutores,
@@ -452,7 +449,7 @@ const InscripcionIndividual = () => {
         }
       } catch (errorPDF) {
         console.error("Error al generar o descargar el PDF:", errorPDF);
-      }
+      } */
 
       setInscripcionCompletada(true);
       setMostrarBoleta(true);

@@ -160,9 +160,11 @@ export const ValidarProcesoOCR = async (payload) => {
 };
 
 export const obtenerAsociadosPagador = async (procesoId) => {
+  console.log("Obteniendo asociados del pagador para el proceso ID:", procesoId);
   try {
     const response = await api.get(`/ocr/competidores/${procesoId}`);
     if (response.data.success) {
+      console.log("Asociados del pagador obtenidos correctamente:", response.data);
       return response.data;
     } else {
       throw new Error(
