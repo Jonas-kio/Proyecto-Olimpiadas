@@ -177,9 +177,10 @@ Route::middleware([IsUserAuth::class])->group(
                     ->name('boleta.generar');
 
             });
+            Route::post('/proceso/{proceso}/calcular-costos-preliminares', [InscripcionDirectaController::class, 'calcularCostosPreliminares'])->name('inscripcion.calcular-costos-preliminares');
 
             // Obtener detalles de boleta (no requiere verificar proceso)
-            Route::get('procesos/{procesoId}/boletas/{boletaId}', [BoletaController::class, 'obtenerDatosBoleta'])
+            Route::get('procesos/{proceso}/boletas/{boletaId}', [BoletaController::class, 'obtenerDatosBoleta'])
                 ->name('boleta.ver');
 
             // Rutas para inscripción grupal

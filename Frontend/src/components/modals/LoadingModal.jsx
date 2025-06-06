@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 /*-
 import React from 'react';
 import '../../styles/components/LoadingModal.css';
@@ -23,7 +24,6 @@ const LoadingModal = ({ isOpen, message = "Por favor espere mientras se cargan l
 
 export default LoadingModal;
 */
-import React from "react";
 
 const LoadingModal = ({
   isOpen,

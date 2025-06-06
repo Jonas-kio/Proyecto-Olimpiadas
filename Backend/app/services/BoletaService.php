@@ -280,8 +280,7 @@ class BoletaService
             })->filter()->values()->toArray();
 
             $resumen['competidores'] = $competidores;
-
-            // Datos de selección y costos
+            $cantidadCompetidores = count(array_unique(array_column($competidores, 'id')));
             $areasSeleccionadas = collect($competidores)->pluck('area')->unique('id')->values()->toArray();
             $nivelesSeleccionados = collect($competidores)->pluck('nivel')->unique('id')->values()->toArray();
             $costosPorCombinacion = [];
@@ -292,6 +291,9 @@ class BoletaService
                         ->first();
 
                     if ($costo && isset($costo->price)) {
+                        // Calcular el subtotal = costo unitario × cantidad de competidores
+                        $subtotal = $costo->price * $cantidadCompetidores;
+
                         $costosPorCombinacion[] = [
                             'area' => [
                                 'id' => $area['id'],
@@ -302,7 +304,10 @@ class BoletaService
                                 'nombre' => $nivel['nombre']
                             ],
                             'costo_unitario' => $costo->price,
-                            'costo_unitario_formateado' => number_format($costo->price, 2)
+                            'costo_unitario_formateado' => number_format($costo->price, 2),
+                            'subtotal' => $subtotal,
+                            'subtotal_formateado' => number_format($subtotal, 2),
+                            'cantidad_competidores' => $cantidadCompetidores
                         ];
                     }
                 }
@@ -314,7 +319,6 @@ class BoletaService
                 'costos_combinaciones' => $costosPorCombinacion
             ];
 
-            $cantidadCompetidores = count(array_unique(array_column($competidores, 'id')));
             $resumen['costo'] = [
                 'monto_total' => $boleta->monto_total,
                 'monto_total_formateado' => number_format($boleta->monto_total, 2),
@@ -338,6 +342,9 @@ class BoletaService
             throw new Exception('Error al obtener los datos de la boleta: ' . $e->getMessage());
         }
     }
+
+
+
 
     public function obtenerBoletasPorOlimpiada($olimpiadaId)
     {

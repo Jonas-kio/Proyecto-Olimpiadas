@@ -213,21 +213,21 @@ export const optenerInscripcionId = async (procesoId) => {
   }
 };
 
-export const inscripcionDirecta = async (datos) => {
+export const inscripcionDirecta = async (procesoId, payload) => {
   try {
-    console.log("📤 Enviando inscripción directa:", datos);
+    console.log("📤 Enviando inscripción directa:", payload);
 
-    if (datos.areas && Array.isArray(datos.areas) && datos.areas.length > 0) {
-      if (typeof datos.areas[0] === 'object') {
-        datos.areas = datos.areas.map(area => area.id);
+    if (payload.areas && Array.isArray(payload.areas) && payload.areas.length > 0) {
+      if (typeof payload.areas[0] === 'object') {
+        payload.areas = payload.areas.map(area => area.id);
       }
     }
-    if (datos.niveles && Array.isArray(datos.niveles) && datos.niveles.length > 0) {
-      if (typeof datos.niveles[0] === 'object') {
-        datos.niveles = datos.niveles.map(nivel => nivel.id);
+    if (payload.niveles && Array.isArray(payload.niveles) && payload.niveles.length > 0) {
+      if (typeof payload.niveles[0] === 'object') {
+        payload.niveles = payload.niveles.map(nivel => nivel.id);
       }
     }
-    const response = await api.post('/inscripcion/proceso/inscripcion-directa', datos);
+    const response = await api.post(`/inscripcion/proceso/${procesoId}/inscripcion-directa`, payload);
     console.log("✅ Inscripción directa completada:", response.data);
     return response;
   } catch (error) {
@@ -240,6 +240,28 @@ export const inscripcionDirecta = async (datos) => {
     if (error.response && error.response.data) {
       console.error("Detalles del error del servidor:", error.response.data);
     }
+    throw error;
+  }
+};
+
+export const calcularCostosPreliminar = async (areasIds, nivelesIds, cantidadCompetidores = 1,procesoId) => {
+  console.log("📤 Enviando solicitud de cálculo de costos:", { areasIds, nivelesIds, cantidadCompetidores });
+  
+  try {
+    const response = await api.post(`/inscripcion/proceso/${procesoId}/calcular-costos-preliminares`, {
+      areas_ids: areasIds,
+      niveles_ids: nivelesIds,
+      cantidad_competidores: cantidadCompetidores
+    });
+    
+    console.log("✅ Respuesta del cálculo de costos:", response.data);
+    
+    if (response.data.success) {
+      return response.data.data;
+    }
+    throw new Error('Error al calcular costos preliminares');
+  } catch (error) {
+    console.error("❌ Error en calcularCostosPreliminar:", error.response || error);
     throw error;
   }
 };
