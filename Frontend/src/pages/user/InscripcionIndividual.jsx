@@ -363,7 +363,9 @@ const InscripcionIndividual = () => {
 
   const volverDesdeBoletaPago = () => {
     setMostrarBoleta(false);
-    setPaso(1);
+    // setPaso(1);
+    navigate("/user/inscripcion/opciones");
+
   };
 
   const handleSubmit = async (e) => {

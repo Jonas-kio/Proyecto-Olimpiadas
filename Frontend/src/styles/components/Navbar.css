@@ -1,3 +1,4 @@
+/* === NAVBAR GENERAL === */
 .navbar {
   background-color: #063970;
   color: white;
@@ -8,7 +9,6 @@
   font-family: sans-serif;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   position: relative;
-  flex-wrap: wrap;
   z-index: 999;
 }
 
@@ -42,7 +42,6 @@
 .navbar-center a {
   color: white;
   text-decoration: none;
-  margin: 0 10px;
   font-size: 14px;
   font-weight: bold;
 }
@@ -56,6 +55,7 @@
   gap: 10px;
 }
 
+/* === BOTONES === */
 .btn {
   display: flex;
   align-items: center;
@@ -77,8 +77,18 @@
   background-color: #1565c0;
 }
 
-/* ---------- Responsive Navbar ---------- */
+/* === BOTONES EN MÓVIL === */
+.btn.logout-btn,
+.btn.login-btn,
+.btn.register-btn {
+  background-color: #0a4d97;
+  border-radius: 20px;
+  width: 100%;
+  justify-content: center;
+  font-weight: bold;
+}
 
+/* === BOTÓN HAMBURGUESA === */
 .menu-toggle {
   display: none;
   background: none;
@@ -86,33 +96,62 @@
   color: white;
   font-size: 24px;
   cursor: pointer;
+  z-index: 1000;
 }
 
+/* === MENÚ RESPONSIVE DESDE LA DERECHA === */
 .navbar-responsive {
-  display: none;
-  flex-direction: column;
-  align-items: flex-end; /* Alinea a la derecha */
-  background-color: #063970;
-  width: 45%;
   position: absolute;
-  top: 90px;
-  left: 55%;
-  border-radius: 30px;
-  padding: 20px 30px;
+  top: 0;
+  right: -260px;
+  height: 50vh;
+  width: 250px;
+  background-color: #063970;
+  border-radius: 0 0 0 20px;
+  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.2);
+  padding: 30px 25px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: start;
+  opacity: 0;
+  transition: right 0.3s ease, opacity 0.3s ease;
   z-index: 998;
 }
+
+.navbar.show .navbar-responsive {
+  right: 0;
+  opacity: 1;
+}
+
 .navbar-responsive a,
 .navbar-responsive button {
+  width: 100%;
+  text-align: left;
+  color: white;
+  font-weight: bold;
+  font-size: 16px;
+  background: none;
+  border: none;
   margin: 10px 0;
-  text-align: right;
+  cursor: pointer;
+  transition: color 0.2s;
 }
+
+.navbar-responsive a:hover,
+.navbar-responsive button:hover {
+  color: #00bfff;
+}
+
 .responsive-btn-group {
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
   gap: 10px;
+  margin-top: 20px;
+  width: 100%;
 }
-/* Estilos para dispositivos móviles */
+
+/* === MEDIA QUERY PARA MÓVILES === */
 @media (max-width: 768px) {
   .navbar-center,
   .navbar-right {
@@ -121,9 +160,5 @@
 
   .menu-toggle {
     display: block;
-  }
-
-  .navbar.show .navbar-responsive {
-    display: flex;
   }
 }
