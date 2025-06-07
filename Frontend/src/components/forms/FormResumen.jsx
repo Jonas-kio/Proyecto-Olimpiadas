@@ -2,42 +2,43 @@
 import { useState, useEffect } from "react";
 
 import "../../styles/components/InscripcionIndividual.css";
-import { obtenerResumenInscripcion } from "../../services/inscripcionService";
 
 const FormResumen = ({
   estudiante,
   tutores,
   areasSeleccionadas,
   categoriasElegidas,
+  costos,
 }) => {
-  // const precioPorArea = 50;
-  // const total = areasSeleccionadas.length * precioPorArea;
+
   const [costosResumen, setCostosResumen] = useState(null);
-  const procesoId = localStorage.getItem("procesoId");
+
 
   useEffect(() => {
-    const fetchResumen = async () => {
-      try {
-        if (!procesoId) {
-          console.warn("No se encontró el ID del proceso");
-          return;
-        }
-        const response = await obtenerResumenInscripcion(procesoId);
-        console.log("Resumen de inscripción obtenido:", response.data);
-
-        const costos = response.data?.resumen?.costo || null;
-        setCostosResumen(costos);
-
-        // 🔹 Guardar en localStorage:
-        if (costos) {
-          localStorage.setItem("costosResumen", JSON.stringify(costos));
-        }
-      } catch (error) {
-        console.error("Error al obtener el resumen:", error);
+    if (costos) {
+      setCostosResumen(costos);
+    } else {
+      console.warn("No se proporcionaron costos para el resumen.");
+      const costosGuardados = localStorage.getItem("costosResumen");
+      if (costosGuardados) {
+        setCostosResumen(JSON.parse(costosGuardados));
       }
-    };
-    fetchResumen();
-  }, [procesoId]);
+    }
+  }, [costos]);
+
+  const obtenerDesgloseCostos = () => {
+    if (!costosResumen) return [];
+
+    if (costosResumen.desglose_costos && costosResumen.desglose_costos.length > 0) {
+      return costosResumen.desglose_costos;
+    }
+
+    if (costosResumen.desglose_combinaciones && costosResumen.desglose_combinaciones.length > 0) {
+      return costosResumen.desglose_combinaciones;
+    }
+
+    return [];
+  };
 
   return (
     <div className="formulario confirmacion">
@@ -145,16 +146,17 @@ const FormResumen = ({
             <div className="fila-resumen">
               <span className="etiqueta">Cantidad de Competidores:</span>
               <span className="valor">
-                {costosResumen.cantidad_competidores}
+                {costosResumen.cantidad_competidores || 1}
               </span>
             </div>
-            {costosResumen.desglose_combinaciones && costosResumen.desglose_combinaciones.length > 0 && (
+
+            {obtenerDesgloseCostos().length > 0 && (
               <div className="desglose-costos">
                 <div className="fila-resumen">
                   <span className="etiqueta">Desglose por área:</span>
                 </div>
-                
-                {costosResumen.desglose_combinaciones.map((item, index) => (
+
+                {obtenerDesgloseCostos().map((item, index) => (
                   <div className="fila-resumen" key={index}>
                     <span className="etiqueta indentado">
                       {item.area.nombre} - {item.nivel.nombre}:
@@ -162,13 +164,19 @@ const FormResumen = ({
                     <span className="valor">
                       Bs. {item.costo_unitario_formateado}
                     </span>
+                    <span className="valor">
+                      Subtotal: Bs. {item.subtotal_formateado}
+                    </span>
                   </div>
                 ))}
               </div>
             )}
+
             <div className="fila-resumen total">
               <span className="etiqueta">Total:</span>
-              <span className="valor">Bs. {costosResumen.monto_total_formateado}</span>
+              <span className="valor">
+                Bs. {costosResumen.monto_total_formateado || "0.00"}
+              </span>
             </div>
           </>
         ) : (

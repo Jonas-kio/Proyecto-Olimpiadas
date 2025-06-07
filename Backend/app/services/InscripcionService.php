@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\BoletaEstado;
 use App\Models\Area;
 use App\Models\Boleta;
 use App\Models\CategoryLevel;
@@ -13,17 +14,26 @@ use App\Models\RegistrationProcess;
 use App\Models\Tutor;
 use App\Repositories\ProcesoInscripcionRepository;
 use App\Enums\EstadoInscripcion;
+use App\Events\BoletaGenerada;
+use App\Models\DetalleInscripcion;
 use Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class InscripcionService
 {
     protected $categoryLevelService;
     protected $procesoRepository;
+    protected $boletaService;
 
-    public function __construct(ProcesoInscripcionRepository $procesoRepository, CategoryLevelService $categoryLevelService)
-    {
+    public function __construct(
+        ProcesoInscripcionRepository $procesoRepository,
+        CategoryLevelService $categoryLevelService,
+        BoletaService $boletaService
+    ){
         $this->categoryLevelService = $categoryLevelService;
+        $this->boletaService = $boletaService;
         $this->procesoRepository = $procesoRepository;
     }
 
@@ -49,62 +59,72 @@ class InscripcionService
 
     public function registrarCompetidor(RegistrationProcess $proceso, array $datos)
     {
-        \App\Services\Helpers\InscripcionHelper::verificarProcesoActivo($proceso, 'registrar competidores');
+        \App\Services\Helpers\InscripcionHelper::verificarProcesoActivo($proceso, 'registrar datos de competidor');
 
         if ($proceso->status !== EstadoInscripcion::PENDIENTE) {
             throw new Exception('El proceso de inscripción no está en estado pendiente');
         }
 
+        // Formatear datos del curso
         $cursoNivel = explode(' ', $datos['curso']);
         $datos['curso'] = $cursoNivel[0];
         $datos['nivel'] = $cursoNivel[1];
 
-        $competidor = Competitor::create($datos);
-        $this->procesoRepository->agregarCompetidor($proceso->id, $competidor->id);
+        // Validar datos básicos
+        if (empty($datos['nombres']) || empty($datos['apellidos']) || empty($datos['documento_identidad'])) {
+            throw new Exception('Faltan datos obligatorios del competidor');
+        }
 
-        return $competidor;
+        // Asignar un ID temporal para referencia
+        $tempId = 'temp_' . uniqid();
+
+        // Almacenar datos en caché con una clave única para este proceso
+        $cacheKey = "proceso_{$proceso->id}_competidor_temporal";
+        \Illuminate\Support\Facades\Cache::put($cacheKey, $datos, now()->addHours(24));
+
+        // También guardar un ID de competidor temporal para referencia
+        $cacheKeyId = "proceso_{$proceso->id}_competidor_temp_id";
+        \Illuminate\Support\Facades\Cache::put($cacheKeyId, $tempId, now()->addHours(24));
+
+        return [
+            'id' => $tempId,
+            'datos' => $datos,
+            'mensaje' => 'Datos del competidor almacenados temporalmente'
+        ];
     }
 
-    public function registrarTutor(RegistrationProcess $proceso, array $datos, array $competidoresIds, int $usuarioId)
+    public function registrarTutor(RegistrationProcess $proceso, array $datos)
     {
-        \App\Services\Helpers\InscripcionHelper::verificarProcesoActivo($proceso, 'registrar tutores');
+        \App\Services\Helpers\InscripcionHelper::verificarProcesoActivo($proceso, 'registrar datos de tutor');
 
         if ($proceso->status !== EstadoInscripcion::PENDIENTE) {
             throw new Exception('El proceso de inscripción no está en estado pendiente');
         }
 
-        if (empty($competidoresIds)) {
-            throw new Exception('Debe seleccionar al menos un competidor');
+        if (empty($datos['nombres']) || empty($datos['apellidos']) || empty($datos['correo_electronico'])) {
+            throw new Exception('Faltan datos obligatorios del tutor');
         }
 
-        $tutor = Tutor::updateOrCreate(
-            ['correo_electronico' => $datos['correo_electronico']],
-            [
-                'nombres' => $datos['nombres'],
-                'apellidos' => $datos['apellidos'],
-                'telefono' => $datos['telefono'],
-            ]
-        );
+        // Crear un array para almacenar múltiples tutores
+        $cacheKey = "proceso_{$proceso->id}_tutores_temporal";
+        $tutoresTemporales = \Illuminate\Support\Facades\Cache::get($cacheKey, []);
 
-        foreach ($competidoresIds as $competidorId) {
-            try {
-                if (!$this->procesoRepository->competidorPerteneceAProceso($proceso->id, $competidorId)) {
-                    throw new Exception("El competidor no pertenece a este proceso de inscripción");
-                }
+        // Agregar un nuevo tutor a la lista
+        $tempId = 'temp_tutor_' . uniqid();
+        $datos['temp_id'] = $tempId;
+        $datos['es_principal'] = $datos['es_principal'] ?? (empty($tutoresTemporales));
+        $datos['relacion'] = $datos['relacion'] ?? 'Tutor';
 
-                CompetidorTutor::create([
-                    'competidor_id' => $competidorId,
-                    'tutor_id' => $tutor->id,
-                    'es_principal' => $datos['es_principal'] ?? false,
-                    'relacion' => $datos['relacion'] ?? 'Tutor',
-                    'activo' => true
-                ]);
-            } catch (ModelNotFoundException $e) {
-                throw new Exception("Uno de los competidores seleccionados no existe");
-            }
-        }
+        $tutoresTemporales[] = $datos;
 
-        return $tutor;
+        // Guardar la lista actualizada en caché
+        \Illuminate\Support\Facades\Cache::put($cacheKey, $tutoresTemporales, now()->addHours(24));
+
+        return [
+            'id' => $tempId,
+            'datos' => $datos,
+            'mensaje' => 'Datos del tutor almacenados temporalmente'
+        ];
     }
 
     public function guardarSeleccionArea(RegistrationProcess $proceso, $areaIds)
@@ -129,7 +149,6 @@ class InscripcionService
             throw new Exception("No puede seleccionar más de {$maximoAreas} área(s) para esta olimpiada. Ya ha seleccionado " . count($areasSeleccionadas) . " área(s).");
         }
 
-        // Verificar para cada área nueva si es válida y si cumple con las condiciones
         foreach ($areaIds as $areaId) {
 
             $areaValidaEnConditions = $proceso->olimpiada->conditions()
@@ -172,7 +191,6 @@ class InscripcionService
                 $guardadas = $guardadas && $this->procesoRepository->guardarSeleccionArea($proceso->id, $areaId);
             }
         }
-
         return $guardadas;
     }
 
@@ -666,4 +684,179 @@ class InscripcionService
             'tiene_boleta' => (bool) $proceso->boleta
         ];
     }
+
+
+    public function inscripcionIndividual(RegistrationProcess $proceso, array $datos){
+        if ($proceso->status->value !== EstadoInscripcion::PENDIENTE->value) {
+            throw new \Exception('El proceso de inscripción no está en estado válido para generar boleta');
+        }
+
+        DB::beginTransaction();
+
+        try {
+            if (empty($datos['areas']) || !is_array($datos['areas'])) {
+                throw new \Exception('Debe seleccionar al menos un área');
+            }
+
+            if (empty($datos['niveles']) || !is_array($datos['niveles'])) {
+                throw new \Exception('Debe seleccionar al menos un nivel');
+            }
+
+            if (empty($datos['competidores']) || !is_array($datos['competidores'])) {
+                throw new \Exception('Debe registrar al menos un competidor');
+            }
+
+            $competidoresIds = [];
+
+            foreach ($datos['competidores'] as $datosCompetidor) {
+                if (empty($datosCompetidor['nombres']) || empty($datosCompetidor['apellidos'])) {
+                    throw new \Exception('Faltan datos obligatorios del competidor');
+                }
+
+                $competidor = Competitor::create([
+                    'nombres' => $datosCompetidor['nombres'],
+                    'apellidos' => $datosCompetidor['apellidos'],
+                    'documento_identidad' => $datosCompetidor['documento_identidad'],
+                    'correo_electronico' => $datosCompetidor['correo_electronico'],
+                    'fecha_nacimiento' => $this->formatearFecha($datosCompetidor['fecha_nacimiento']),
+                    'colegio' => $datosCompetidor['colegio'],
+                    'curso' => $datosCompetidor['curso'],
+                    'provincia' => $datosCompetidor['provincia'],
+                    'nivel' => $datosCompetidor['nivel'] ?? 'Secundaria'
+                ]);
+
+                Log::info("Creando competidor desde datos del request", [
+                    'proceso_id' => $proceso->id,
+                    'competidor_id' => $competidor->id,
+                    'nombres' => $competidor->nombres
+                ]);
+
+                $competidoresIds[] = $competidor->id;
+                $this->procesoRepository->agregarCompetidor($proceso->id, $competidor->id);
+
+                if (!empty($datosCompetidor['tutores']) && is_array($datosCompetidor['tutores'])) {
+                    $tieneTutorPrincipal = false;
+
+                    foreach ($datosCompetidor['tutores'] as $index => $datosTutor) {
+                        if (empty($datosTutor['nombres']) || empty($datosTutor['apellidos']) || empty($datosTutor['correo_electronico'])) {
+                            throw new \Exception('Faltan datos obligatorios del tutor');
+                        }
+
+                        // Determinar si este tutor es principal
+                        $esPrincipal = isset($datosTutor['es_principal']) ?
+                            (bool)$datosTutor['es_principal'] :
+                            ($index === 0);
+
+                        if ($esPrincipal) {
+                            $tieneTutorPrincipal = true;
+                        }
+
+                        $tutor = Tutor::updateOrCreate(
+                            ['correo_electronico' => $datosTutor['correo_electronico']],
+                            [
+                                'nombres' => $datosTutor['nombres'],
+                                'apellidos' => $datosTutor['apellidos'],
+                                'telefono' => $datosTutor['telefono'] ?? '',
+                            ]
+                        );
+
+                        CompetidorTutor::create([
+                            'competidor_id' => $competidor->id,
+                            'tutor_id' => $tutor->id,
+                            'es_principal' => $esPrincipal,
+                            'relacion' => $datosTutor['relacion'] ?? 'Tutor',
+                            'activo' => true
+                        ]);
+                    }
+
+                    Log::info("Tutores creados para competidor", [
+                        'competidor_id' => $competidor->id,
+                        'cantidad_tutores' => count($datosCompetidor['tutores'])
+                    ]);
+
+                    // Verificar que hay al menos un tutor principal
+                    if (!$tieneTutorPrincipal && !empty($datosCompetidor['tutores'])) {
+                        throw new \Exception('Debe designar al menos un tutor principal para el competidor');
+                    }
+                } else {
+                    throw new \Exception('Debe registrar al menos un tutor para cada competidor');
+                }
+            }
+
+            // Obtener los IDs de áreas y niveles
+            $areasIds = $datos['areas'];
+            $nivelesIds = $datos['niveles'];
+
+            // Calcular costos y generar detalles de inscripción
+            $montoTotal = 0;
+            $fechaExpiracion = $proceso->olimpiada->fecha_fin;
+
+            if (!$fechaExpiracion) {
+                throw new \Exception('La olimpiada no tiene definida una fecha de finalización');
+            }
+
+            foreach ($areasIds as $areaId) {
+                foreach ($nivelesIds as $nivelId) {
+                    try {
+                        $costo = Cost::where('area_id', $areaId)
+                            ->where('category_id', $nivelId)
+                            ->firstOrFail();
+
+                        if (!isset($costo->price)) {
+                            continue;
+                        }
+
+                        foreach ($competidoresIds as $competidorId) {
+                            DetalleInscripcion::create([
+                                'register_process_id' => $proceso->id,
+                                'competidor_id' => $competidorId,
+                                'area_id' => $areaId,
+                                'categoria_id' => $nivelId,
+                                'monto' => $costo->price,
+                                'status' => true
+                            ]);
+                            $montoTotal += $costo->price;
+                        }
+                    } catch (\Exception $e) {
+                        continue;
+                    }
+                }
+            }
+
+            if ($montoTotal == 0) {
+                throw new \Exception('No se encontraron combinaciones válidas de área y nivel para generar la boleta');
+            }
+
+            // Crear boleta
+            $boleta = Boleta::create([
+                'registration_process_id' => $proceso->id,
+                'numero_boleta' => $this->boletaService->generarCodigoBoleta($proceso->type),
+                'monto_total' => $montoTotal,
+                'fecha_emision' => now(),
+                'fecha_expiracion' => $fechaExpiracion,
+                'estado' => BoletaEstado::PENDIENTE->value,
+                'validado' => false
+            ]);
+
+            $this->procesoRepository->actualizarEstadoActivacion($proceso->id, false);
+
+            DB::commit();
+
+            event(new BoletaGenerada($boleta));
+
+            return $boleta;
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw new \Exception('Error al generar la boleta: ' . $e->getMessage());
+        }
+    }
+
+    private function formatearFecha($fecha)
+    {
+        if (is_numeric($fecha) || !strtotime($fecha)) {
+            return null;
+        }
+        return date('Y-m-d', strtotime($fecha));
+    }
+
 }

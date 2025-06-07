@@ -81,7 +81,7 @@ class InscripcionController extends Controller
         $competidor = $this->inscripcionService->registrarCompetidor($proceso, $request->validated());
         return response()->json([
             'success' => true,
-            'competidor_id' => $competidor->id,
+            'competidor_id' => $competidor['id'],
             'mensaje' => 'Competidor registrado correctamente'
         ]);
     }
@@ -97,7 +97,7 @@ class InscripcionController extends Controller
 
         return response()->json([
             'success' => true,
-            'tutor_id' => $tutor->id,
+            'tutor_id' => $tutor['id'],
             'mensaje' => 'Tutor registrado correctamente'
         ]);
     }
@@ -114,12 +114,25 @@ class InscripcionController extends Controller
 
     public function seleccionarNivel(SeleccionNivelRequest $request, RegistrationProcess $proceso)
     {
-        $this->inscripcionService->guardarSeleccionNivel($proceso, $request->nivel_id);
+        try {
+            $this->inscripcionService->guardarSeleccionArea($proceso, $request->area_id);
 
-        return response()->json([
-            'success' => true,
-            'mensaje' => count($request->nivel_id) > 1 ? 'Niveles seleccionados correctamente' : 'Nivel seleccionado correctamente'
-        ]);
+            return response()->json([
+                'success' => true,
+                'mensaje' => count($request->area_id) > 1 ? 'Áreas seleccionadas correctamente' : 'Área seleccionada correctamente'
+            ]);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Error al guardar áreas: " . $e->getMessage(), [
+                'proceso_id' => $proceso->id,
+                'areas' => $request->area_id,
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'mensaje' => $e->getMessage()
+            ], 400); // Usa 400 en lugar de 500 para errores de validación
+        }
     }
 
     public function obtenerResumen(RegistrationProcess $proceso)

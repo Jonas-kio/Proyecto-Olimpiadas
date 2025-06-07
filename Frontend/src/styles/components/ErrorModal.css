@@ -32,7 +32,7 @@
 }
 
 .error-modal__message {
-    color: #4b5563;
+    color: #000000;
     /* Gris oscuro */
     text-align: center;
     margin-bottom: 16px;

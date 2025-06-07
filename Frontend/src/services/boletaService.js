@@ -22,19 +22,49 @@ export const generarBoletaPDF = async (
   tutores,
   areasSeleccionadas,
   numeroBoleta,
-  costoPorArea // este argumento sigue, por si lo envías directo
+  costos
 ) => {
-  // Si no se proporciona costoPorArea, intenta usar el localStorage
-  if (!costoPorArea) {
+  // Si no se proporciona costos, intenta usar el localStorage
+  if (!costos) {
     const resumen = JSON.parse(localStorage.getItem("costosResumen"));
-    costoPorArea = resumen?.monto_unitario ?? COSTO_POR_AREA_DEFAULT;
+    costos = resumen?.monto_unitario ?? COSTO_POR_AREA_DEFAULT;
   }
   try {
+
+    let datosDesglose = [];
+    let montoTotal = "0.00";
+
+    if (costos && costos.desglose_costos) {
+      datosDesglose = costos.desglose_costos;
+      montoTotal = costos.monto_total_formateado || costos.monto_total;
+    } else {
+      // Intentar cargar desde localStorage como fallback
+      const resumenGuardado = JSON.parse(localStorage.getItem("costosResumen"));
+      if (resumenGuardado) {
+        datosDesglose = resumenGuardado.desglose_costos || [];
+        montoTotal = resumenGuardado.monto_total_formateado || resumenGuardado.monto_total || "0.00";
+      } else {
+        // Si no hay datos disponibles, usar valor predeterminado
+        const costoPredeterminado = COSTO_POR_AREA_DEFAULT;
+        montoTotal = (areasSeleccionadas.length * costoPredeterminado).toFixed(2);
+        areasSeleccionadas.forEach(area => {
+          datosDesglose.push({
+            area: area,
+            costo_unitario: costoPredeterminado,
+            costo_unitario_formateado: costoPredeterminado.toFixed(2),
+            subtotal: costoPredeterminado,
+            subtotal_formateado: costoPredeterminado.toFixed(2)
+          });
+        });
+      }
+    }
+
+
     console.log("Generando PDF con datos:", {
       numeroBoleta,
       estudiante,
       areasSeleccionadas,
-      costoPorArea,
+      costos,
     });
 
     // Generar el PDF en el frontend
@@ -47,13 +77,6 @@ export const generarBoletaPDF = async (
       new Date().setDate(new Date().getDate() + 7)
     ).toLocaleDateString("es-BO");
 
-    // Calcular total usando el costo proporcionado
-    const resumen = JSON.parse(localStorage.getItem("costosResumen"));
-
-    
-    const precioArea = costoPorArea;
-    const totalPago =
-      resumen?.monto_total ?? areasSeleccionadas.length * precioArea;
 
     // ENCABEZADO
     doc.setFontSize(20);
@@ -153,15 +176,23 @@ export const generarBoletaPDF = async (
     doc.setFont("helvetica", "normal");
     doc.setTextColor(0, 0, 0);
 
-    resumen.desglose_combinaciones.forEach((item) => {
-      const nombre = item.area.nombre;
-      doc.text(nombre, 20, yPos + 6);
-      doc.text(`Bs. ${item.costo_unitario_formateado}`, pageWidth / 2 - 10, yPos + 6);
-      doc.text(`Bs. ${item.subtotal_formateado}`, pageWidth - 40, yPos + 6);
-      doc.setDrawColor(220, 220, 220);
-      doc.line(15, yPos + 8, pageWidth - 15, yPos + 8);
+    if (Array.isArray(datosDesglose) && datosDesglose.length > 0) {
+      datosDesglose.forEach((item) => {
+        const nombre = item.area?.nombre || "Área";
+        const costoUnitario = item.costo_unitario_formateado || (item.costo_unitario?.toFixed(2) || "0.00");
+        const subtotal = item.subtotal_formateado || (item.subtotal?.toFixed(2) || "0.00");
+        doc.text(nombre, 20, yPos + 6);
+        doc.text(`Bs. ${costoUnitario}`, pageWidth / 2 - 10, yPos + 6);
+        doc.text(`Bs. ${subtotal}`, pageWidth - 40, yPos + 6);
+        doc.setDrawColor(220, 220, 220);
+        doc.line(15, yPos + 8, pageWidth - 15, yPos + 8);
+        yPos += 10;
+      });
+    } else {
+      // Si no hay datos detallados, mostrar un mensaje
+      doc.text("No hay detalles de costos disponibles", 20, yPos + 6);
       yPos += 10;
-    });
+    }
 
     // Total
     doc.setFillColor(233, 238, 246);
@@ -169,7 +200,7 @@ export const generarBoletaPDF = async (
     doc.setTextColor(26, 78, 142);
     doc.rect(15, yPos, pageWidth - 30, 8, "F");
     doc.text("Total a pagar", pageWidth / 2 - 10, yPos + 6);
-    doc.text(`Bs. ${totalPago}`, pageWidth - 40, yPos + 6);
+    doc.text(`Bs. ${montoTotal}`, pageWidth - 40, yPos + 6);
     yPos += 20;
 
     // INFORMACIÓN IMPORTANTE
@@ -209,11 +240,11 @@ export const enviarBoletaPorEmail = async (
   areasSeleccionadas,
   numeroBoleta,
   correoDestino,
-  costoPorArea
+  costos
 ) => {
-  if (!costoPorArea) {
+  if (!costos) {
     const resumen = JSON.parse(localStorage.getItem("costosResumen"));
-    costoPorArea = resumen?.monto_unitario ?? COSTO_POR_AREA_DEFAULT;
+    costos = resumen?.monto_unitario ?? COSTO_POR_AREA_DEFAULT;
   }
   try {
     // Generar el PDF
@@ -222,7 +253,7 @@ export const enviarBoletaPorEmail = async (
       tutores,
       areasSeleccionadas,
       numeroBoleta,
-      costoPorArea
+      costos
     );
 
     // Crear FormData para enviar el archivo
@@ -259,7 +290,7 @@ export const enviarBoletaPorEmail = async (
         areasSeleccionadas,
         numeroBoleta,
         correoDestino,
-        costoPorArea
+        costos
       );
     }
   } catch (error) {
@@ -270,7 +301,7 @@ export const enviarBoletaPorEmail = async (
       areasSeleccionadas,
       numeroBoleta,
       correoDestino,
-      costoPorArea
+      costos
     );
   }
 };
@@ -282,7 +313,7 @@ const usarMetodoAlternativo = async (
   areasSeleccionadas,
   numeroBoleta,
   correoDestino,
-  costoPorArea
+  costos
 ) => {
   try {
     console.log("Usando método alternativo de envío (cliente de correo)...");
@@ -294,7 +325,7 @@ const usarMetodoAlternativo = async (
       areasSeleccionadas,
       numeroBoleta,
       correoDestino,
-      costoPorArea
+      costos
     );
 
     // Abrir el cliente de correo predeterminado
@@ -319,11 +350,11 @@ export const generarEnlacesCorreo = async (
   areasSeleccionadas,
   numeroBoleta,
   correoDestino,
-  costoPorArea
+  costos
 ) => {
-  if (!costoPorArea) {
+  if (!costos) {
     const resumen = JSON.parse(localStorage.getItem("costosResumen"));
-    costoPorArea = resumen?.monto_unitario ?? COSTO_POR_AREA_DEFAULT;
+    costos = resumen?.monto_unitario ?? COSTO_POR_AREA_DEFAULT;
   }
   try {
     // Generar el PDF
@@ -332,7 +363,7 @@ export const generarEnlacesCorreo = async (
       tutores,
       areasSeleccionadas,
       numeroBoleta,
-      costoPorArea
+      costos
     );
 
     // Crear URL para el PDF
@@ -342,7 +373,7 @@ export const generarEnlacesCorreo = async (
     const asunto = `Boleta de Pago - Olimpiadas Oh! SanSi #${numeroBoleta}`;
 
     // Calcular el total a pagar
-    const totalPago = areasSeleccionadas.length * costoPorArea;
+    const totalPago = areasSeleccionadas.length * costos;
     const fechaLimite = new Date(
       new Date().setDate(new Date().getDate() + 7)
     ).toLocaleDateString("es-BO");
@@ -404,3 +435,17 @@ Equipo CodersSociety.srl`;
     );
   }
 };
+
+export const obtenerDatosBoleta = async (procesoId, boletaId) => {
+  try {
+    const response = await api.get(`/inscripcion/procesos/${procesoId}/boletas/${boletaId}`);
+    if (response.data.success) {
+      return response.data;
+    } else {
+      throw new Error(response.data.message || "Error al obtener los datos de la boleta");
+    }
+  } catch (error) {
+    console.error("Error al obtener los datos de la boleta:", error);
+    throw error;
+  }
+}

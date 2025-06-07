@@ -8,6 +8,7 @@ use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\API\boleta\BoletaController;
 use App\Http\Controllers\API\CategoryLevelController;
 use App\Http\Controllers\API\Inscripcion\InscripcionController;
+use App\Http\Controllers\API\Inscripcion\InscripcionDirectaController;
 use App\Http\Controllers\API\Inscripcion\InscripcionGrupalController;
 use App\Http\Controllers\API\Olimpiada\OlimpiadaController;
 use App\Http\Controllers\CompetitorController;
@@ -142,11 +143,13 @@ Route::middleware([IsUserAuth::class])->group(
         // FLUJO DE INSCRIPCIÓN
         Route::prefix('inscripcion')->name('inscripcion.')->group(function () {
                 // Iniciar proceso
-                Route::post('/olimpiada/{olimpiada}/iniciar', [InscripcionController::class, 'iniciarProceso'])
+            Route::post('/olimpiada/{olimpiada}/iniciar', [InscripcionController::class, 'iniciarProceso'])
                     ->name('iniciar');
 
             // Rutas que requieren un proceso de inscripción activo
             Route::middleware([VerificarProcesoInscripcion::class])->group(function () {
+                Route::post('/proceso/{proceso}/inscripcion-directa', [InscripcionDirectaController::class, 'inscripcionDirecta'])
+                    ->name('inscripcion.directa');
                 // Competidores
                 Route::post('/proceso/{proceso}/competidor', [InscripcionController::class, 'registrarCompetidor'])
                     ->name('competidor.registrar');
@@ -178,10 +181,12 @@ Route::middleware([IsUserAuth::class])->group(
                 // Generar boleta
                 Route::post('/proceso/{proceso}/boleta', [InscripcionController::class, 'generarBoleta'])
                     ->name('boleta.generar');
+
             });
+            Route::post('/proceso/{proceso}/calcular-costos-preliminares', [InscripcionDirectaController::class, 'calcularCostosPreliminares'])->name('inscripcion.calcular-costos-preliminares');
 
             // Obtener detalles de boleta (no requiere verificar proceso)
-            Route::get('procesos/{procesoId}/boletas/{boletaId}', [BoletaController::class, 'obtenerDatosBoleta'])
+            Route::get('procesos/{proceso}/boletas/{boletaId}', [BoletaController::class, 'obtenerDatosBoleta'])
                 ->name('boleta.ver');
 
             // Rutas para inscripción grupal
@@ -228,7 +233,7 @@ Route::middleware([IsUserAuth::class])->group(
 
         // FLUJO DE VALIDACIÓN DE COMPROBANTE CON OCR
         Route::post('/ocr/procesar-comprobante', [OcrController::class, 'procesarComprobante']);
-        Route::get('/ocr/competidores/{registrationProcessId}', [OcrController::class, 'obtenerCompetidoresAsociados']);
+        Route::get('/ocr/competidores/{proceso}', [OcrController::class, 'obtenerCompetidoresAsociados']);
     }
 );
 
