@@ -16,11 +16,11 @@ const REGEX = {
 const VALIDATION = {
   AREA_NAME: {
     MIN_LENGTH: 3,
-    MAX_LENGTH: 100 // Manteniendo tu límite de 100 caracteres
+    MAX_LENGTH: 100
   },
   AREA_DESCRIPTION: {
     MIN_LENGTH: 10,
-    MAX_LENGTH: 500 // Manteniendo tu límite de 500 caracteres
+    MAX_LENGTH: 150
   }
 };
 
