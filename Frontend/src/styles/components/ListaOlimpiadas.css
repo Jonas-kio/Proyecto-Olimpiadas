@@ -71,7 +71,7 @@
     color: white;
 }
 
-/* Imagen que ocupa todo el contenedor */
+/* Imagen que mantiene proporciones */
 .olimpiada-content {
     background: white;
     padding: 0; /* Sin padding para que la imagen toque los bordes */
@@ -87,16 +87,14 @@
 .olimpiada-portada-img {
     width: 100%; /* Ocupa todo el ancho del contenedor */
     height: 150px; /* Altura fija */
-    object-fit: cover; /* Cubre todo el espacio, puede recortar para ajustarse */
+    object-fit: contain; /* CAMBIADO: Mantiene proporciones sin estirar */
     object-position: center;
     border-radius: 0; /* Sin border-radius porque la tarjeta ya lo tiene */
     display: block;
     margin: 0;
-    background: transparent;
+    background: #f8f9fa; /* CAMBIADO: Fondo sutil para espacios vacíos */
     box-shadow: none; /* Sin sombra individual */
 }
-
-
 
 .olimpiada-logo {
     width: 100%;
@@ -108,8 +106,6 @@
     align-items: center;
     justify-content: center;
 }
-
-
 
 .olimpiada-info {
     padding: 0.75rem 1rem;
@@ -199,8 +195,6 @@
     margin-bottom: 1rem;
     text-align: center;
 }
-
-
 
 .lista-olimpiadas-page {
     min-height: 100vh;

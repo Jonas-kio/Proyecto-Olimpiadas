@@ -119,11 +119,6 @@ const ListaOlimpiadas = () => {
       return olimpiada.estado;
     }
 
-    // Si tiene campo activo pero no está activa, está terminada
-    /* if (olimpiada.hasOwnProperty("activo") && !olimpiada.activo) {
-      return "Terminado";
-    }
- */
     // Si la fecha de inicio existe y es en el futuro, está pendiente
     if (fechaInicio && fechaInicio > hoy) {
       return "Pendiente";
@@ -195,7 +190,6 @@ const ListaOlimpiadas = () => {
                         src={`http://localhost:8000/storage/${olimpiada.imagen}`}
                         alt="Portada de la olimpiada"
                         className="olimpiada-portada-img"
-                        style={{ width: "100%", maxHeight: "140px", objectFit: "contain", borderRadius: "10px" }}
                       />
                     ) : (
                       <div className="sin-imagen">Sin imagen</div>
@@ -203,31 +197,12 @@ const ListaOlimpiadas = () => {
                   </div>
                 </div>
 
-              <div className="olimpiada-info">
-                <p>
-                  <strong>Áreas:</strong>{" "}
-                  {olimpiada.areas.length > 0
-                    ? olimpiada.areas.join(", ")
-                    : "No especificadas"}
-                </p>
-                {/* <p>
-                  <strong>Inscritos:</strong> {olimpiada.inscritos}{" "}
-                  participantes
-                </p> */}
-                <p>
-                  <strong>Modalidad:</strong> {olimpiada.modalidad}
-                </p>
-              </div>
                 <div className="olimpiada-info">
                   <p>
                     <strong>Áreas:</strong>{" "}
                     {olimpiada.areas.length > 0
                       ? olimpiada.areas.join(", ")
                       : "No especificadas"}
-                  </p>
-                  <p>
-                    <strong>Inscritos:</strong> {olimpiada.inscritos}{" "}
-                    participantes
                   </p>
                   <p>
                     <strong>Modalidad:</strong> {olimpiada.modalidad}
@@ -241,7 +216,12 @@ const ListaOlimpiadas = () => {
                         rel="noopener noreferrer"
                         title="Ver PDF de detalles"
                         className="pdf-icon-link"
-                        style={{ color: '#d32f2f', fontSize: '1.2rem', verticalAlign: 'middle' }}
+                        style={{ 
+                          color: '#d32f2f', 
+                          fontSize: '1.2rem', 
+                          verticalAlign: 'middle',
+                          textDecoration: 'none'
+                        }}
                       >
                         <FaFilePdf />
                       </a>
