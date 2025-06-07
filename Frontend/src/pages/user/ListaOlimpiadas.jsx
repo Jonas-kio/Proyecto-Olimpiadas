@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "../../styles/components/ListaOlimpiadas.css";
 import "../../styles/components/Table.css";
@@ -118,10 +118,10 @@ const ListaOlimpiadas = () => {
     }
 
     // Si tiene campo activo pero no está activa, está terminada
-    if (olimpiada.hasOwnProperty("activo") && !olimpiada.activo) {
+    /* if (olimpiada.hasOwnProperty("activo") && !olimpiada.activo) {
       return "Terminado";
     }
-
+ */
     // Si la fecha de inicio existe y es en el futuro, está pendiente
     if (fechaInicio && fechaInicio > hoy) {
       return "Pendiente";
@@ -223,10 +223,10 @@ const ListaOlimpiadas = () => {
                     ? olimpiada.areas.join(", ")
                     : "No especificadas"}
                 </p>
-                <p>
+                {/* <p>
                   <strong>Inscritos:</strong> {olimpiada.inscritos}{" "}
                   participantes
-                </p>
+                </p> */}
                 <p>
                   <strong>Modalidad:</strong> {olimpiada.modalidad}
                 </p>

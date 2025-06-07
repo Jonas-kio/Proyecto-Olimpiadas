@@ -8,9 +8,11 @@ use App\Events\BoletaGenerada;
 use App\Models\Boleta;
 use App\Models\CompetidorAreaNivel;
 use App\Models\CompetidorTutor;
+use App\Models\Competitor;
 use App\Models\Cost;
 use App\Models\DetalleInscripcion;
 use App\Models\RegistrationProcess;
+use App\Models\Tutor;
 use App\Repositories\ProcesoInscripcionRepository;
 
 use Carbon\Carbon;
@@ -21,6 +23,7 @@ use League\Csv\Reader;
 use League\Csv\Statement;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Cache;
 
 class BoletaService
 {
@@ -39,11 +42,8 @@ class BoletaService
             throw new \Exception('El proceso de inscripción no está en estado válido para generar boleta');
         }
 
-
-        $competidoresIds = $this->procesoRepository->obtenerIdsCompetidores($proceso->id);
-        if (empty($competidoresIds)) {
-            throw new \Exception('El proceso de inscripción no tiene competidores asociados');
-        }
+        $datosCompetidor = Cache::get("proceso_{$proceso->id}_competidor_temporal");
+        $tutoresTemporales = Cache::get("proceso_{$proceso->id}_tutores_temporal", []);
 
         $areasIds = $this->procesoRepository->obtenerAreasSeleccionadas($proceso->id);
         $nivelesIds = $this->procesoRepository->obtenerNivelesSeleccionados($proceso->id);
@@ -55,6 +55,52 @@ class BoletaService
         DB::beginTransaction();
 
         try {
+            $competidoresIds = [];
+
+            if ($datosCompetidor) {
+                Log::info("Creando competidor permanente desde datos temporales", [
+                    'proceso_id' => $proceso->id,
+                    'nombres' => $datosCompetidor['nombres']
+                ]);
+
+                $competidor = Competitor::create($datosCompetidor);
+                $competidoresIds[] = $competidor->id;
+
+
+                $this->procesoRepository->agregarCompetidor($proceso->id, $competidor->id);
+
+                if (!empty($tutoresTemporales)) {
+                    foreach ($tutoresTemporales as $datosTutor) {
+                        $tutor = Tutor::updateOrCreate(
+                            ['correo_electronico' => $datosTutor['correo_electronico']],
+                            [
+                                'nombres' => $datosTutor['nombres'],
+                                'apellidos' => $datosTutor['apellidos'],
+                                'telefono' => $datosTutor['telefono'] ?? '',
+                            ]
+                        );
+
+                        CompetidorTutor::create([
+                            'competidor_id' => $competidor->id,
+                            'tutor_id' => $tutor->id,
+                            'es_principal' => $datosTutor['es_principal'] ?? false,
+                            'relacion' => $datosTutor['relacion'] ?? 'Tutor',
+                            'activo' => true
+                        ]);
+                    }
+
+                    Log::info("Tutores creados para competidor", [
+                        'competidor_id' => $competidor->id,
+                        'cantidad_tutores' => count($tutoresTemporales)
+                    ]);
+                }
+            } else {
+                // Si no hay datos temporales, verificar si hay competidores registrados
+                $competidoresIds = $this->procesoRepository->obtenerIdsCompetidores($proceso->id);
+                if (empty($competidoresIds)) {
+                    throw new \Exception('El proceso de inscripción no tiene competidores asociados');
+                }
+            }
 
             $montoTotal = 0;
             $fechaExpiracion = $proceso->olimpiada->fecha_fin;
@@ -105,6 +151,10 @@ class BoletaService
 
             $this->procesoRepository->actualizarEstadoActivacion($proceso->id, false);
 
+            Cache::forget("proceso_{$proceso->id}_competidor_temporal");
+            Cache::forget("proceso_{$proceso->id}_competidor_temp_id");
+            Cache::forget("proceso_{$proceso->id}_tutores_temporal");
+
             DB::commit();
 
             event(new BoletaGenerada($boleta));
@@ -116,7 +166,7 @@ class BoletaService
         }
     }
 
-    protected function generarCodigoBoleta($tipo = null)
+    public function generarCodigoBoleta($tipo)
     {
         $fechaActual = Carbon::now()->format('Ymd');
 
@@ -230,8 +280,7 @@ class BoletaService
             })->filter()->values()->toArray();
 
             $resumen['competidores'] = $competidores;
-
-            // Datos de selección y costos
+            $cantidadCompetidores = count(array_unique(array_column($competidores, 'id')));
             $areasSeleccionadas = collect($competidores)->pluck('area')->unique('id')->values()->toArray();
             $nivelesSeleccionados = collect($competidores)->pluck('nivel')->unique('id')->values()->toArray();
             $costosPorCombinacion = [];
@@ -242,6 +291,9 @@ class BoletaService
                         ->first();
 
                     if ($costo && isset($costo->price)) {
+                        // Calcular el subtotal = costo unitario × cantidad de competidores
+                        $subtotal = $costo->price * $cantidadCompetidores;
+
                         $costosPorCombinacion[] = [
                             'area' => [
                                 'id' => $area['id'],
@@ -252,7 +304,10 @@ class BoletaService
                                 'nombre' => $nivel['nombre']
                             ],
                             'costo_unitario' => $costo->price,
-                            'costo_unitario_formateado' => number_format($costo->price, 2)
+                            'costo_unitario_formateado' => number_format($costo->price, 2),
+                            'subtotal' => $subtotal,
+                            'subtotal_formateado' => number_format($subtotal, 2),
+                            'cantidad_competidores' => $cantidadCompetidores
                         ];
                     }
                 }
@@ -264,7 +319,6 @@ class BoletaService
                 'costos_combinaciones' => $costosPorCombinacion
             ];
 
-            $cantidadCompetidores = count(array_unique(array_column($competidores, 'id')));
             $resumen['costo'] = [
                 'monto_total' => $boleta->monto_total,
                 'monto_total_formateado' => number_format($boleta->monto_total, 2),
@@ -288,6 +342,9 @@ class BoletaService
             throw new Exception('Error al obtener los datos de la boleta: ' . $e->getMessage());
         }
     }
+
+
+
 
     public function obtenerBoletasPorOlimpiada($olimpiadaId)
     {

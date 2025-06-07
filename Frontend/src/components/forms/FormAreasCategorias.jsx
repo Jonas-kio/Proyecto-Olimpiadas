@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+/* eslint-disable react/prop-types */
+import { useState } from "react";
 import "../../styles/components/InscripcionIndividual.css";
 
 const FormAreasCategorias = ({
@@ -8,7 +9,6 @@ const FormAreasCategorias = ({
   categoriasFiltradas,
   categoriasSeleccionadas,
   setCategoriasSeleccionadas,
-  categoriasDisponibles,
   setCategoriasFiltradas,
   obtenerCategoriasPorArea,
   maximoAreas,
