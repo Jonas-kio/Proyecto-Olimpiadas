@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import "../../styles/components/ListaOlimpiadas.css";
 import "../../styles/components/Table.css";
 import { getOlimpiadas } from "../../services/olimpiadaService";
+import { FaFilePdf } from 'react-icons/fa';
 
 const ListaOlimpiadas = () => {
   const navigate = useNavigate();
@@ -74,6 +75,7 @@ const ListaOlimpiadas = () => {
             fechaInicio: olimpiada.fecha_inicio || olimpiada.fechaInicio,
             edicion: olimpiada.edicion || "13",
             imagen: olimpiada.ruta_imagen_portada,
+            ruta_pdf_detalles: olimpiada.ruta_pdf_detalles,
           }));
 
           console.log("Olimpiadas procesadas:", mappedOlimpiadas);
@@ -215,6 +217,21 @@ const ListaOlimpiadas = () => {
                   <p>
                     <strong>Modalidad:</strong> {olimpiada.modalidad}
                   </p>
+                  {olimpiada.ruta_pdf_detalles && (
+                    <p>
+                      <strong>Detalles Olimpiada:</strong>{" "}
+                      <a
+                        href={`http://localhost:8000/storage/${olimpiada.ruta_pdf_detalles}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title="Ver PDF de detalles"
+                        className="pdf-icon-link"
+                        style={{ color: '#d32f2f', fontSize: '1.2rem', verticalAlign: 'middle' }}
+                      >
+                        <FaFilePdf />
+                      </a>
+                    </p>
+                  )}
                 </div>
 
                 <div className="olimpiada-acciones">

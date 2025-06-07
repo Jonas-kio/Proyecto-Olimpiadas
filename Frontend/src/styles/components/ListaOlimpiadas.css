@@ -1,15 +1,15 @@
 /* components/ListaOlimpiadas.css */
 .lista-olimpiadas-container {
-    max-width: 1600px; /* Aumentado de 1200px para aprovechar más espacio */
+    max-width: 1400px; /* Reducido para menos espacio vacío */
     margin: 0 auto;
-    padding: 1.5rem 2rem; /* Aumentado padding lateral */
-    width: 95%; /* Usar 95% del ancho disponible */
+    padding: 1.5rem;
+    width: 90%; /* Reducido del 95% */
 }
 
 .olimpiadas-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Aumentado minmax */
-    gap: 2rem; 
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); /* Tarjetas más anchas */
+    gap: 1.5rem; /* Gap normal */
     margin-top: 1.5rem;
     justify-content: center;
 }
@@ -18,12 +18,11 @@
     background: #fafafa;
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
+    overflow: hidden; /* IMPORTANTE: Evita que las imágenes sobresalgan */
     transition: transform 0.3s ease;
     width: 100%;
     display: flex;
     flex-direction: column;
-   
 }
 
 .olimpiada-card:hover {
@@ -72,16 +71,29 @@
     color: white;
 }
 
+/* Imagen que ocupa todo el contenedor */
 .olimpiada-content {
     background: white;
-    padding: 1.25rem 1rem;
+    padding: 0; /* Sin padding para que la imagen toque los bordes */
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     position: relative;
     height: auto;
-    min-height: 120px;
+    min-height: 150px;
+}
+
+.olimpiada-portada-img {
+    width: 100%; /* Ocupa todo el ancho del contenedor */
+    height: 150px; /* Altura fija */
+    object-fit: cover; /* Cubre todo el espacio, puede recortar para ajustarse */
+    object-position: center;
+    border-radius: 0; /* Sin border-radius porque la tarjeta ya lo tiene */
+    display: block;
+    margin: 0;
+    background: transparent;
+    box-shadow: none; /* Sin sombra individual */
 }
 
 
@@ -188,16 +200,7 @@
     text-align: center;
 }
 
-.olimpiada-portada-img {
-    width: 100%;
-    height: 100px;
-    object-fit: contain;
-    object-position: center;
-    border-radius: 8px;
-    display: block;
-    margin: 0 auto;
-    background: #f3f4f6;
-}
+
 
 .lista-olimpiadas-page {
     min-height: 100vh;
@@ -214,15 +217,9 @@ footer {
 }
 
 /* RESPONSIVE DESIGN */
-@media (min-width: 1400px) {
+@media (min-width: 1200px) {
     .olimpiadas-grid {
-        grid-template-columns: repeat(5, 1fr); /* 5 columnas en pantallas muy grandes */
-    }
-}
-
-@media (min-width: 1200px) and (max-width: 1399px) {
-    .olimpiadas-grid {
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(3, 1fr); /* Solo 3 columnas para tarjetas más anchas */
     }
 }
 
