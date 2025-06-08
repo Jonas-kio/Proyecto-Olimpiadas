@@ -1,0 +1,88 @@
+/* ErrorModal.css */
+/* Clases específicas para el componente ErrorModal */
+.error-modal__overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.error-modal__content {
+    background-color: white;
+    border-radius: 6px;
+    width: 100%;
+    max-width: 450px;
+    padding: 24px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.error-modal__title {
+    color: #dc2626;
+    /* Rojo */
+    font-weight: 500;
+    text-align: center;
+    margin-bottom: 16px;
+    font-size: 18px;
+}
+
+.error-modal__message {
+    color: #000000;
+    /* Gris oscuro */
+    text-align: center;
+    margin-bottom: 16px;
+}
+
+.error-modal__fields {
+    background-color: #fee2e2;
+    /* Fondo rojo claro */
+    border-radius: 4px;
+    padding: 12px 16px;
+    margin-bottom: 20px;
+}
+
+.error-modal__fields-title {
+    font-weight: 500;
+    color: #b91c1c;
+    /* Rojo oscuro */
+    margin-bottom: 8px;
+}
+
+.error-modal__fields-list {
+    list-style-type: disc;
+    padding-left: 20px;
+}
+
+.error-modal__field-item {
+    color: #991b1b;
+    /* Rojo más oscuro */
+    margin-bottom: 4px;
+    font-size: 14px;
+}
+
+.error-modal__actions {
+    display: flex;
+    justify-content: center;
+    margin-top: 8px;
+}
+
+.error-modal__button {
+    background-color: #111827;
+    /* Negro */
+    color: white;
+    font-weight: 500;
+    padding: 8px 24px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+}
+
+.error-modal__button:hover {
+    background-color: #000000;
+    /* Negro más oscuro al pasar el mouse */
+}

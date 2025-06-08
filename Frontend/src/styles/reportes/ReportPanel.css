@@ -1,0 +1,63 @@
+.admin-container {
+  flex: 1;
+  background-color: #f3f4f6; /* bg-gray-100 */
+}
+
+.admin-inner {
+  padding: 1rem; /* p-6 */
+  padding-top: 0%;
+}
+
+.admin-title {
+  font-size: 1.5rem; /* text-2xl */
+  font-weight: 600;  /* font-semibold */
+  color: #1e40af;    /* text-blue-800 */
+}
+
+.admin-subtitle {
+  color: #4b5563; /* text-gray-600 */
+  font-size: 0.875rem; /* text-sm */
+}
+
+.admin-box {
+  margin-top: 1.25rem; /* mt-6 */
+  background-color: #ffffff; /* bg-white */
+  border-radius: 0.375rem; /* rounded-md */
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1); /* shadow */
+  padding: 1.25rem; /* p-5 */
+}
+
+.admin-grid {
+  
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+}
+
+.admin-section-title {
+  color: #1e40af; /* text-blue-800 */
+  font-weight: 600;
+  margin-bottom: 1rem;
+  font-size: 1.28rem; /* text-sm */
+}
+
+.payment-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem; /* space-y-3 */
+}
+
+.payment-row {
+  display: flex;
+  justify-content: space-between;
+  color: #4b5563; /* text-gray-600 */
+  margin-top: 0.5rem;
+}
+
+.payment-value {
+  font-weight: 500;
+}
+
+.payment-value.success {
+  color: #10b981; /* text-green-500 */
+}

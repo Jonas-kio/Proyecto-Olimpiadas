@@ -13,6 +13,9 @@ return new class extends Migration
     {
         Schema::create('area', function (Blueprint $table) {
             $table->id();
+            $table->string('nombre');
+            $table->text('descripcion');
+            $table->boolean('activo')->default(true);
             $table->timestamps();
         });
     }

@@ -1,0 +1,61 @@
+.export-dropdown-container {
+  position: relative;
+  display: inline-block;
+  text-align: left;
+}
+
+.export-button {
+  display: flex;
+  align-items: center;
+  background-color: #2563eb; /* bg-blue-600 */
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem; /* rounded-md */
+  transition: background-color 0.3s;
+  font-size: 0.9rem;
+}
+
+.export-button:focus {
+  outline: none;
+  box-shadow: none;
+}
+.export-button:hover {
+  background-color: #1e40af; /* hover:bg-blue-700 */
+}
+
+.icon-left {
+  margin-right: 0.25rem;
+}
+
+.icon-right {
+  margin-left: 0.25rem;
+}
+
+.export-menu {
+  position: absolute;
+  right: 0;
+  margin-top: 0.5rem;
+  width: 10.3rem;
+  background-color: #ffffff !important; /* 👈 Forzar fondo blanco */
+  border: 1px solid #e5e7eb;
+  border-radius: 0.375rem;
+  box-shadow: 0 10px 15px rgba(75, 74, 74, 0.1);
+  z-index: 10;
+
+}
+
+.export-option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  color: #363b42; /* 👈 texto gris oscuro */
+  background-color: transparent;
+  font-weight: normal; /* 👈 Esto elimina la negrita */
+}
+
+.export-option:hover {
+  background-color: #f3f4f6;
+}
+

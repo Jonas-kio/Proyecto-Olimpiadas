@@ -1,0 +1,283 @@
+/* styles/components/BoletaPago.css */
+
+.boleta-contenedor {
+  text-align: start;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.boleta-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.btn-volver {
+  display: flex;
+  align-items: center;
+  padding: 8px 16px;
+  background-color: #f0f4f8;
+  border: none;
+  border-radius: 4px;
+  color: #1e3a8a;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-right: 20px;
+}
+
+.btn-volver:hover {
+  background-color: #dbe4f0;
+}
+
+.boleta-titulo {
+  margin: 0;
+  flex-grow: 1;
+  text-align: center;
+  color: #1e3a8a;
+  font-size: 24px;
+}
+
+.boleta-info {
+  display: flex;
+  justify-content: space-between;
+  padding: 15px;
+  background-color: #f1f5f9;
+  border-radius: 6px;
+  margin-bottom: 20px;
+}
+
+.boleta-seccion {
+  margin-bottom: 20px;
+  padding: 15px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+}
+
+.boleta-seccion p {
+  /* background-color: #059669; */
+  margin: 10px;
+}
+
+.boleta-seccion h2 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #1e3a8a;
+  font-size: 18px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.boleta-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+.boleta-tabla th,
+.boleta-tabla td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.boleta-tabla th {
+  background-color: #f1f5f9;
+  color: #1e3a8a;
+  font-weight: 600;
+}
+
+.boleta-tabla tfoot td {
+  font-weight: 600;
+  background-color: #f1f5f9;
+}
+
+.boleta-acciones {
+  margin-top: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.boleta-email {
+  display: flex;
+  gap: 10px;
+}
+
+.boleta-email input {
+  flex-grow: 1;
+  padding: 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.boleta-btn-enviar,
+.boleta-btn-pdf {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.boleta-btn-enviar {
+  background-color: #2563eb;
+  color: white;
+}
+
+.boleta-btn-enviar:hover {
+  background-color: #1d4ed8;
+}
+
+.boleta-btn-pdf {
+  background-color: #10b981;
+  color: white;
+}
+
+.boleta-btn-pdf:hover {
+  background-color: #059669;
+}
+
+.boleta-btn-enviar:disabled,
+.boleta-btn-pdf:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.opciones-correo {
+  padding: 15px;
+  background-color: #f8fafc;
+  border-radius: 6px;
+  margin-top: 10px;
+  border: 1px solid #e2e8f0;
+}
+
+.opciones-correo h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 16px;
+  color: #1e3a8a;
+}
+
+.servicios-correo {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.btn-servicio {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex: 1;
+}
+
+.btn-servicio.gmail {
+  background-color: #ea4335;
+  color: white;
+}
+
+.btn-servicio.outlook {
+  background-color: #0078d4;
+  color: white;
+}
+
+.btn-servicio.predeterminado {
+  background-color: #6b7280;
+  color: white;
+}
+
+.btn-servicio:hover {
+  filter: brightness(90%);
+}
+
+.nota-correo {
+  font-size: 14px;
+  color: #64748b;
+  margin-bottom: 15px;
+}
+
+.btn-cancelar {
+  padding: 8px 15px;
+  background-color: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-cancelar:hover {
+  background-color: #e2e8f0;
+}
+
+.boleta-mensaje {
+  margin-top: 20px;
+  padding: 10px 15px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.boleta-mensaje-success {
+  background-color: #dcfce7;
+  color: #16a34a;
+  border-left: 4px solid #16a34a;
+}
+
+.boleta-mensaje-error {
+  background-color: #fee2e2;
+  color: #dc2626;
+  border-left: 4px solid #dc2626;
+}
+
+.boleta-mensaje-info {
+  background-color: #dbeafe;
+  color: #2563eb;
+  border-left: 4px solid #2563eb;
+}
+
+.icono-mensaje {
+  font-size: 16px;
+}
+
+.icono-spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 768px) {
+  .boleta-email {
+    flex-direction: column;
+  }
+
+  .servicios-correo {
+    flex-direction: column;
+  }
+}
