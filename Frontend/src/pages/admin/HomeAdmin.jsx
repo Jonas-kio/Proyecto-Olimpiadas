@@ -150,7 +150,7 @@ const HomeAdmin = () => {
               </div>
 
               <p className="info-message">
-                {pagos.registros_pendientes} pagos necesitan verificación. Revise la sección de reportes.
+                {pagos.registros_pendientes} pago(s) necesita verificación. Revise la sección de reportes.
               </p>
             </div>
           </div>
