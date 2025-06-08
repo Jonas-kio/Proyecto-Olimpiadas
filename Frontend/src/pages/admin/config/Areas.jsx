@@ -27,7 +27,7 @@ import {
 } from '../../../utils/validators/areaValidators';
 
 const Areas = () => {
-  // Estados para datos y UI
+
   const [areas, setAreas] = useState([]);
   const [niveles, setNiveles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -37,9 +37,7 @@ const Areas = () => {
   const [editingId, setEditingId] = useState(null);
   const [formErrors, setFormErrors] = useState({});
   const [isFormSubmitted, setIsFormSubmitted] = useState(false);
-  const [hideFieldErrors, setHideFieldErrors] = useState(true); // Iniciar con true para ocultar errores en campos
-  
-  // Estados para modales
+  const [hideFieldErrors, setHideFieldErrors] = useState(true);
   const [deleteModal, setDeleteModal] = useState({
     show: false,
     itemId: null,
@@ -74,19 +72,14 @@ const Areas = () => {
     }
   ];
 
-  // Renderizar los niveles asociados a un área como un número
   const renderNiveles = (row) => {
-    // Filtrar los niveles que pertenecen a esta área específica
-    // Importante comprobar tanto el areaId como área.id debido a las diferentes estructuras de datos
+
     const nivelesDelArea = niveles.filter(nivel => {
-      // Normalizar el areaId del nivel considerando ambas estructuras posibles
       const nivelAreaId = nivel.areaId || (nivel.area && nivel.area.id);
-      
-      // Comparar con el id del área actual
+
       return nivelAreaId === row.id;
     });
-    
-    // Mostrar el número de niveles asociados a esta área
+
     return (
       <div className="niveles-count">
         {nivelesDelArea.length}
@@ -94,7 +87,6 @@ const Areas = () => {
     );
   };
 
-  // Definición de campos para el formulario
   const areaFields = [
     {
       name: 'name',
@@ -111,47 +103,40 @@ const Areas = () => {
     }
   ];
 
-  // Cargar áreas y niveles al montar el componente
   useEffect(() => {
     fetchData();
   }, []);
 
-  // Obtener todos los datos necesarios
   const fetchData = async () => {
     try {
       setLoading(true);
-      
-      // Cargar áreas y niveles en paralelo para optimizar
+
       const [areasData, nivelesData] = await Promise.all([
         getAllAreas(),
         getLevels()
       ]);
-      
-      // Verificar que los datos sean arrays válidos
+
       const validAreas = Array.isArray(areasData) ? areasData : [];
       const validNiveles = Array.isArray(nivelesData) ? nivelesData : [];
-      
-      // Normalizamos los datos de niveles para asegurar que areaId sea consistente
+
       const normalizedNiveles = validNiveles.map(nivel => {
-        // Utilizar areaId si existe, o extraer del objeto area si está disponible
+
         const areaId = nivel.areaId || (nivel.area && nivel.area.id);
-        
+
         return {
           ...nivel,
-          // Aseguramos que areaId sea un número para comparaciones consistentes
+
           areaId: typeof areaId === 'string' ? parseInt(areaId, 10) : areaId
         };
       });
-      
+
       setAreas(validAreas);
       setNiveles(normalizedNiveles);
       setError(null);
-      
-      // Para depuración
+
       console.log('Áreas cargadas:', validAreas);
       console.log('Niveles cargados:', normalizedNiveles);
-      
-      // Calcular cuántos niveles hay por cada área
+
       const nivelesCountByArea = {};
       normalizedNiveles.forEach(nivel => {
         const areaId = nivel.areaId || (nivel.area && nivel.area.id);

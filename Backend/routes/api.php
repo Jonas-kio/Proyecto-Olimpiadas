@@ -33,6 +33,7 @@ Route::get('/categoryLevelUser', [CategoryLevelController::class, 'indexUser']);
 
 //Route::get('crear-admin', [AuthController::class, 'crearAdmin']);
 Route::get('/libre/olimpiadas/', [OlimpiadaController::class, 'index'])->name('olimpiadas.index');
+Route::get('libre/areas', [AreaController::class, 'index'])->name('areas.indexLibre');
 Route::get('/libre/olimpiadas/{olimpiada}', [OlimpiadaController::class, 'show']);
 
 

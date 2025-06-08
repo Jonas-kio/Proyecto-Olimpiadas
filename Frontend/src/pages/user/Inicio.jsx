@@ -1,12 +1,94 @@
 import "../../styles/components/Inicio.css";
-import { useRef, useEffect } from "react";
-
+import { useRef, useEffect, useState } from "react";
+import { getAllAreasLibre } from "../../services/areasService";
 import { useNavigate } from "react-router-dom";
 
 const Inicio = () => {
   const navigate = useNavigate();
   // Dentro del componente Inicio
   const detalleRef = useRef(null);
+  const [areas, setAreas] = useState([]);
+  const [mostrarTodasAreas, setMostrarTodasAreas] = useState(false);
+
+
+  const asignarIcono = (nombreArea) => {
+    const nombreNormalizado = nombreArea.toLowerCase();
+
+    const iconosPorArea = {
+      'matemática': '➗',
+      'matemáticas': '➗',
+      'física': '⚛️',
+      'química': '🧪',
+      'biología': '🧫',
+      'informática': '💻',
+      'computación': '💻',
+      'sistemas': '🖥️',
+      'astronomía': '🔭',
+      'robótica': '🤖',
+      'ciencias sociales': '🌍',
+      'historia': '📜',
+      'geografía': '🗺️',
+      'literatura': '📚',
+      'idiomas': '🗣️',
+      'inglés': '🇬🇧',
+      'arte': '🎨',
+      'música': '🎵',
+      'educación física': '🏃',
+      'deportes': '⚽',
+      'filosofía': '🧠',
+      'psicología': '🧩',
+      'economía': '💰',
+      'contabilidad': '📊',
+      'medicina': '⚕️',
+      'enfermería': '🩺',
+      'arquitectura': '🏛️',
+      'ingeniería': '⚙️',
+      'comunicación': '📱',
+      'periodismo': '📰',
+      'diseño': '✏️',
+      'cocina': '👨‍🍳',
+      'agronomía': '🌱',
+      'veterinaria': '🐾',
+      'mecánica': '🔧',
+      'electrónica': '🔌',
+      'estadística': '📈',
+      'lógica': '🔢',
+      'programación': '👨‍💻',
+      'redes': '🌐',
+      'inteligencia artificial': '🤖',
+    };
+
+    for (const [key, icon] of Object.entries(iconosPorArea)) {
+      if (nombreNormalizado.includes(key)) {
+        return icon;
+      }
+    }
+    return '🔬';
+  };
+
+
+  useEffect(() => {
+    const cargarAreas = async () => {
+      try {
+        const areasDesdeAPI = await getAllAreasLibre(true);
+        const areasConIconos = areasDesdeAPI.map(area => ({
+          nombre: area.name,
+          icono: asignarIcono(area.name)
+        }));
+        setAreas(areasConIconos);
+      } catch (error) {
+        console.error('Error al cargar áreas:', error);
+        setAreas([
+          { nombre: "Matemáticas", icono: "➗" },
+          { nombre: "Física", icono: "⚛️" },
+          { nombre: "Química", icono: "🧪" },
+          { nombre: "Biología", icono: "🧫" }
+        ]);
+      }
+    };
+    
+    cargarAreas();
+  }, []);
 
   useEffect(() => {
     const container = detalleRef.current;
@@ -43,16 +125,7 @@ const Inicio = () => {
     cupoMinimo: 50,
     modalidad: "Presencial",
     detallePDF: "/documentos/detalle_olimpiada.pdf",
-    areas: [
-      { nombre: "Matemáticas", icono: "➗" },
-      { nombre: "Física", icono: "🧬" },
-      { nombre: "Química", icono: "🧪" },
-      { nombre: "Biología", icono: "🧫" },
-      { nombre: "Informática", icono: "💻" },
-      { nombre: "Astronomía", icono: "🔭" },
-      { nombre: "Robótica", icono: "🤖" },
-      { nombre: "Ciencias Sociales", icono: "🌍" },
-    ],
+    areas: areas,
   };
 
   return (
@@ -175,17 +248,17 @@ const Inicio = () => {
           </div>
 */}
 
-<div
-  className="beneficio"
-  style={{ cursor: "pointer" }}
-  onClick={() => navigate("/user/mis-inscripciones")}
->
-  <span>📊</span>
-  <h3>Reportes Detallados</h3>
-  <p className="parrafoBeneficio">
-    Accede a informes completos sobre inscripciones, pagos y participación.
-  </p>
-</div>
+          <div
+            className="beneficio"
+            style={{ cursor: "pointer" }}
+            onClick={() => navigate("/user/mis-inscripciones")}
+          >
+            <span>📊</span>
+            <h3>Reportes Detallados</h3>
+            <p className="parrafoBeneficio">
+              Accede a informes completos sobre inscripciones, pagos y participación.
+            </p>
+          </div>
 
 
 
@@ -199,17 +272,35 @@ const Inicio = () => {
           Las olimpiadas abarcan diversas disciplinas científicas para
           estudiantes de todos los niveles.
         </p>
-        <div className="areas-grid">
-          {olimpiadaActual.areas.map((area) => (
+        <div 
+          className="areas-grid"
+          style={{
+            display: 'grid',
+            gridTemplateColumns: mostrarTodasAreas 
+              ? 'repeat(6, 1fr)'
+              : 'repeat(6, 1fr)',
+            gap: '1rem',
+          }}
+        >
+          {(mostrarTodasAreas ? olimpiadaActual.areas : olimpiadaActual.areas.slice(0, 6)).map((area) => (
             <div key={area.nombre} className="area-card">
               <span className="area-icon">{area.icono}</span>
-              <h3>{area.nombre}</h3>
+              <h3>
+                {area.nombre.includes('o') || area.nombre.length > 12 
+                  ? area.nombre.replace(/o|y|\//, (match) => match === 'o' ? ' o ' : match === 'y' ? ' y ' : ' / ')
+                  : area.nombre}
+              </h3>
             </div>
           ))}
         </div>
-        <button className="btn-primario mt-32">
-          Ver todas las áreas y categorías
-        </button>
+        {olimpiadaActual.areas.length > 6 && (
+          <button 
+            className="btn-primario mt-32" 
+            onClick={() => setMostrarTodasAreas(!mostrarTodasAreas)}
+          >
+            {mostrarTodasAreas ? "Mostrar menos áreas" : "Ver todas las áreas y categorías"}
+          </button>
+        )}
       </section>
 
       {/* PARTICIPACIÓN */}
@@ -232,5 +323,4 @@ const Inicio = () => {
     </div>
   );
 };
-
 export default Inicio;
