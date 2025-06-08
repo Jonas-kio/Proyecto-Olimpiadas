@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import "../../styles/components/ListaOlimpiadas.css";
 import "../../styles/components/Table.css";
 import { getOlimpiadas } from "../../services/olimpiadaService";
+import { FaFilePdf } from 'react-icons/fa';
 
 const ListaOlimpiadas = () => {
   const navigate = useNavigate();
@@ -73,7 +74,8 @@ const ListaOlimpiadas = () => {
             modalidad: olimpiada.modalidad || "Virtual",
             fechaInicio: olimpiada.fecha_inicio || olimpiada.fechaInicio,
             edicion: olimpiada.edicion || "13",
-            imagen: olimpiada.imagen,
+            imagen: olimpiada.ruta_imagen_portada,
+            ruta_pdf_detalles: olimpiada.ruta_pdf_detalles,
           }));
 
           console.log("Olimpiadas procesadas:", mappedOlimpiadas);
@@ -117,11 +119,6 @@ const ListaOlimpiadas = () => {
       return olimpiada.estado;
     }
 
-    // Si tiene campo activo pero no está activa, está terminada
-    /* if (olimpiada.hasOwnProperty("activo") && !olimpiada.activo) {
-      return "Terminado";
-    }
- */
     // Si la fecha de inicio existe y es en el futuro, está pendiente
     if (fechaInicio && fechaInicio > hoy) {
       return "Pendiente";
@@ -165,95 +162,96 @@ const ListaOlimpiadas = () => {
   }
 
   return (
-    <div className="lista-olimpiadas-container">
-      {error && <div className="error-message">{error}</div>}
+    <div className="lista-olimpiadas-page">
+      <div className="lista-olimpiadas-container">
+        {error && <div className="error-message">{error}</div>}
 
-      <div className="olimpiadas-grid">
-        {olimpiadas.length === 0 ? (
-          <div className="no-olimpiadas">
-            <p>No hay olimpiadas disponibles en este momento.</p>
-          </div>
-        ) : (
-          olimpiadas.map((olimpiada) => (
-            <div key={olimpiada.id} className="olimpiada-card">
-              <div className="olimpiada-header">
-                <h2>{olimpiada.nombre}</h2>
-                <span
-                  className={`estado-badge ${getEstadoClass(olimpiada.estado)}`}
-                >
-                  {olimpiada.estado}
-                </span>
-              </div>
-
-              <div className="olimpiada-content">
-                <div className="edicion-container">
-                  <span className="edicion-numero">{olimpiada.edicion}</span>
-                  <span className="edicion-texto">a</span>
-                </div>
-
-                <div className="flecha-decorativa">
-                  <div className="flecha-linea"></div>
-                  <div className="flecha-punta"></div>
-                </div>
-
-                <div className="olimpiada-logo">
-                  <div className="atom-icon">
-                    <div className="nucleus"></div>
-                    <div className="electron-orbit orbit-1"></div>
-                    <div className="electron-orbit orbit-2"></div>
-                    <div className="electron electron-1"></div>
-                    <div className="electron electron-2"></div>
-                    <div className="electron electron-3"></div>
-                  </div>
-                  <div className="texto-principal">
-                    <span className="olimpiada-text">OLIMPIADA</span>
-                    <span className="cientifica-text">CIENTÍFICA</span>
-                    <span className="estudiante-text">ESTUDIANTIL</span>
-                    <span className="plurinacional-text">
-                      PLURINACIONAL BOLIVIANA
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="olimpiada-info">
-                <p>
-                  <strong>Áreas:</strong>{" "}
-                  {olimpiada.areas.length > 0
-                    ? olimpiada.areas.join(", ")
-                    : "No especificadas"}
-                </p>
-                {/* <p>
-                  <strong>Inscritos:</strong> {olimpiada.inscritos}{" "}
-                  participantes
-                </p> */}
-                <p>
-                  <strong>Modalidad:</strong> {olimpiada.modalidad}
-                </p>
-              </div>
-
-              <div className="olimpiada-acciones">
-                {olimpiada.estado === "En Curso" ||
-                olimpiada.estado === "En Proceso" ? (
-                  <button
-                    className="btn-registrarse"
-                    onClick={() => handleRegistrarse(olimpiada.id)}
-                  >
-                    Registrarse
-                  </button>
-                ) : olimpiada.estado === "Pendiente" ? (
-                  <button className="btn-proximamente" disabled>
-                    Próximamente
-                  </button>
-                ) : (
-                  <button className="btn-terminado" disabled>
-                    Finalizado
-                  </button>
-                )}
-              </div>
+        <div className="olimpiadas-grid">
+          {olimpiadas.length === 0 ? (
+            <div className="no-olimpiadas">
+              <p>No hay olimpiadas disponibles en este momento.</p>
             </div>
-          ))
-        )}
+          ) : (
+            olimpiadas.map((olimpiada) => (
+              <div key={olimpiada.id} className="olimpiada-card">
+                <div className="olimpiada-header">
+                  <h2>{olimpiada.nombre}</h2>
+                  <span
+                    className={`estado-badge ${getEstadoClass(olimpiada.estado)}`}
+                  >
+                    {olimpiada.estado}
+                  </span>
+                </div>
+
+                <div className="olimpiada-content">
+                  <div className="olimpiada-logo">
+                    {olimpiada.imagen ? (
+                      <img
+                        src={`http://localhost:8000/storage/${olimpiada.imagen}`}
+                        alt="Portada de la olimpiada"
+                        className="olimpiada-portada-img"
+                      />
+                    ) : (
+                      <div className="sin-imagen">Sin imagen</div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="olimpiada-info">
+                  <p>
+                    <strong>Áreas:</strong>{" "}
+                    {olimpiada.areas.length > 0
+                      ? olimpiada.areas.join(", ")
+                      : "No especificadas"}
+                  </p>
+                  <p>
+                    <strong>Modalidad:</strong> {olimpiada.modalidad}
+                  </p>
+                  {olimpiada.ruta_pdf_detalles && (
+                    <p>
+                      <strong>Detalles Olimpiada:</strong>{" "}
+                      <a
+                        href={`http://localhost:8000/storage/${olimpiada.ruta_pdf_detalles}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title="Ver PDF de detalles"
+                        className="pdf-icon-link"
+                        style={{ 
+                          color: '#d32f2f', 
+                          fontSize: '1.2rem', 
+                          verticalAlign: 'middle',
+                          textDecoration: 'none'
+                        }}
+                      >
+                        <FaFilePdf />
+                      </a>
+                    </p>
+                  )}
+                </div>
+
+                <div className="olimpiada-acciones">
+                  {olimpiada.estado === "En Curso" ||
+                  olimpiada.estado === "En Proceso" ? (
+                    <button
+                      className="btn-registrarse"
+                      onClick={() => handleRegistrarse(olimpiada.id)}
+                    >
+                      Registrarse
+                    </button>
+                  ) : olimpiada.estado === "Pendiente" ? (
+                    <button className="btn-proximamente" disabled>
+                      Próximamente
+                    </button>
+                  ) : (
+                    <button className="btn-terminado" disabled>
+                      Finalizado
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </div>
     </div>
   );

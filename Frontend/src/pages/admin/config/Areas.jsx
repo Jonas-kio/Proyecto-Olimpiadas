@@ -64,7 +64,7 @@ const Areas = () => {
       title: 'Niveles',
       render: (_, row) => renderNiveles(row)
     },
-    { key: 'participants', title: 'Participantes' },
+    //{ key: 'participants', title: 'Participantes' },
     {
       key: 'actions',
       title: 'Acciones',
