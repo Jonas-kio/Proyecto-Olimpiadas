@@ -364,7 +364,7 @@ const InscripcionIndividual = () => {
   const volverDesdeBoletaPago = () => {
     setMostrarBoleta(false);
     // setPaso(1);
-    navigate("/user/inscripcion/opciones");
+    navigate("/user/inscripcion");
 
   };
 

@@ -88,7 +88,15 @@ const Navbar = () => {
   return (
     <nav className={`navbar ${menuAbierto ? "show" : ""}`}>
       <div className="navbar-left">
-        <div className="logo-circle">O!</div>
+        <div
+          className="logo-circle"
+          onClick={() => {
+            navigate(isAuthenticated ? "/user/inicio" : "/");
+            cerrarMenu();
+          }}
+        >
+          O!
+        </div>
         <span className="logo-text">Oh! SanSi</span>
       </div>
 
