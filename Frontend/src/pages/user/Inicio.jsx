@@ -196,7 +196,7 @@ const Inicio = () => {
             </div>
             
             <div className="explicacion-side">
-              <h3 className="pasos-titulo">Inscríbete en 3 simples pasos</h3>
+              <h3 className="pasos-titulo">Sigue los pasos para inscribirte</h3>
               <ol className="pasos-inscripcion">
                 <li>Regístrate con tu información personal</li>
                 <li>Selecciona una olimpiada para inscribirte</li>
