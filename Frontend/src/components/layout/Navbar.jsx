@@ -97,7 +97,15 @@ const Navbar = () => {
         >
           O!
         </div>
-        <span className="logo-text">Oh! SanSi</span>
+        <span
+          className="logo-text"
+          onClick={() => {
+            navigate(isAuthenticated ? "/user/inicio" : "/");
+            cerrarMenu();
+          }}
+        >
+          Oh! SanSi
+        </span>
       </div>
 
       <div className="menu-toggle" onClick={toggleMenu}>

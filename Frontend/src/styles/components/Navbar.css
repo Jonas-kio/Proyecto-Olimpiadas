@@ -28,10 +28,12 @@
   justify-content: center;
   font-weight: bold;
   margin-right: 10px;
+  cursor: pointer;
 }
 
 .logo-text {
   font-weight: bold;
+  cursor: pointer;
 }
 
 .navbar-center {
