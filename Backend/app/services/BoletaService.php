@@ -374,7 +374,7 @@ class BoletaService
                         'boleta' => '#' . $boleta->numero_boleta,
                         'amount' => (float) $boleta->monto_total,
                         'date' => $boleta->fecha_emision ? $boleta->fecha_emision->format('Y-m-d') : date('Y-m-d'),
-                        'status' => $boleta->estado->value === 'pagado' ? 'Pagado' : 'Pendiente'
+                        'status' => $boleta->estado === BoletaEstado::PAGADO ? 'Pagado' : 'Pendiente'
                     ];
                 }
                 $boletasPorOlimpiada[] = $datoOlimpiada;
