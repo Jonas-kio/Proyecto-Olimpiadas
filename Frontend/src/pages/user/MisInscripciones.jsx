@@ -47,7 +47,7 @@ const MisInscripciones = () => {
       fecha: proceso.fecha,
       monto: `Bs. ${proceso.monto}`,
       estado: mapearEstado(proceso.estado),
-      // Datos adicionales que se podría necesitar
+
       procesoId: proceso.id,
       boletaId: proceso.boleta?.id,
       cantidadEstudiantes: proceso.cantidad_estudiantes,

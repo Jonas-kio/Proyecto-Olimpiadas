@@ -534,7 +534,8 @@ const DetalleInscripcion = () => {
                 height: "180px",
                 backgroundColor: "#fff",
                 border: "1px solid #e2e8f0",
-                borderRadius: "4px"
+                borderRadius: "4px",
+                color: "black"
               }}>
               </div>
             </div>
@@ -562,12 +563,12 @@ const DetalleInscripcion = () => {
             <div style={{
               marginTop: "20px",
               backgroundColor: "#e0fce3",
-              color: "#16a34a",
               padding: "10px",
               borderRadius: "6px",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
+              color: "black",
               gap: "8px"
             }}>
               <span>✅</span> Validación exitosa

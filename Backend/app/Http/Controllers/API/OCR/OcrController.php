@@ -50,10 +50,10 @@ class OcrController extends Controller
         }
     }
 
-    public function obtenerCompetidoresAsociados($registrationProcessId)
+    public function obtenerCompetidoresAsociados($proceso)
     {
         try {
-            $response = $this->ocrService->obtenerCompetidoresAsociadosPorNombrePAgador($registrationProcessId);
+            $response = $this->ocrService->obtenerCompetidoresAsociadosPorNombrePAgador($proceso);
 
             return response()->json([
                 'success' => true,

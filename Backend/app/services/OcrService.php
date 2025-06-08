@@ -222,58 +222,41 @@ class OcrService
                 throw new \Exception('No se pudo extraer el nombre del pagador del comprobante de pago.');
             }
 
-            $nombrePagador = trim($nombrePagador);
-            $palabras = explode(' ', $nombrePagador);
-            $totalPalabras = count($palabras);
+            $tutoresAsociados = Tutor::select('tutor.*')
+                ->join('competidor_tutor', 'tutor.id', '=', 'competidor_tutor.tutor_id')
+                ->join('competitor', 'competidor_tutor.competidor_id', '=', 'competitor.id')
+                ->join('registration_detail', 'competitor.id', '=', 'registration_detail.competidor_id')
+                ->where('registration_detail.register_process_id', $registrationProcessId)
+                ->distinct()
+                ->get();
 
-            // Iniciar con ningún tutor encontrado
-            $tutor = null;
+            if ($tutoresAsociados->isEmpty()) {
+                throw new \Exception('No se encontraron tutores asociados a este proceso de inscripción.');
+            }
 
-            // Probar diferentes combinaciones de nombres y apellidos
-            for ($i = 1; $i < $totalPalabras && !$tutor; $i++) {
-                // Para cada división posible, crear posibles nombres y apellidos
-                $posiblesNombres = implode(' ', array_slice($palabras, 0, $i));
-                $posiblesApellidos = implode(' ', array_slice($palabras, $i));
+            $nombrePagadorNormalizado = $this->normalizarTexto($nombrePagador);
+            $tutorEncontrado = null;
 
-                // Buscar con esta combinación
-                $tutor = Tutor::where(function($query) use ($posiblesNombres, $posiblesApellidos) {
-                    $query->where(function($q) use ($posiblesNombres, $posiblesApellidos) {
-                        $q->where('nombres', 'LIKE', '%' . $posiblesNombres . '%')
-                        ->where('apellidos', 'LIKE', '%' . $posiblesApellidos . '%');
-                    });
-                })->first();
+            foreach ($tutoresAsociados as $tutor) {
+                $nombreCompletoTutor = $this->normalizarTexto($tutor->nombres . ' ' . $tutor->apellidos);
+                $apellidosNombre = $this->normalizarTexto($tutor->apellidos . ' ' . $tutor->nombres);
 
-                // Si no encontramos, probar al revés (por si los apellidos están primero)
-                if (!$tutor) {
-                    $tutor = Tutor::where(function($query) use ($posiblesNombres, $posiblesApellidos) {
-                        $query->where(function($q) use ($posiblesNombres, $posiblesApellidos) {
-                            $q->where('apellidos', 'LIKE', '%' . $posiblesNombres . '%')
-                            ->where('nombres', 'LIKE', '%' . $posiblesApellidos . '%');
-                        });
-                    })->first();
+                if ($nombrePagadorNormalizado == $nombreCompletoTutor ||
+                    $nombrePagadorNormalizado == $apellidosNombre ||
+                    strpos($nombreCompletoTutor, $nombrePagadorNormalizado) !== false ||
+                    strpos($nombrePagadorNormalizado, $nombreCompletoTutor) !== false) {
+                    $tutorEncontrado = $tutor;
+                    break;
                 }
             }
 
-            // Si todavía no encontramos, intentar buscar por palabras individuales
-            if (!$tutor) {
-                $tutor = Tutor::where(function($query) use ($palabras) {
-                    foreach ($palabras as $palabra) {
-                        if (strlen($palabra) > 3) { // Ignorar palabras muy cortas
-                            $query->orWhere('nombres', 'LIKE', '%' . $palabra . '%')
-                                ->orWhere('apellidos', 'LIKE', '%' . $palabra . '%');
-                        }
-                    }
-                })->first();
-            }
-
-
-            if (!$tutor) {
-                throw new \Exception('No se encontró un tutor que coincida con el nombre "' . $nombrePagador . '" en nuestros registros.');
+            if (!$tutorEncontrado) {
+                throw new \Exception('No se pudo identificar al tutor correspondiente al pagador "' . $nombrePagador . '".');
             }
 
             $competidores = Competitor::join('competidor_tutor as ct', 'competitor.id', '=', 'ct.competidor_id')
                 ->join('registration_detail as di', 'competitor.id', '=', 'di.competidor_id')
-                ->where('ct.tutor_id', $tutor->id)
+                ->where('ct.tutor_id', $tutorEncontrado ->id)
                 ->where('di.register_process_id', $registrationProcessId)
                 ->select('competitor.*', 'ct.es_principal', 'ct.relacion')
                 ->distinct()
@@ -284,16 +267,17 @@ class OcrService
             }
 
             $comprobante->update([
-                'nombre_pagador_detectado' => $tutor->nombres . ' ' . $tutor->apellidos,
-                'tutor_id' => $tutor->id
+                'nombre_pagador_detectado' => $tutorEncontrado->nombres . ' ' . $tutorEncontrado->apellidos,
+                'tutor_id' => $tutorEncontrado->id
             ]);
 
             return [
                 'tutor' => [
-                    'id' => $tutor->id,
-                    'nombres' => $tutor->nombres,
-                    'apellidos' => $tutor->apellidos,
-                    'nombre_completo' => $tutor->nombres . ' ' . $tutor->apellidos
+                    'id' => $tutorEncontrado->id,
+                    'nombres' => $tutorEncontrado->nombres,
+                    'apellidos' => $tutorEncontrado->apellidos,
+                    'email' => $tutorEncontrado->correo_electronico,
+                    'nombre_completo' => $tutorEncontrado->nombres . ' ' . $tutorEncontrado->apellidos
                 ],
                 'competidores' => $competidores
             ];
@@ -301,9 +285,27 @@ class OcrService
             Log::error('Error al obtener competidores asociados: ' . $e->getMessage());
             return [
                 'success' => false,
+                'tutor' => [
+                    'id' => $tutorEncontrado->id,
+                    'nombres' => $tutorEncontrado->nombres,
+                    'apellidos' => $tutorEncontrado->apellidos,
+                    'email' => $tutorEncontrado->correo_electronico,
+                    'nombre_completo' => $tutorEncontrado->nombres . ' ' . $tutorEncontrado->apellidos
+                ],
                 'mensaje' => $e->getMessage()
             ];
         }
 
+    }
+    private function normalizarTexto($texto)
+    {
+        $texto = mb_strtolower($texto, 'UTF-8');
+        $acentos = [
+            'á' => 'a', 'é' => 'e', 'í' => 'i', 'ó' => 'o', 'ú' => 'u',
+            'ä' => 'a', 'ë' => 'e', 'ï' => 'i', 'ö' => 'o', 'ü' => 'u',
+            'à' => 'a', 'è' => 'e', 'ì' => 'i', 'ò' => 'o', 'ù' => 'u',
+            'ñ' => 'n'
+        ];
+        return strtr($texto, $acentos);
     }
 }
