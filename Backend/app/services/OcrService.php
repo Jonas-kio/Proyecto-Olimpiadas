@@ -9,11 +9,9 @@ use App\Models\Competitor;
 use App\Models\ComprobantePago;
 use App\Models\RegistrationProcess;
 use App\Models\Tutor;
-use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 
 class OcrService
 {

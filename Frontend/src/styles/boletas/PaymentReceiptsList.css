@@ -30,6 +30,21 @@
   align-items: center;            
 }
 
+.filter-select {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.475rem;
+  background-color: rgb(255, 255, 255);
+  font-size: 0.875rem;
+  color: #111827;
+}
+
+.filter-text{
+  font-size: 0.875rem;
+  color: #3d424b;
+  margin-right: 1rem;
+}
+
 .payment-header-left {
   display: flex;
   align-items: center;

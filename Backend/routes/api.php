@@ -93,7 +93,7 @@ Route::middleware([IsUserAuth::class])->group(
 
                 // rutas para las boletas
                 Route::prefix('boletas')->group(function () {
-                    Route::get('olimpiada/{olimpiadaId}', [BoletaController::class, 'obtenerBoletasPorOlimpiada']);
+                    Route::get('olimpiada', [BoletaController::class, 'obtenerBoletasPorOlimpiada']);
                     Route::post('actualizar-estado', [BoletaController::class, 'actualizarEstadoBoletas']);
                 });
 

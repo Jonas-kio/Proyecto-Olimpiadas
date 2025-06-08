@@ -11,6 +11,7 @@ use App\Models\CompetidorTutor;
 use App\Models\Competitor;
 use App\Models\Cost;
 use App\Models\DetalleInscripcion;
+use App\Models\Olimpiada;
 use App\Models\RegistrationProcess;
 use App\Models\Tutor;
 use App\Repositories\ProcesoInscripcionRepository;
@@ -346,54 +347,46 @@ class BoletaService
 
 
 
-    public function obtenerBoletasPorOlimpiada($olimpiadaId)
+    public function obtenerBoletasPorOlimpiada()
     {
         try {
-            $boletas = Boleta::with([
-                'registrationProcess',
-                'registrationProcess.olimpiada',
-                'registrationProcess.user'
-            ])
-            ->whereHas('registrationProcess', function ($query) use ($olimpiadaId) {
-                $query->where('olimpiada_id', $olimpiadaId);
-            })
-            ->get()
-            ->map(function ($boleta) {
-                return [
-                    'id' => $boleta->id,
-                    'numero_boleta' => $boleta->numero_boleta,
-                    'estado' => $boleta->estado->value,
-                    'estado_formateado' => ucfirst($boleta->estado->value),
-                    'validado' => $boleta->validado,
-                    'usuario' => $boleta->registrationProcess->user->full_name,
-                    'tipo_proceso' => ucfirst($boleta->registrationProcess->type),
-                    'fecha_emision' => Carbon::parse($boleta->fecha_emision)->format('d/m/Y'),
-                    'fecha_expiracion' => Carbon::parse($boleta->fecha_expiracion)->format('d/m/Y'),
-                    'monto_total' => number_format($boleta->monto_total, 2),
-                ];
-            });
+            $olimpiadas = Olimpiada::all();
 
-            $estadisticas = [
-                'total_boletas' => $boletas->count(),
-                'pendientes' => $boletas->where('estado', BoletaEstado::PENDIENTE->value)->count(),
-                'pagadas' => $boletas->where('estado', BoletaEstado::PAGADO->value)->count(),
-                'validadas' => $boletas->where('validado', true)->count(),
-            ];
+            $boletasPorOlimpiada = [];
+
+            foreach ($olimpiadas as $olimpiada) {
+                $datoOlimpiada = [
+                    'id' => $olimpiada->id,
+                    'olympiad' => $olimpiada->nombre,
+                    'receipts' => []
+                ];
+
+                $boletas = Boleta::with(['registrationProcess', 'registrationProcess.user'])
+                    ->whereHas('registrationProcess', function($query) use ($olimpiada) {
+                        $query->where('olimpiada_id', $olimpiada->id);
+                    })
+                    ->get();
+
+                foreach ($boletas as $boleta) {
+                    $datoOlimpiada['receipts'][] = [
+                        'id' => $boleta->id,
+                        'user' => $boleta->registrationProcess->user->full_name ?? 'Usuario Desconocido',
+                        'boleta' => '#' . $boleta->numero_boleta,
+                        'amount' => (float) $boleta->monto_total,
+                        'date' => $boleta->fecha_emision ? $boleta->fecha_emision->format('Y-m-d') : date('Y-m-d'),
+                        'status' => $boleta->estado->value === 'pagado' ? 'Pagado' : 'Pendiente'
+                    ];
+                }
+                $boletasPorOlimpiada[] = $datoOlimpiada;
+            }
 
             return [
                 'success' => true,
-                'data' => [
-                    'boletas' => $boletas,
-                    'estadisticas' => $estadisticas,
-                    'totales' => [
-                        'monto_total' => number_format($boletas->sum('monto_total'), 2),
-                        'cantidad_boletas' => $boletas->count()
-                    ]
-                ]
+                'data' => $boletasPorOlimpiada
             ];
 
         } catch (Exception $e) {
-            Log::error('Error al obtener boletas: ' . $e->getMessage());
+            Log::error('Error al obtener todas las boletas por olimpiada: ' . $e->getMessage());
             throw new Exception('Error al obtener las boletas: ' . $e->getMessage());
         }
     }
