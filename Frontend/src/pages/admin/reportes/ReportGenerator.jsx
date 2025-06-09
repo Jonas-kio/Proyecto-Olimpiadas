@@ -102,6 +102,7 @@ const ReportGenerator = ({ filtros, setFiltros, data = [], resumen }) => {
               <option value="Todos">Todos los estados</option>
               <option value="approved">Verificado</option>
               <option value="pending">Pendiente</option>
+              <option value="rejected">Rechazado</option>
             </select>
             <ChevronDownIcon size={16} className="select-icon" />
           </div>
