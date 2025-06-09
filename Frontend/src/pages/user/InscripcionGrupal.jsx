@@ -19,6 +19,7 @@ import FormResumenGrupal from "../../components/forms/FormResumenGrupal";
 
 // Componentes comunes
 import BarraPasos from "../../components/common/BarraPasos";
+import BoletaPagoGrupal from "./BoletaPagoGrupal";
 import BotonesPaso from "../../components/common/BotonesPaso";
 
 const InscripcionGrupal = () => {
@@ -39,10 +40,11 @@ const InscripcionGrupal = () => {
     },
   ]);  const [competidores, setCompetidores] = useState([]);
   const [asignacionesAreasYCategorias, setAsignacionesAreasYCategorias] = useState([]);
-
   // Estados para boletas
   const [mostrarBoleta, setMostrarBoleta] = useState(false);
   const [datosBoletaGenerada, setDatosBoletaGenerada] = useState(null);
+  const [boletaId, setBoletaId] = useState(null);
+  const [numeroBoleta, setNumeroBoleta] = useState(null);
   // Cargar datos iniciales
   useEffect(() => {
     const procesoIdStorage = localStorage.getItem("procesoId");
@@ -59,7 +61,7 @@ const InscripcionGrupal = () => {
   // Detectar cuando se cargan competidores desde CSV
   useEffect(() => {
     if (competidores.length > 0) {
-      const tienenAreas = competidores.length > 0 && 
+      const tienenAreas = competidores.length > 0 &&
                          competidores.every(comp => comp.area && comp.nivel);
       console.log("🔍 Competidores actualizados:", {
         cantidad: competidores.length,
@@ -88,7 +90,7 @@ const InscripcionGrupal = () => {
     if (competidores.length < 2) {
       return false;
     }
-    
+
     // Si los competidores vienen de CSV con áreas asignadas, validación más flexible
     if (competidoresTienenAreasAsignadas()) {
       // Para competidores de CSV, solo verificar campos básicos
@@ -103,7 +105,7 @@ const InscripcionGrupal = () => {
       });
       return competidoresCompletos.length >= 2;
     }
-    
+
     // Para competidores manuales, validación completa
     const competidoresCompletos = competidores.filter(competidor => {
       return (
@@ -119,7 +121,7 @@ const InscripcionGrupal = () => {
         /^\d{7,10}$/.test(competidor.documento_identidad)
       );
     });
-    
+
     // Requiere al menos 2 competidores completos
     return competidoresCompletos.length >= 2;
   };
@@ -130,7 +132,7 @@ const InscripcionGrupal = () => {
       alert("Se requieren al menos 2 competidores para una inscripción grupal.");
       return false;
     }
-    
+
     // Si los competidores vienen de CSV con áreas asignadas, validación más flexible
     if (competidoresTienenAreasAsignadas()) {
       // Para competidores de CSV, solo verificar campos básicos
@@ -143,15 +145,15 @@ const InscripcionGrupal = () => {
           competidor.nivel?.trim()
         );
       });
-      
+
       if (competidoresCompletos.length < 2) {
         alert(`Se requieren al menos 2 competidores completos. Actualmente hay ${competidoresCompletos.length} competidor(es) completo(s) de ${competidores.length} total(es).`);
         return false;
       }
-      
+
       return true;
     }
-    
+
     // Para competidores manuales, validación completa
     const competidoresCompletos = competidores.filter(competidor => {
       return (
@@ -167,18 +169,18 @@ const InscripcionGrupal = () => {
         /^\d{7,10}$/.test(competidor.documento_identidad)
       );
     });
-    
+
     // Requiere al menos 2 competidores completos
     if (competidoresCompletos.length < 2) {
       alert(`Se requieren al menos 2 competidores completos. Actualmente hay ${competidoresCompletos.length} competidor(es) completo(s) de ${competidores.length} total(es).`);
       return false;
     }
-    
+
     return true;
   };
   const validarAreasYCategorias = () => {
-    return asignacionesAreasYCategorias.length > 0 && 
-           asignacionesAreasYCategorias.every(asignacion => 
+    return asignacionesAreasYCategorias.length > 0 &&
+           asignacionesAreasYCategorias.every(asignacion =>
              asignacion.areaId && asignacion.categoriaId
            );
   };  const puedeAvanzar = () => {
@@ -200,7 +202,7 @@ const InscripcionGrupal = () => {
     }
   };// Función para detectar si los competidores vienen de CSV con áreas ya asignadas
   const competidoresTienenAreasAsignadas = () => {
-    return competidores.length > 0 && 
+    return competidores.length > 0 &&
            competidores.every(comp => comp.area && comp.nivel);
   };
 
@@ -212,7 +214,7 @@ const InscripcionGrupal = () => {
 
     // Validación adicional con alertas para cada paso
     let puedeProceeder = true;
-    
+
     switch (paso) {
       case 1:
         puedeProceeder = validarTutores();
@@ -255,7 +257,7 @@ const InscripcionGrupal = () => {
 
     try {
       console.log("🚀 Iniciando envío de datos grupales completos...");
-      
+
       // Paso 1: Registrar todos los tutores
       console.log("📤 Enviando tutores...", tutores);
       await registrarTutoresGrupales(procesoId, tutores);
@@ -263,7 +265,7 @@ const InscripcionGrupal = () => {
 
       // Paso 2: Manejar competidores según su origen
       let competidoresConIds = [];
-      
+
       if (competidoresTienenAreasAsignadas()) {
         // Los competidores vienen de CSV y ya fueron registrados
         console.log("🔄 Competidores desde CSV - ya registrados, usando IDs existentes");
@@ -276,7 +278,7 @@ const InscripcionGrupal = () => {
       } else {
         // Competidores de registro manual - necesitan ser registrados
         console.log("📤 Enviando competidores manuales...", competidores);
-        
+
         // 🔍 Logging detallado de los datos de competidores
         console.log("🔍 Datos detallados de competidores:", JSON.stringify(competidores, null, 2));
         competidores.forEach((comp, index) => {
@@ -291,10 +293,10 @@ const InscripcionGrupal = () => {
             colegio: comp.colegio
           });
         });
-        
+
         const responseCompetidores = await registrarCompetidoresGrupales(procesoId, competidores);
         console.log("✅ Competidores registrados exitosamente:", responseCompetidores.data);
-        
+
         // Guardar los competidores registrados con sus IDs
         competidoresConIds = responseCompetidores.data.competidores || responseCompetidores.data.data || [];
       }      // Paso 3: Manejar asignaciones de áreas y niveles
@@ -304,13 +306,13 @@ const InscripcionGrupal = () => {
       } else {
         // Crear asignaciones para competidores de registro manual
         console.log("📤 Creando asignaciones para competidores manuales...");
-        
+
         const asignacionesParaBackend = asignacionesAreasYCategorias.map((asignacion, index) => {
           const competidor = competidoresConIds[index];
           if (!competidor) {
             throw new Error(`No se encontró el competidor registrado para el índice ${index}`);
           }
-          
+
           return {
             competidor_id: competidor.id,
             area_id: parseInt(asignacion.areaId),
@@ -321,67 +323,75 @@ const InscripcionGrupal = () => {
         console.log("📤 Enviando asignaciones transformadas...", asignacionesParaBackend);
         await asignarAreasNivelesGrupales(procesoId, asignacionesParaBackend);
         console.log("✅ Áreas y categorías asignadas exitosamente");
-      }
-
-      // Paso 4: Generar la boleta
+      }      // Paso 4: Generar la boleta
       console.log("📄 Generando boleta grupal...");
       const response = await generarBoletaGrupal(procesoId);
-      
+
       if (response.data.success) {
         setDatosBoletaGenerada(response.data);
+        setBoletaId(response.data.boleta_id);
+        setNumeroBoleta(response.data.codigo);
         setMostrarBoleta(true);
-        
+
         // Limpiar localStorage
         localStorage.removeItem("procesoId");
         localStorage.removeItem("idOlimpiada");
         localStorage.removeItem("tipoInscripcion");
-        
+
         console.log("✅ Boleta grupal generada exitosamente");
       } else {
         throw new Error(response.data.mensaje || "Error al generar la boleta");
       }
     } catch (error) {
       console.error("❌ Error en el proceso de inscripción grupal:", error);
-      
+
       // Mensaje de error más específico
-      const errorMessage = error.response?.data?.mensaje || 
-                          error.response?.data?.message || 
-                          error.message || 
+      const errorMessage = error.response?.data?.mensaje ||
+                          error.response?.data?.message ||
+                          error.message ||
                           "Error desconocido";
-      
+
       alert(`Error en la inscripción: ${errorMessage}`);
     } finally {
       setProcesando(false);
     }
   };
-
   const volverDesdeBoletaPago = () => {
     setMostrarBoleta(false);
     navigate("/user/mis-inscripciones");
-  };  const pasos = [
+  };
+
+  const pasos = [
     "1 Datos Tutor",
-    "2 Datos Estudiantes", 
+    "2 Datos Estudiantes",
     competidoresTienenAreasAsignadas() ? "3 Resumen y Boleta" : "3 Áreas y Categorías",
     competidoresTienenAreasAsignadas() ? "" : "4 Resumen y Boleta"
   ].filter(paso => paso !== ""); // Filtrar pasos vacíos
 
-  if (mostrarBoleta && datosBoletaGenerada) {
+  if (mostrarBoleta && datosBoletaGenerada && boletaId && numeroBoleta) {
+    // Para inscripciones grupales, pasar todos los competidores y tutores
+    const competidoresReferencia = competidores || [];
+    const tutoresReferencia = tutores || [];
+
+    // Crear áreas seleccionadas basadas en las asignaciones
+    const areasSeleccionadas = asignacionesAreasYCategorias.map(asignacion => {
+      return {
+        id: asignacion.areaId,
+        nombre: asignacion.areaNombre || `Área ${asignacion.areaId}`,
+        // Agregar más información si está disponible
+      };
+    });
+
     return (
-      <div className="boleta-container">
-        <div className="boleta-content">
-          <h2>¡Inscripción Grupal Completada!</h2>
-          <div className="boleta-info">
-            <p><strong>Código de Boleta:</strong> {datosBoletaGenerada.codigo}</p>
-            <p><strong>ID de Boleta:</strong> {datosBoletaGenerada.boleta_id}</p>
-            <p className="boleta-mensaje">{datosBoletaGenerada.mensaje}</p>
-          </div>
-          <div className="boleta-acciones">
-            <button className="btn-primario" onClick={volverDesdeBoletaPago}>
-              Ver Mis Inscripciones
-            </button>
-          </div>
-        </div>
-      </div>
+      <BoletaPagoGrupal
+        competidores={competidoresReferencia}
+        tutores={tutoresReferencia}
+        areasSeleccionadas={areasSeleccionadas}
+        numeroBoleta={numeroBoleta}
+        registration_process_id={procesoId}
+        boleta_id={boletaId}
+        onVolver={volverDesdeBoletaPago}
+      />
     );
   }
 

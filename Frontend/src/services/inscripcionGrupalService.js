@@ -145,6 +145,82 @@ export const procesarArchivoGrupal = async (procesoId, archivo) => {
   }
 };
 
+/**
+ * Procesa archivo grupal enviando contenido como texto (alternativa al upload)
+ * @param {number} procesoId - ID del proceso de inscripción
+ * @param {File} archivo - Archivo CSV a procesar
+ */
+export const procesarArchivoGrupalTexto = async (procesoId, archivo) => {
+  try {
+    console.log("📤 Procesando archivo grupal como texto:", {
+      procesoId,
+      archivoNombre: archivo.name,
+      archivoTamaño: archivo.size,
+      archivoTipo: archivo.type,
+      archivoLastModified: archivo.lastModified
+    });    // Leer el contenido del archivo como texto
+    const contenidoCSV = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target.result);
+      reader.onerror = () => reject(new Error('Error al leer el archivo'));
+      reader.readAsText(archivo, 'UTF-8');
+    });
+
+    console.log("📤 Contenido CSV leído:", {
+      longitud: contenidoCSV.length,
+      primerasLineas: contenidoCSV.split('\n').slice(0, 3)
+    });
+
+    // Enviar contenido como JSON
+    const response = await api.post(`/inscripcion/grupal/proceso/${procesoId}/csv-texto`, {
+      csv_content: contenidoCSV,
+      filename: archivo.name
+    }, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    console.log("✅ Archivo grupal procesado como texto:", response.data);
+    return response.data;
+
+  } catch (error) {
+    console.error("❌ Error al procesar archivo grupal como texto:", error);
+    
+    if (error.response) {
+      const { status, data } = error.response;
+      console.error(`❌ Error del servidor (${status}):`, data);
+      
+      if (status === 422 && data) {
+        console.error("🔍 Detalles del error 422:", {
+          data: data.data || 'No data',
+          message: data.message || 'No message',
+          errors: data.errors || 'No errors'
+        });
+        
+        if (data.errors && typeof data.errors === 'object') {
+          const erroresDetallados = Object.entries(data.errors)
+            .map(([campo, mensajes]) => `${campo}: ${Array.isArray(mensajes) ? mensajes.join(', ') : mensajes}`)
+            .join('\n');
+          throw new Error(`Errores de validación del archivo:\n${erroresDetallados}`);
+        } else if (data.message) {
+          throw new Error(`Error de validación: ${data.message}`);
+        } else {
+          throw new Error("Error de validación del archivo. Verifique que sea un archivo CSV válido con el formato correcto.");
+        }
+      } else if (data.mensaje) {
+        throw new Error(data.mensaje);
+      }
+    } else if (error.request) {
+      console.error("❌ Error de red:", error.request);
+      throw new Error("Error de conexión. Verifique su conexión a internet.");
+    } else {
+      console.error("❌ Error:", error.message);
+      throw new Error("Error inesperado al procesar el archivo.");
+    }
+  }
+};
+
 // Asignar áreas y niveles a competidores grupales
 export const asignarAreasNivelesGrupales = async (procesoId, asignaciones) => {
   try {

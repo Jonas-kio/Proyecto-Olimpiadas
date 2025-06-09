@@ -26,6 +26,8 @@ class CargaMasivaExcelRequest extends FormRequest
         // Debug del archivo recibido en la validación
         if ($this->hasFile('file')) {
             $file = $this->file('file');
+            $fileError = $file->getError();
+
             \Log::info('CargaMasivaExcelRequest - Archivo recibido para validación:', [
                 'original_name' => $file->getClientOriginalName(),
                 'mime_type' => $file->getMimeType(),
@@ -34,8 +36,20 @@ class CargaMasivaExcelRequest extends FormRequest
                 'extension' => $file->getClientOriginalExtension(),
                 'path' => $file->getRealPath(),
                 'is_valid' => $file->isValid(),
-                'error' => $file->getError()
+                'error' => $fileError,
+                'error_message' => $this->getUploadErrorMessage($fileError)
             ]);
+
+            // Si hay error de upload temporal, intentar una validación más flexible
+            if ($fileError === UPLOAD_ERR_NO_TMP_DIR || $fileError === UPLOAD_ERR_CANT_WRITE) {
+                \Log::warning('CargaMasivaExcelRequest - Error de directorio temporal, aplicando validación flexible');
+                return [
+                    'file' => [
+                        'required',
+                        'max:10240' // Solo validar tamaño
+                    ]
+                ];
+            }
         } else {
             \Log::warning('CargaMasivaExcelRequest - No se recibió archivo file');
         }
@@ -49,6 +63,30 @@ class CargaMasivaExcelRequest extends FormRequest
                 'max:10240' // max 10MB
             ]
         ];
+    }
+
+    private function getUploadErrorMessage($errorCode)
+    {
+        switch ($errorCode) {
+            case UPLOAD_ERR_OK:
+                return 'No error';
+            case UPLOAD_ERR_INI_SIZE:
+                return 'File too large (ini_size)';
+            case UPLOAD_ERR_FORM_SIZE:
+                return 'File too large (form_size)';
+            case UPLOAD_ERR_PARTIAL:
+                return 'File partially uploaded';
+            case UPLOAD_ERR_NO_FILE:
+                return 'No file uploaded';
+            case UPLOAD_ERR_NO_TMP_DIR:
+                return 'No temporary directory';
+            case UPLOAD_ERR_CANT_WRITE:
+                return 'Cannot write to disk';
+            case UPLOAD_ERR_EXTENSION:
+                return 'Upload stopped by extension';
+            default:
+                return 'Unknown error';
+        }
     }
 
     /**

@@ -23,3 +23,21 @@
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
 </IfModule>
+
+# Configuración específica para uploads y directorio temporal
+php_value upload_tmp_dir "../storage/uploads/temp"
+php_value sys_temp_dir "../storage/uploads/temp"
+php_value upload_max_filesize 40M
+php_value post_max_size 50M
+php_value max_file_uploads 20
+php_value max_execution_time 300
+php_value max_input_time 300
+php_value memory_limit 256M
+php_value file_uploads On
+
+# Configurar permisos para archivos temporales
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options nosniff
+    Header always set X-Frame-Options DENY
+    Header always set X-XSS-Protection "1; mode=block"
+</IfModule>

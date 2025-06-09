@@ -436,9 +436,14 @@ Equipo CodersSociety.srl`;
   }
 };
 
-export const obtenerDatosBoleta = async (procesoId, boletaId) => {
+export const obtenerDatosBoleta = async (procesoId, boletaId, esGrupal = false) => {
   try {
-    const response = await api.get(`/inscripcion/procesos/${procesoId}/boletas/${boletaId}`);
+    // Usar ruta específica para inscripciones grupales
+    const ruta = esGrupal 
+      ? `/inscripcion/grupal/procesos/${procesoId}/boletas/${boletaId}`
+      : `/inscripcion/procesos/${procesoId}/boletas/${boletaId}`;
+    
+    const response = await api.get(ruta);
     if (response.data.success) {
       return response.data;
     } else {
