@@ -205,18 +205,6 @@ Route::middleware([IsUserAuth::class])->group(
                     Route::post('/proceso/{proceso}/excel', [InscripcionGrupalController::class, 'cargarArchivoExcel'])
                         ->name('excel.cargar');
 
-                    // Verificar competidores existentes
-                    Route::post('/verificar-competidores', [InscripcionGrupalController::class, 'verificarCompetidoresExistentes'])
-                        ->name('competidores.verificar');
-
-                    // Registrar competidores sin duplicados
-                    Route::post('/proceso/{proceso}/competidores-sin-duplicados', [InscripcionGrupalController::class, 'registrarCompetidoresSinDuplicados'])
-                        ->name('competidores.registrar-sin-duplicados');
-
-                    // Asociar competidores existentes
-                    Route::post('/proceso/{proceso}/asociar-competidores', [InscripcionGrupalController::class, 'asociarCompetidoresExistentes'])
-                        ->name('competidores.asociar');
-
                     // Registrar competidores manualmente
                     Route::post('/proceso/{proceso}/competidores', [InscripcionGrupalController::class, 'registrarCompetidores'])
                         ->name('competidores.registrar');
