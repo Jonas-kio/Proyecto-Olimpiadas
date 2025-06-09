@@ -77,9 +77,9 @@ class DashboardController extends Controller
             ->get();
 
         // Calcular montos por estado de inscripción
-        $totalRecaudado = $detalles->sum('monto');
         $totalPendiente = $detalles->where('status', 'pending')->sum('monto');
         $totalVerificado = $detalles->where('status', 'approved')->sum('monto');
+        $totalRecaudado = ($totalVerificado + $totalPendiente);
 
         // Nuevo: contar registros pendientes
         $registrosPendientes = $detalles->where('status', 'pending')->count();

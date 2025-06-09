@@ -110,9 +110,9 @@ class ReporteInscripcionesController extends Controller
         })->values();
 
         // 💰 Estado de pagos
-        $totalRecaudado = $detalles->sum('monto');
-        $totalPendiente = $detalles->where('proceso_inscripcion.status', 'pending')->sum('monto');
         $totalVerificado = $detalles->where('proceso_inscripcion.status', 'approved')->sum('monto');
+        $totalPendiente = $detalles->where('proceso_inscripcion.status', 'pending')->sum('monto');
+        $totalRecaudado = ($totalVerificado + $totalPendiente);
 
         $porcentajeVerificado = $totalRecaudado > 0 
             ? round(($totalVerificado / $totalRecaudado) * 100)
@@ -127,6 +127,6 @@ class ReporteInscripcionesController extends Controller
                 'porcentaje_verificado' => $porcentajeVerificado
             ]
         ]);
+        
     }
 }
- 

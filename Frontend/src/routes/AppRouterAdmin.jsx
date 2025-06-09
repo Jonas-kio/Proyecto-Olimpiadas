@@ -6,8 +6,8 @@ import DashboardConfig from "../pages/admin/config/DashboardConfig";
 import Reportes from "../pages/admin/reportes/ReportPanel";
 import Boletas from "../pages/admin/boletas/Tickets";
 import HomeAdmin from "../pages/admin/HomeAdmin";
-import DasboardOlimpiada from '../pages/admin/DasboardOlimpiada';
-import FormularioOlimpiada from "../pages/admin/formularioOlimpiada";
+import DasboardOlimpiada from '../pages/admin/olimpiadas/DasboardOlimpiada';
+import FormularioOlimpiada from "../pages/admin/olimpiadas/FormularioOlimpiada";
 
 const AppRouterAdmin = () => {
   return (

@@ -1,6 +1,6 @@
 import "../../styles/components/Navbar.css";
 import { useState, useEffect } from "react";
-import { FaSignInAlt, FaUserPlus, FaSignOutAlt } from "react-icons/fa";
+import { FaSignInAlt, FaUserPlus, FaSignOutAlt, FaBars } from "react-icons/fa";
 import { useLocation, useNavigate } from "react-router-dom";
 
 const Navbar = () => {
@@ -11,16 +11,16 @@ const Navbar = () => {
 
   useEffect(() => {
     const checkAuth = () => {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       setIsAuthenticated(token !== null);
     };
 
     checkAuth();
 
-    window.addEventListener('storage', checkAuth);
-    
+    window.addEventListener("storage", checkAuth);
+
     return () => {
-      window.removeEventListener('storage', checkAuth);
+      window.removeEventListener("storage", checkAuth);
     };
   }, []);
 
@@ -77,8 +77,8 @@ const Navbar = () => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('userRole');
+    localStorage.removeItem("token");
+    localStorage.removeItem("userRole");
     setIsAuthenticated(false);
 
     navigate("/");
@@ -88,13 +88,29 @@ const Navbar = () => {
   return (
     <nav className={`navbar ${menuAbierto ? "show" : ""}`}>
       <div className="navbar-left">
-        <div className="logo-circle">O!</div>
-        <span className="logo-text">Oh! SanSi</span>
+        <div
+          className="logo-circle"
+          onClick={() => {
+            navigate(isAuthenticated ? "/user/inicio" : "/");
+            cerrarMenu();
+          }}
+        >
+          O!
+        </div>
+        <span
+          className="logo-text"
+          onClick={() => {
+            navigate(isAuthenticated ? "/user/inicio" : "/");
+            cerrarMenu();
+          }}
+        >
+          Oh! SanSi
+        </span>
       </div>
 
-      <button className="menu-toggle" onClick={toggleMenu}>
-        ☰
-      </button>
+      <div className="menu-toggle" onClick={toggleMenu}>
+        <FaBars />
+      </div>
 
       <div className="navbar-center">
         <a
