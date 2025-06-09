@@ -3,7 +3,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import {
   CheckIcon,
   UploadIcon,
-  XIcon,
   ChevronDownIcon,
   Loader2,
 } from "lucide-react";
@@ -11,15 +10,16 @@ import {
   crearOlimpiada,
   actualizarOlimpiada,
   obtenerOlimpiadaPorId,
-  obtenerAreas,
-} from "../../services/apiConfig";
-import LoadingModal from "../../components/modals/LoadingModal";
-import ProcesandoModal from "../../components/common/ProcesandoModal";
-import SuccessModal from "../../components/common/SuccessModal";
-import ErrorModal from "../../components/common/ErrorModal";
-import "../../styles/components/FormularioOlimpiada.css";
+} from "../../../services/apiConfig";
+import LoadingModal from "../../../components/modals/LoadingModal";
+import ProcesandoModal from "../../../components/common/ProcesandoModal";
+import SuccessModal from "../../../components/common/SuccessModal";
+import ErrorModal from "../../../components/common/ErrorModal";
+import "../../../styles/components/FormularioOlimpiada.css";
+import ImageUploader from "./ImageUploader";
 
-import { getAllAreas } from "../../services/areasService";
+
+import { getAllAreas } from "../../../services/areasService";
 
 function FormularioOlimpiada() {
   const navigate = useNavigate();
@@ -149,15 +149,14 @@ function FormularioOlimpiada() {
     });
   };
 
-  const handleImageChange = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setFormData((prev) => ({ ...prev, coverImage: file }));
-      const reader = new FileReader();
-      reader.onload = () => setImagePreview(reader.result);
-      reader.readAsDataURL(file);
-    }
-  };
+
+  const handleImageChange = (file) => {
+  setFormData((prev) => ({ ...prev, coverImage: file }));
+  const reader = new FileReader();
+  reader.onload = () => setImagePreview(reader.result);
+  reader.readAsDataURL(file);
+};
+
 
   const handleCloseSuccessModal = () => {
     setShowSuccessModal(false);
@@ -309,46 +308,16 @@ function FormularioOlimpiada() {
             {id ? "Editar Olimpiada" : "Crear Nueva Olimpiada"}
           </h1>
           <form onSubmit={handleSubmit} className="form-content">
+
             {/* Imagen */}
-            <div className="input-group">
-              <label className="label">
-                Imagen de Portada <span className="asterisco">*</span>
-              </label>
-              <div className="image-upload">
-                {imagePreview ? (
-                  <div className="image-preview-wrapper">
-                    <img
-                      src={imagePreview}
-                      alt="Preview"
-                      className="image-preview"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setImagePreview("");
-                        setFormData((prev) => ({ ...prev, coverImage: null }));
-                      }}
-                      className="remove-btn"
-                    >
-                      <XIcon size={16} />
-                    </button>
-                  </div>
-                ) : (
-                  <div className="upload-placeholder">
-                    <UploadIcon className="upload-icon" />
-                    <label className="upload-label">
-                      <span className="upload-text">Subir imagen</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="file-hidden"
-                        onChange={handleImageChange}
-                      />
-                    </label>
-                  </div>
-                )}
-              </div>
-            </div>
+            <ImageUploader
+              imagePreview={imagePreview}
+              onImageChange={handleImageChange}
+              onRemove={() => {
+                setImagePreview("");
+                setFormData((prev) => ({ ...prev, coverImage: null }));
+              }}
+            />
 
             {/* Nombre, descripción, fechas, modalidad, etc. */}
             <div className="input-group">
