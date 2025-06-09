@@ -73,7 +73,17 @@ class InscripcionGrupalController extends Controller
     public function cargarArchivoExcel(CargaMasivaExcelRequest $request, RegistrationProcess $proceso): JsonResponse
     {
         try {
-            $resultado = $this->inscripcionGrupalService->procesarArchivoExcel($proceso, $request->file('file'));
+            // Debug información del archivo recibido
+            $file = $request->file('file');
+            \Log::info('Archivo CSV recibido:', [
+                'original_name' => $file->getClientOriginalName(),
+                'mime_type' => $file->getMimeType(),
+                'size' => $file->getSize(),
+                'extension' => $file->getClientOriginalExtension(),
+                'path' => $file->getRealPath()
+            ]);
+
+            $resultado = $this->inscripcionGrupalService->procesarArchivoExcel($proceso, $file);
 
             return response()->json([
                 'success' => $resultado['success'],
@@ -82,6 +92,11 @@ class InscripcionGrupalController extends Controller
                 'error' => !$resultado['success'] ? $resultado['error'] : null
             ]);
         } catch (Exception $e) {
+            \Log::error('Error al procesar archivo CSV:', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
             return response()->json([
                 'success' => false,
                 'mensaje' => $e->getMessage()
@@ -276,5 +291,109 @@ class InscripcionGrupalController extends Controller
                 'success' => false,
                 'mensaje' => $e->getMessage()
             ], 422);        }
+    }
+
+    /**
+     * Verifica si los competidores ya existen en la base de datos
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function verificarCompetidoresExistentes(Request $request): JsonResponse
+    {
+        try {
+            $request->validate([
+                'competidores' => 'required|array|min:1',
+                'competidores.*.documento_identidad' => 'required|string|max:20',
+                'competidores.*.correo_electronico' => 'required|email|max:100',
+                'competidores.*.nombres' => 'nullable|string|max:255',
+                'competidores.*.apellidos' => 'nullable|string|max:255'
+            ]);
+
+            $resultado = $this->inscripcionGrupalService->verificarCompetidoresExistentes(
+                $request->competidores
+            );
+
+            return response()->json([
+                'success' => true,
+                'resultado' => $resultado,
+                'mensaje' => 'Verificación completada'
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'mensaje' => $e->getMessage()
+            ], 422);
+        }
+    }
+
+    /**
+     * Registra competidores omitiendo los duplicados
+     *
+     * @param Request $request
+     * @param RegistrationProcess $proceso
+     * @return JsonResponse
+     */
+    public function registrarCompetidoresSinDuplicados(Request $request, RegistrationProcess $proceso): JsonResponse
+    {
+        try {
+            $request->validate([
+                'competidores' => 'required|array|min:1',
+                'indices_omitir' => 'nullable|array',
+                'indices_omitir.*' => 'integer'
+            ]);
+
+            $competidores = $this->inscripcionGrupalService->registrarCompetidoresSinDuplicados(
+                $proceso,
+                $request->competidores,
+                $request->indices_omitir ?? []
+            );
+
+            return response()->json([
+                'success' => true,
+                'competidores' => $competidores,
+                'total_registrados' => count($competidores),
+                'mensaje' => 'Competidores registrados correctamente'
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'mensaje' => $e->getMessage()
+            ], 422);
+        }
+    }
+
+    /**
+     * Asocia competidores existentes a un proceso
+     *
+     * @param Request $request
+     * @param RegistrationProcess $proceso
+     * @return JsonResponse
+     */
+    public function asociarCompetidoresExistentes(Request $request, RegistrationProcess $proceso): JsonResponse
+    {
+        try {
+            $request->validate([
+                'competidores_ids' => 'required|array|min:1',
+                'competidores_ids.*' => 'integer|exists:competitor,id'
+            ]);
+
+            $competidores = $this->inscripcionGrupalService->asociarCompetidoresExistentes(
+                $proceso,
+                $request->competidores_ids
+            );
+
+            return response()->json([
+                'success' => true,
+                'competidores' => $competidores,
+                'total_asociados' => count($competidores),
+                'mensaje' => 'Competidores asociados correctamente'
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'mensaje' => $e->getMessage()
+            ], 422);
+        }
     }
 }
