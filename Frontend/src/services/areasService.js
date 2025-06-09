@@ -30,6 +30,32 @@ export const getAllAreas = async (activeOnly = null) => {
   }
 };
 
+//Route::get('libre/areas', [AreaController::class, 'index'])->name('areas.indexLibre');
+export const getAllAreasLibre = async (activeOnly = null) => {
+  try {
+    let url = '/libre/areas';
+
+    if (activeOnly !== null) {
+      url += `?activo=${activeOnly}`;
+    }
+    
+    const response = await api.get(url);
+    
+    if (response.data.success) {
+      return response.data.data.map(area => ({
+        id: area.id,
+        name: area.nombre,
+        active: area.activo === 1 || area.activo === true
+      }));
+    } else {
+      throw new Error(response.data.message || 'Error al obtener áreas');
+    }
+  } catch (error) {
+    console.error('Error al obtener las áreas:', error);
+    throw error;
+  }
+};
+
 export const getActiveAreas = async () => {
   return getAllAreas(true);
 };

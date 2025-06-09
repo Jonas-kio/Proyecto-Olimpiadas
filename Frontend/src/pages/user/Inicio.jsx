@@ -1,12 +1,95 @@
 import "../../styles/components/Inicio.css";
-import { useRef, useEffect } from "react";
-
+import { useRef, useEffect, useState } from "react";
+import { getAllAreasLibre } from "../../services/areasService";
 import { useNavigate } from "react-router-dom";
 
 const Inicio = () => {
   const navigate = useNavigate();
   // Dentro del componente Inicio
   const detalleRef = useRef(null);
+  const [areas, setAreas] = useState([]);
+  const [mostrarTodasAreas, setMostrarTodasAreas] = useState(false);
+  const areasRef = useRef(null);
+
+
+  const asignarIcono = (nombreArea) => {
+    const nombreNormalizado = nombreArea.toLowerCase();
+
+    const iconosPorArea = {
+      'matemática': '➗',
+      'matemáticas': '➗',
+      'física': '⚛️',
+      'química': '🧪',
+      'biología': '🧫',
+      'informática': '💻',
+      'computación': '💻',
+      'sistemas': '🖥️',
+      'astronomía': '🔭',
+      'robótica': '🤖',
+      'ciencias sociales': '🌍',
+      'historia': '📜',
+      'geografía': '🗺️',
+      'literatura': '📚',
+      'idiomas': '🗣️',
+      'inglés': '🇬🇧',
+      'arte': '🎨',
+      'música': '🎵',
+      'educación física': '🏃',
+      'deportes': '⚽',
+      'filosofía': '🧠',
+      'psicología': '🧩',
+      'economía': '💰',
+      'contabilidad': '📊',
+      'medicina': '⚕️',
+      'enfermería': '🩺',
+      'arquitectura': '🏛️',
+      'ingeniería': '⚙️',
+      'comunicación': '📱',
+      'periodismo': '📰',
+      'diseño': '✏️',
+      'cocina': '👨‍🍳',
+      'agronomía': '🌱',
+      'veterinaria': '🐾',
+      'mecánica': '🔧',
+      'electrónica': '🔌',
+      'estadística': '📈',
+      'lógica': '🔢',
+      'programación': '👨‍💻',
+      'redes': '🌐',
+      'inteligencia artificial': '🤖',
+    };
+
+    for (const [key, icon] of Object.entries(iconosPorArea)) {
+      if (nombreNormalizado.includes(key)) {
+        return icon;
+      }
+    }
+    return '🔬';
+  };
+
+
+  useEffect(() => {
+    const cargarAreas = async () => {
+      try {
+        const areasDesdeAPI = await getAllAreasLibre(true);
+        const areasConIconos = areasDesdeAPI.map(area => ({
+          nombre: area.name,
+          icono: asignarIcono(area.name)
+        }));
+        setAreas(areasConIconos);
+      } catch (error) {
+        console.error('Error al cargar áreas:', error);
+        setAreas([
+          { nombre: "Matemáticas", icono: "➗" },
+          { nombre: "Física", icono: "⚛️" },
+          { nombre: "Química", icono: "🧪" },
+          { nombre: "Biología", icono: "🧫" }
+        ]);
+      }
+    };
+    
+    cargarAreas();
+  }, []);
 
   useEffect(() => {
     const container = detalleRef.current;
@@ -43,16 +126,7 @@ const Inicio = () => {
     cupoMinimo: 50,
     modalidad: "Presencial",
     detallePDF: "/documentos/detalle_olimpiada.pdf",
-    areas: [
-      { nombre: "Matemáticas", icono: "➗" },
-      { nombre: "Física", icono: "🧬" },
-      { nombre: "Química", icono: "🧪" },
-      { nombre: "Biología", icono: "🧫" },
-      { nombre: "Informática", icono: "💻" },
-      { nombre: "Astronomía", icono: "🔭" },
-      { nombre: "Robótica", icono: "🤖" },
-      { nombre: "Ciencias Sociales", icono: "🌍" },
-    ],
+    areas: areas,
   };
 
   return (
@@ -70,7 +144,12 @@ const Inicio = () => {
             >
               Inscríbete ahora
             </button>
-            <button className="btn-secundario">Conoce las áreas</button>
+            <button 
+              className="btn-secundario"
+              onClick={() => areasRef.current.scrollIntoView({ behavior: 'smooth' })}
+            >
+              Conoce las áreas
+            </button>
           </div>
         </div>
         <div className="hero-imagen">
@@ -98,47 +177,43 @@ const Inicio = () => {
       </div>
 
       <section className="detalle-olimpiada">
-        <h2>Detalles de la Olimpiada</h2>
-        <div className="detalle-scroll" ref={detalleRef}>
-          {[
-            {
-              label: "Fecha de inicio",
-              valor: olimpiadaActual.fechaInicio,
-              img: "/src/assets/images/fechaInicio.jpg",
-            },
-            {
-              label: "Fecha de fin",
-              valor: olimpiadaActual.fechaFin,
-              img: "/src/assets/images/fechaFin.jpg",
-            },
-            {
-              label: "Cupo mínimo",
-              valor: `${olimpiadaActual.cupoMinimo} participantes`,
-              img: "/src/assets/images/cupoMinimo.png",
-            },
-            {
-              label: "Modalidad",
-              valor: olimpiadaActual.modalidad,
-              img: "/src/assets/images/modalidad.webp",
-            },
-          ].map((item, index) => (
-            <div className="detalle-item" key={index}>
-              <img src={item.img} alt={item.label} />
-              <p>
-                <strong>{item.label}:</strong> {item.valor}
-              </p>
+        <h2 className="titulo-seccion">Procedimiento de Inscripción</h2>
+        
+        <div className="procedimiento-marco">
+          <div className="video-explicacion-container">
+            <div className="video-side">
+              <div className="video-wrapper">
+                <iframe 
+                  width="100%" 
+                  height="100%" 
+                  src="https://www.youtube.com/embed/dQw4w9WgXcQ" 
+                  title="Procedimiento de Inscripción Olimpiadas" 
+                  frameBorder="0" 
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                  allowFullScreen>
+                </iframe>
+              </div>
             </div>
-          ))}
+            
+            <div className="explicacion-side">
+              <h3 className="pasos-titulo">Sigue los pasos para inscribirte</h3>
+              <ol className="pasos-inscripcion">
+                <li>Regístrate con tu información personal</li>
+                <li>Selecciona una olimpiada para inscribirte</li>
+                <li>Selecciona si es una inscripcion individual o grupal</li>
+                <li>Llena los datos requeridos del formulario</li>
+                <li>Selecciona las areas y niveles de competencia</li>
+                <li>Genera tu boleta, realiza el pago y confirma tu inscripción</li>
+              </ol>
+              <button 
+                className="btn-primario"
+                onClick={() => navigate("/user/inscripcion")}
+              >
+                Comenzar Inscripción
+              </button>
+            </div>
+          </div>
         </div>
-
-        <a
-          href={olimpiadaActual.detallePDF}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="btn-secundario link-detalle-pdf"
-        >
-          📄 Ver detalles de la olimpiada (PDF)
-        </a>
       </section>
       {/* BENEFICIOS */}
       <section className="beneficios-section">
@@ -175,17 +250,17 @@ const Inicio = () => {
           </div>
 */}
 
-<div
-  className="beneficio"
-  style={{ cursor: "pointer" }}
-  onClick={() => navigate("/user/mis-inscripciones")}
->
-  <span>📊</span>
-  <h3>Reportes Detallados</h3>
-  <p className="parrafoBeneficio">
-    Accede a informes completos sobre inscripciones, pagos y participación.
-  </p>
-</div>
+          <div
+            className="beneficio"
+            style={{ cursor: "pointer" }}
+            onClick={() => navigate("/user/mis-inscripciones")}
+          >
+            <span>📊</span>
+            <h3>Reportes Detallados</h3>
+            <p className="parrafoBeneficio">
+              Accede a informes completos sobre inscripciones, pagos y participación.
+            </p>
+          </div>
 
 
 
@@ -193,23 +268,32 @@ const Inicio = () => {
       </section>
 
       {/* ÁREAS DE COMPETENCIA */}
-      <section className="areas-section">
+      <section className="areas-section" ref={areasRef}>
         <h2 className="titulo2">Áreas de competencia</h2>
         <p className="parrafo2">
           Las olimpiadas abarcan diversas disciplinas científicas para
           estudiantes de todos los niveles.
         </p>
-        <div className="areas-grid">
-          {olimpiadaActual.areas.map((area) => (
+        <div className={`areas-grid ${mostrarTodasAreas ? 'areas-grid-expanded' : ''}`}>
+          {(mostrarTodasAreas ? olimpiadaActual.areas : olimpiadaActual.areas.slice(0, window.innerWidth <= 576 ? 3 : 6)).map((area) => (
             <div key={area.nombre} className="area-card">
               <span className="area-icon">{area.icono}</span>
-              <h3>{area.nombre}</h3>
+              <h3>
+                {area.nombre.includes('o') || area.nombre.length > 12 
+                  ? area.nombre.replace(/o|y|\//, (match) => match === 'o' ? ' o ' : match === 'y' ? ' y ' : ' / ')
+                  : area.nombre}
+              </h3>
             </div>
           ))}
         </div>
-        <button className="btn-primario mt-32">
-          Ver todas las áreas y categorías
-        </button>
+        {olimpiadaActual.areas.length > (window.innerWidth <= 576 ? 3 : 6) && (
+          <button 
+            className="btn-primario mt-32" 
+            onClick={() => setMostrarTodasAreas(!mostrarTodasAreas)}
+          >
+            {mostrarTodasAreas ? "Mostrar menos áreas" : "Ver todas las áreas"}
+          </button>
+        )}
       </section>
 
       {/* PARTICIPACIÓN */}
@@ -232,5 +316,4 @@ const Inicio = () => {
     </div>
   );
 };
-
 export default Inicio;

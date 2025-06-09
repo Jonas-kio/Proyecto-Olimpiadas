@@ -1,69 +1,53 @@
-import { useState } from 'react';
-import FileUpload from './FileUpload';
-import PaymentReceiptsList from './PaymentReceiptsList'; 
+import { useState, useEffect } from 'react';
+import PaymentReceiptsList from './PaymentReceiptsList';
+import {obtenerBoletasPorOlimpiadas} from '../../../services/olimpiadaService'; // Asegúrate de que la ruta sea correcta
+import ErrorModal from '../../../components/common/ErrorModal';
+import LoadingModal from '../../../components/modals/LoadingModal';
 
 const Tickets = () => {
-  const [uploadedFile, setUploadedFile] = useState(null);
-  const [paymentReceipts, setPaymentReceipts] = useState([
-    {
-      id: 1,
-      olympiad: 'Olimpiada Nacional de Matemáticas 2024',
-      receipts: [
-        {
-          id: 1,
-          user: 'Ana García López',
-          amount: 150,
-          date: '2024-01-15',
-          status: 'Pagado'
-        },
-        {
-          id: 2,
-          user: 'Carlos Mendoza',
-          amount: 150,
-          date: '2024-01-16',
-          status: 'Pendiente'
-        },
-        {
-          id: 3,
-          user: 'Ismael',
-          amount: 300,
-          date: '2025-05-26',
-          status: 'Pagado'
-        }
-      ]
-    },
-    {
-      id: 2,
-      olympiad: 'Olimpiada de Física 2024',
-      receipts: [
-        {
-          id: 3,
-          user: 'María Rodríguez',
-          amount: 200,
-          date: '2024-01-18',
-          status: 'Pagado'
-        },
-        {
-          id: 4,
-          user: 'José Martínez',
-          amount: 200,
-          date: '2024-01-19',
-          status: 'Pagado'
-        }
-      ]
-    }
-  ]);
+  const [paymentReceipts, setPaymentReceipts] = useState();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const handleFileUpload = (file) => {
-    setUploadedFile(file);
-    console.log('Archivo CSV subido:', file.name);
-    // Aquí puedes procesar el archivo CSV si lo deseas
+  useEffect(() => {
+    const cargarBoletas = async () => {
+      try {
+        setLoading(true);
+        const response = await obtenerBoletasPorOlimpiadas();
+        
+        if (response.success) {
+          setPaymentReceipts(response.data);
+        } else {
+          setError('Error al cargar las boletas');
+        }
+      } catch (err) {
+        console.error('Error al cargar boletas:', err);
+        setError('No se pudieron cargar las boletas. Por favor, intenta nuevamente.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    cargarBoletas();
+  }, []);
+
+  const handleCloseError = () => {
+    setError(null);
   };
+
 
   return (
     <div className="space-y-8">
+      <LoadingModal isOpen={loading} message="Cargando boletas..." />
+      <ErrorModal 
+        isOpen={!!error} 
+        message={error || ''} 
+        onClose={handleCloseError} 
+      />
       {/* <FileUpload onFileUpload={handleFileUpload} uploadedFile={uploadedFile} /> */}
-      <PaymentReceiptsList paymentReceipts={paymentReceipts} />
+      {!loading && !error && paymentReceipts && (
+        <PaymentReceiptsList paymentReceipts={paymentReceipts} />
+      )}
     </div>
   );
 };
