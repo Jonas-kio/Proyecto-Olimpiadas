@@ -1,4 +1,5 @@
-import React, { useRef } from 'react';
+/* eslint-disable react/prop-types */
+import { useRef } from 'react';
 import { UploadIcon, CheckCircleIcon } from 'lucide-react';
 import "../../../styles/boletas/FileUpload.css";
 

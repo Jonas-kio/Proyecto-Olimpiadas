@@ -26,6 +26,7 @@ export const getOlimpiadaDetail = async (id) => {
     return response;
   } catch (error) {
     // Si falla, intentar con la ruta admin
+    console.log("Error en ruta pública, intentando ruta admin...", error.message);
     const adminResponse = await api.get(`/olimpiadas/${id}`);
     return adminResponse;
   }
@@ -60,7 +61,18 @@ export const obtenerAreas = async () => {
     return response.data;
   } catch (error) {
     // Si falla, intentar con la ruta alternativa
+    console.error("Error al obtener áreas:", error.message);
     const altResponse = await api.get("/inscripcion/area");
     return altResponse.data;
+  }
+};
+
+export const obtenerBoletasPorOlimpiadas= async () => {
+  try {
+    const response = await api.get('boletas/olimpiada');
+    return response.data;
+  } catch (error) {
+    console.error('Error al obtener boletas por olimpiada:', error);
+    throw error;
   }
 };
