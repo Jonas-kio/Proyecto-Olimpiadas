@@ -88,7 +88,7 @@ const ReportPanel = () => {
                 }))}
               />
             ) : (
-              <p className="no-data">No hay registros disponibles.</p> 
+              <p className="no-data">No hay areas encontradas.</p> 
             )}
           </div>
 
@@ -112,7 +112,7 @@ const ReportPanel = () => {
                 </div>
               </>
             ) : (
-              <p className="no-data">No hay registros disponibles.</p>  
+              <p className="no-data">No hay pagos realizados.</p>  
             )}
           </div>
         </div>

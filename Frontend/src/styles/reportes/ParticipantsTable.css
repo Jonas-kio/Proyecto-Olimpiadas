@@ -85,6 +85,11 @@
   color: #b45309;
 }
 
+.badge-red {
+  background-color: #ffd3d3;
+  color: #ce0000;
+}
+
 .badge-blue {
   background-color: #dbeafe;
   color: #1d4ed8;
