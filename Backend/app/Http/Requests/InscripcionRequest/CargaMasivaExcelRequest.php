@@ -107,30 +107,6 @@ class CargaMasivaExcelRequest extends FormRequest
 
     protected function failedValidation(Validator $validator)
     {
-        // Debug detallado de la validación fallida
-        if ($this->hasFile('file')) {
-            $file = $this->file('file');
-            \Log::error('CargaMasivaExcelRequest - Validación fallida:', [
-                'errors' => $validator->errors()->toArray(),
-                'file_info' => [
-                    'original_name' => $file->getClientOriginalName(),
-                    'mime_type' => $file->getMimeType(),
-                    'client_mime_type' => $file->getClientMimeType(),
-                    'size' => $file->getSize(),
-                    'extension' => $file->getClientOriginalExtension(),
-                    'path' => $file->getRealPath(),
-                    'is_valid' => $file->isValid(),
-                    'error' => $file->getError()
-                ]
-            ]);
-        } else {
-            \Log::error('CargaMasivaExcelRequest - Validación fallida sin archivo:', [
-                'errors' => $validator->errors()->toArray(),
-                'all_files' => $this->allFiles(),
-                'all_data' => $this->all()
-            ]);
-        }
-
         throw new HttpResponseException(response()->json([
             'success' => false,
             'message' => 'Error de validación',

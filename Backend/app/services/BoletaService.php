@@ -46,45 +46,12 @@ class BoletaService
         $datosCompetidor = Cache::get("proceso_{$proceso->id}_competidor_temporal");
         $tutoresTemporales = Cache::get("proceso_{$proceso->id}_tutores_temporal", []);
 
-        // Obtener áreas y niveles según el tipo de inscripción
-        if ($proceso->type === 'grupal') {
-            // Para inscripciones grupales, obtener de la tabla CompetidorAreaNivel
-            Log::info("BoletaService: Proceso grupal detectado, obteniendo asignaciones");
-
-            $asignaciones = CompetidorAreaNivel::where('registration_process_id', $proceso->id)
-                ->get();
-
-            if ($asignaciones->isEmpty()) {
-                throw new \Exception('Debe seleccionar al menos un área y un nivel para generar la boleta');
-            }
-
-            $areasIds = $asignaciones->pluck('area_id')->unique()->toArray();
-            $nivelesIds = $asignaciones->pluck('category_level_id')->unique()->toArray();
-        } else {
-            // Para inscripciones individuales, usar el método tradicional
-            Log::info("BoletaService: Proceso individual detectado, usando métodos tradicionales");
-            $areasIds = $this->procesoRepository->obtenerAreasSeleccionadas($proceso->id);
-            $nivelesIds = $this->procesoRepository->obtenerNivelesSeleccionados($proceso->id);
-
-            Log::info("BoletaService: Áreas y niveles obtenidos (individual)", [
-                'areas_ids' => $areasIds,
-                'niveles_ids' => $nivelesIds
-            ]);
-        }
+        $areasIds = $this->procesoRepository->obtenerAreasSeleccionadas($proceso->id);
+        $nivelesIds = $this->procesoRepository->obtenerNivelesSeleccionados($proceso->id);
 
         if (empty($areasIds) || empty($nivelesIds)) {
-            Log::error("BoletaService: Áreas o niveles vacíos", [
-                'areas_ids' => $areasIds,
-                'niveles_ids' => $nivelesIds,
-                'tipo_proceso' => $proceso->type
-            ]);
             throw new \Exception('Debe seleccionar al menos un área y un nivel para generar la boleta');
         }
-
-        Log::info("BoletaService: Verificación exitosa, continuando con la generación", [
-            'cantidad_areas' => count($areasIds),
-            'cantidad_niveles' => count($nivelesIds)
-        ]);
 
         DB::beginTransaction();
 

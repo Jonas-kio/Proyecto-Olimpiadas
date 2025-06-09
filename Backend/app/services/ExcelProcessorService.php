@@ -32,12 +32,8 @@ class ExcelProcessorService
             throw new Exception('El archivo debe ser de tipo Excel (xlsx, xls) o CSV.');
         }
 
-        // Generar nombre de archivo único con la extensión correcta
-        $fileName = uniqid() . '.' . $extension;
-        $path = 'uploads/inscripciones/' . $fileName;
-
-        // Guardar el archivo con la extensión correcta
-        Storage::put($path, file_get_contents($file->getRealPath()));
+        // Guardar el archivo en el almacenamiento
+        $path = $file->store('uploads/inscripciones');
 
         // Registrar en la base de datos
         $fileCarga = FileCargaMasiva::create([
@@ -151,25 +147,6 @@ class ExcelProcessorService
             throw new Exception('No se pudo abrir el archivo CSV.');
         }
 
-        // Leer todo el contenido del archivo para manejar BOM UTF-8
-        $content = file_get_contents($fullPath);
-
-        // Remover BOM UTF-8 si existe
-        if (substr($content, 0, 3) === "\xEF\xBB\xBF") {
-            $content = substr($content, 3);
-        }
-
-        // Escribir contenido limpio a un archivo temporal
-        $tempFile = tempnam(sys_get_temp_dir(), 'csv_clean_');
-        file_put_contents($tempFile, $content);
-
-        // Abrir el archivo temporal limpio
-        fclose($handle);
-        $handle = fopen($tempFile, 'r');
-        if (!$handle) {
-            throw new Exception('No se pudo abrir el archivo CSV temporal.');
-        }
-
         // Detectar el separador leyendo la primera línea
         $firstLine = fgets($handle);
         rewind($handle);
@@ -190,24 +167,15 @@ class ExcelProcessorService
                 // Primera fila son los encabezados
                 $headers = array_map('trim', $row);
 
-                // Debug: Loggear los encabezados encontrados
-                \Log::info('ExcelProcessorService - Encabezados CSV encontrados:', [
-                    'headers' => $headers,
-                    'count' => count($headers),
-                    'first_header' => isset($headers[0]) ? $headers[0] : 'N/A',
-                    'first_header_bytes' => isset($headers[0]) ? bin2hex($headers[0]) : 'N/A'
-                ]);
-
                 // Validar encabezados esperados
                 $expectedHeaders = [
                     'nombres', 'apellidos', 'documento_identidad', 'fecha_nacimiento',
-                    'correo_electronico', 'colegio', 'curso', 'provincia', 'area', 'nivel'
+                    'correo_electronico', 'colegio', 'curso', 'provincia', 'area_id', 'nivel_id'
                 ];
 
                 foreach ($expectedHeaders as $header) {
                     if (!in_array($header, $headers)) {
                         fclose($handle);
-                        unlink($tempFile);
                         throw new Exception("Falta el encabezado requerido: '{$header}'. Encabezados encontrados: " . implode(', ', $headers));
                     }
                 }
@@ -228,30 +196,13 @@ class ExcelProcessorService
                     case 'fecha_nacimiento':
                         $rowData[$header] = $this->procesarFechaExcel($value);
                         break;
-                    case 'area':
-                        // Convertir nombre de área a ID
-                        $area = Area::where('nombre', $value)->first();
-                        if (!$area) {
-                            fclose($handle);
-                            unlink($tempFile);
-                            throw new Exception("Área no encontrada en fila {$rowNumber}: {$value}. Áreas disponibles: " . Area::pluck('nombre')->implode(', '));
-                        }
-                        $rowData['area_id'] = $area->id;
-                        break;
-                    case 'nivel':
-                        // Convertir nombre de nivel a ID
-                        $nivel = CategoryLevel::where('name', $value)->first();
-                        if (!$nivel) {
-                            fclose($handle);
-                            unlink($tempFile);
-                            throw new Exception("Nivel no encontrado en fila {$rowNumber}: {$value}. Niveles disponibles: " . CategoryLevel::pluck('name')->implode(', '));
-                        }
-                        $rowData['nivel_id'] = $nivel->id;
+                    case 'area_id':
+                    case 'nivel_id':
+                        $rowData[$header] = (int) $value;
                         break;
                     case 'correo_electronico':
                         if (!empty($value) && !filter_var($value, FILTER_VALIDATE_EMAIL)) {
                             fclose($handle);
-                            unlink($tempFile);
                             throw new Exception("Email inválido en fila {$rowNumber}: {$value}");
                         }
                         $rowData[$header] = strtolower($value);
@@ -265,7 +216,6 @@ class ExcelProcessorService
             // Validar datos mínimos
             if (empty($rowData['nombres']) || empty($rowData['apellidos']) || empty($rowData['documento_identidad'])) {
                 fclose($handle);
-                unlink($tempFile);
                 throw new Exception("Fila {$rowNumber} tiene datos incompletos. Se requiere al menos nombres, apellidos y documento de identidad.");
             }
 
@@ -273,7 +223,6 @@ class ExcelProcessorService
         }
 
         fclose($handle);
-        unlink($tempFile);
 
         if (empty($data)) {
             throw new Exception('No se encontraron datos válidos para procesar en el archivo.');
@@ -347,43 +296,17 @@ class ExcelProcessorService
             throw new Exception('El archivo no contiene datos.');
         }
 
-        // Debug: Loggear la estructura de los datos recibidos
-        \Log::info('ExcelProcessorService - Validando estructura del archivo:', [
-            'data_count' => count($data),
-            'first_row_type' => gettype($data[0]),
-            'first_row_structure' => array_keys($data[0]),
-            'first_row_sample' => array_slice($data[0], 0, 5, true)
-        ]);
-
-        $camposRequeridosBasicos = [
+        $camposRequeridos = [
             'nombres', 'apellidos', 'documento_identidad', 'fecha_nacimiento',
-            'correo_electronico', 'colegio', 'curso', 'provincia'
+            'correo_electronico', 'colegio', 'curso', 'provincia', 'area_id', 'nivel_id'
         ];
 
-        // Validar que el primer registro tenga todos los campos básicos requeridos
+        // Validar que el primer registro tenga todos los campos requeridos
         $primeraFila = $data[0];
-        foreach ($camposRequeridosBasicos as $campo) {
+        foreach ($camposRequeridos as $campo) {
             if (!array_key_exists($campo, $primeraFila)) {
-                \Log::error('ExcelProcessorService - Campo faltante en validación:', [
-                    'campo_faltante' => $campo,
-                    'campos_disponibles' => array_keys($primeraFila),
-                    'primera_fila_completa' => $primeraFila
-                ]);
-
                 throw new Exception("El archivo no tiene la estructura correcta. Falta el campo '{$campo}'.");
             }
-        }
-
-        // Validar que tenga área y nivel (ya sea en forma original o convertida)
-        $tieneArea = array_key_exists('area', $primeraFila) || array_key_exists('area_id', $primeraFila);
-        $tieneNivel = array_key_exists('nivel', $primeraFila) || array_key_exists('nivel_id', $primeraFila);
-
-        if (!$tieneArea) {
-            throw new Exception("El archivo no tiene la estructura correcta. Falta el campo 'area' o 'area_id'.");
-        }
-
-        if (!$tieneNivel) {
-            throw new Exception("El archivo no tiene la estructura correcta. Falta el campo 'nivel' o 'nivel_id'.");
         }
     }
 
@@ -447,11 +370,6 @@ class ExcelProcessorService
                 'nombres' => $competidor->nombres,
                 'apellidos' => $competidor->apellidos,
                 'documento_identidad' => $competidor->documento_identidad,
-                'fecha_nacimiento' => $competidor->fecha_nacimiento,
-                'correo_electronico' => $competidor->correo_electronico,
-                'colegio' => $competidor->colegio,
-                'curso' => $competidor->curso . ' ' . $competidor->nivel,
-                'provincia' => $competidor->provincia,
                 'area' => $area->nombre,
                 'nivel' => $nivel->name
             ];
@@ -512,90 +430,75 @@ class ExcelProcessorService
                 'colegio',
                 'curso',
                 'provincia',
-                'area',
-                'nivel'
+                'area_id',
+                'nivel_id'
             ];
 
-            // Generar documentos únicos para evitar duplicados
-            $timestamp = time();
-            $random1 = rand(1000, 9999);
-            $random2 = rand(1000, 9999);
-            $random3 = rand(1000, 9999);
-
-            // Ejemplos de datos con nombres reales de áreas y niveles y documentos únicos
+            // Ejemplos de datos
             $ejemplos = [
                 [
                     'Juan Carlos',
                     'Pérez López',
-                    $timestamp . $random1, // Documento único
+                    '12345678',
                     '2010-05-15',
-                    'juan.perez.' . $random1 . '@email.com', // Email único
+                    'juan.perez@email.com',
                     'Colegio San Martín',
                     '3 Secundaria',
                     'La Paz',
-                    'Matemáticas',
-                    'Básico Primaria'
+                    '1',
+                    '2'
                 ],
                 [
                     'María Elena',
                     'García Mendoza',
-                    $timestamp . $random2, // Documento único
+                    '87654321',
                     '2011-07-22',
-                    'maria.garcia.' . $random2 . '@email.com', // Email único
+                    'maria.garcia@email.com',
                     'Colegio San José',
                     '2 Secundaria',
                     'Santa Cruz',
-                    'Física',
-                    'Física Secundaria'
-                ],
-                [
-                    'Carlos Alberto',
-                    'Mamani Quispe',
-                    $timestamp . $random3, // Documento único
-                    '2009-03-10',
-                    'carlos.mamani.' . $random3 . '@email.com', // Email único
-                    'Unidad Educativa Central',
-                    '4 Secundaria',
-                    'Cochabamba',
-                    'Química',
-                    'Química Secundaria'
+                    '2',
+                    '3'
                 ]
             ];
 
-            // Usar nombre único para generar plantilla fresca cada vez
-            $fileName = 'plantilla_carga_masiva_' . date('Y_m_d_H_i_s');
-            $filePath = 'private/plantillas/' . $fileName . '.csv';
+            // Usar nombre fijo para reutilizar el mismo archivo
+            $fileName = 'plantilla_carga_masiva';
+            $filePath = 'plantillas/' . $fileName . '.csv';
 
             // Crear directorio si no existe
-            Storage::makeDirectory('private/plantillas');
+            Storage::makeDirectory('plantillas');
 
-            // Generar archivo CSV con codificación UTF-8 correcta
+            // Si el archivo ya existe, retornarlo en lugar de crear uno nuevo
+            if (Storage::exists($filePath)) {
+                return $filePath;
+            }
+
+            // Generar archivo CSV usando funciones nativas de PHP con formato compatible para Excel
             $csvContent = '';
 
-            // Agregar BOM UTF-8 para compatibilidad con Excel
+            // Agregar BOM UTF-8 para Excel
             $csvContent .= "\xEF\xBB\xBF";
 
-            // Generar encabezados
-            $csvContent .= implode(';', $headers) . "\r\n";
+            // Generar CSV con punto y coma como separador (formato español)
+            $tempFile = tempnam(sys_get_temp_dir(), 'plantilla_csv');
+            $handle = fopen($tempFile, 'w');
+
+            // Configurar para usar punto y coma como separador
+            fputcsv($handle, $headers, ';');
 
             // Agregar ejemplos de datos
             foreach ($ejemplos as $ejemplo) {
-                $line = [];
-                foreach ($ejemplo as $campo) {
-                    // Siempre escapar campos de texto con comillas para evitar problemas de codificación
-                    // Solo no usar comillas para números simples
-                    if (is_numeric($campo) && !strpos($campo, '.') && !strpos($campo, '-')) {
-                        $line[] = $campo;
-                    } else {
-                        // Escapar comillas dobles dentro del campo y envolver en comillas
-                        $campo = '"' . str_replace('"', '""', $campo) . '"';
-                        $line[] = $campo;
-                    }
-                }
-                $csvContent .= implode(';', $line) . "\r\n";
+                fputcsv($handle, $ejemplo, ';');
             }
 
-            // Guardar el archivo con codificación UTF-8
+            fclose($handle);
+
+            // Leer el contenido generado
+            $csvContent .= file_get_contents($tempFile);
+            unlink($tempFile);
+
+            // Guardar el archivo
             Storage::put($filePath, $csvContent);
 
             return $filePath;
