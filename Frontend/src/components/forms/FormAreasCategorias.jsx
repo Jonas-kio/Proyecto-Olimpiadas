@@ -148,11 +148,7 @@ const FormAreasCategorias = ({
           <label>
             Áreas de Competencia <span className="asterisco rojo">*</span>
           </label>
-          <select
-            name="area"
-            onChange={handleAreaChange}
-            defaultValue=""
-          >
+          <select name="area" onChange={handleAreaChange} defaultValue="">
             <option value="" disabled>
               Selecciona un área
             </option>
@@ -275,9 +271,13 @@ const FormAreasCategorias = ({
                 const area = areasDisponibles.find((a) => a.id === cat.area_id);
                 const nombreArea = area ? area.nombre : "Área desconocida";
                 return (
-                  <option key={cat.id} value={cat.id}>
-                    [{nombreArea}] {cat.name} - {cat.grade_name} (cursos:{" "}
-                    {cat.grade_min} a máximo: {cat.grade_max})
+                  <option
+                    key={cat.id}
+                    value={cat.id}
+                    className="option-categoria"
+                  >
+                    [{nombreArea}] {cat.name} - {cat.grade_name} (
+                    {cat.grade_min} - {cat.grade_max})
                   </option>
                 );
               })}

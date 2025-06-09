@@ -18,10 +18,10 @@ class BoletaController extends Controller
     }
 
     //obtener listado de boletas
-    public function obtenerBoletasPorOlimpiada($olimpiadaId): JsonResponse
+    public function obtenerBoletasPorOlimpiada(): JsonResponse
     {
         try {
-            $resultado = $this->boletaService->obtenerBoletasPorOlimpiada($olimpiadaId);
+            $resultado = $this->boletaService->obtenerBoletasPorOlimpiada();
             return response()->json($resultado);
         } catch (Exception $e) {
             return response()->json([
