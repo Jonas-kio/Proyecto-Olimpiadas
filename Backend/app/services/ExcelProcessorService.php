@@ -507,4 +507,105 @@ class ExcelProcessorService
             throw new Exception('Error al generar la plantilla CSV: ' . $e->getMessage());
         }
     }
+
+    /**
+     * Genera una plantilla CSV en memoria para evitar problemas de archivos temporales
+     *
+     * @return string Contenido CSV
+     */
+    public function generarPlantillaCSVEnMemoria()
+    {
+        try {
+            // Datos para la plantilla
+            $headers = [
+                'nombres',
+                'apellidos',
+                'documento_identidad',
+                'fecha_nacimiento',
+                'correo_electronico',
+                'colegio',
+                'curso',
+                'provincia',
+                'area',
+                'nivel'
+            ];
+
+            // Generar documentos únicos para evitar duplicados
+            $timestamp = time();
+            $random1 = rand(1000, 9999);
+            $random2 = rand(1000, 9999);
+            $random3 = rand(1000, 9999);
+
+            // Ejemplos de datos con nombres reales de áreas y niveles y documentos únicos
+            $ejemplos = [
+                [
+                    'Juan Carlos',
+                    'Pérez López',
+                    $timestamp . $random1, // Documento único
+                    '2010-05-15',
+                    'juan.perez.' . $random1 . '@email.com', // Email único
+                    'Colegio San Martín',
+                    '3 Secundaria',
+                    'La Paz',
+                    'Matemáticas',
+                    'Básico Primaria'
+                ],
+                [
+                    'María Elena',
+                    'García Mendoza',
+                    $timestamp . $random2, // Documento único
+                    '2011-07-22',
+                    'maria.garcia.' . $random2 . '@email.com', // Email único
+                    'Colegio San José',
+                    '2 Secundaria',
+                    'Santa Cruz',
+                    'Física',
+                    'Física Secundaria'
+                ],
+                [
+                    'Carlos Alberto',
+                    'Mamani Quispe',
+                    $timestamp . $random3, // Documento único
+                    '2009-03-10',
+                    'carlos.mamani.' . $random3 . '@email.com', // Email único
+                    'Unidad Educativa Central',
+                    '4 Secundaria',
+                    'Cochabamba',
+                    'Química',
+                    'Química Secundaria'
+                ]
+            ];
+
+            // Generar contenido CSV en memoria
+            $csvContent = '';
+
+            // Agregar BOM UTF-8 para compatibilidad con Excel
+            $csvContent .= "\xEF\xBB\xBF";
+
+            // Generar encabezados
+            $csvContent .= implode(';', $headers) . "\r\n";
+
+            // Agregar ejemplos de datos
+            foreach ($ejemplos as $ejemplo) {
+                $line = [];
+                foreach ($ejemplo as $campo) {
+                    // Siempre escapar campos de texto con comillas para evitar problemas de codificación
+                    // Solo no usar comillas para números simples
+                    if (is_numeric($campo) && !strpos($campo, '.') && !strpos($campo, '-')) {
+                        $line[] = $campo;
+                    } else {
+                        // Escapar comillas dobles dentro del campo y envolver en comillas
+                        $campo = '"' . str_replace('"', '""', $campo) . '"';
+                        $line[] = $campo;
+                    }
+                }
+                $csvContent .= implode(';', $line) . "\r\n";
+            }
+
+            return $csvContent;
+
+        } catch (Exception $e) {
+            throw new Exception('Error al generar la plantilla CSV en memoria: ' . $e->getMessage());
+        }
+    }
 }
