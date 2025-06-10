@@ -1,7 +1,31 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "../../styles/components/Footer.css";
 
 const Footer = () => {
+  const navigate = useNavigate();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    const checkAuth = () => {
+      const token = localStorage.getItem("token");
+      setIsAuthenticated(token !== null);
+    };
+
+    checkAuth();
+
+    window.addEventListener("storage", checkAuth);
+
+    return () => {
+      window.removeEventListener("storage", checkAuth);
+    };
+  }, []);
+
+  const handleInicio = (e) => {
+    e.preventDefault();
+    navigate(isAuthenticated ? "/user/inicio" : "/");
+  };
+
   return (
     <footer className="footer">
       <div className="footer-contenido">
@@ -17,7 +41,9 @@ const Footer = () => {
           <h3>Enlaces</h3>
           <ul>
             <li>
-              <a href="#">Inicio</a>
+              <a href="#" onClick={handleInicio}>
+                Inicio
+              </a>
             </li>
             <li>
               <a href="#">Áreas de competencia</a>
