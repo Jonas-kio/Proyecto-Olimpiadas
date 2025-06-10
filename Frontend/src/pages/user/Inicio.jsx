@@ -2,6 +2,7 @@ import "../../styles/components/Inicio.css";
 import { useRef, useEffect, useState } from "react";
 import { getAllAreasLibre } from "../../services/areasService";
 import { useNavigate } from "react-router-dom";
+import VideoPlayer from "../../components/VideoPlayer";
 
 const Inicio = () => {
   const navigate = useNavigate();
@@ -154,7 +155,7 @@ const Inicio = () => {
         </div>
         <div className="hero-imagen">
           <img
-            src={olimpiadaActual.imagenPortada}
+            src={"https://i.imgur.com/xGYenCL.png"}
             alt="Estudiantes"
             width={500}
           />
@@ -183,15 +184,10 @@ const Inicio = () => {
           <div className="video-explicacion-container">
             <div className="video-side">
               <div className="video-wrapper">
-                <iframe 
+                <VideoPlayer 
                   width="100%" 
                   height="100%" 
-                  src="https://www.youtube.com/embed/dQw4w9WgXcQ" 
-                  title="Procedimiento de Inscripción Olimpiadas" 
-                  frameBorder="0" 
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                  allowFullScreen>
-                </iframe>
+                />
               </div>
             </div>
             
