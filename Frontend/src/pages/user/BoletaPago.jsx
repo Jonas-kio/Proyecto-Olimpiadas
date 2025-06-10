@@ -70,6 +70,7 @@ const BoletaPago = ({
 
   const resumenCostos = datosBoleta?.costo;
 
+
   const totalPago = resumenCostos?.monto_total_formateado || "0.00"
 
   const nivel = estudiante.curso?.includes("Primaria")
@@ -79,6 +80,7 @@ const BoletaPago = ({
   useEffect(() => {
     setCorreoDestino(estudiante.correo_electronico || "");
   }, [estudiante]);
+
   const mostrarMensajeTemporal = (msg, tipo = "info") => {
     setMensaje(msg);
     setEstadoMensaje(tipo);
@@ -87,10 +89,12 @@ const BoletaPago = ({
       setEstadoMensaje("");
     }, 5000);
   };
+
   const descargarBoleta = async () => {
     try {
       setDescargando(true);
       mostrarMensajeTemporal("Generando PDF...", "info");
+
 
       if (datosBoleta) {
         const boletaPDF = await generarBoletaPDF(
@@ -112,6 +116,7 @@ const BoletaPago = ({
         
         mostrarMensajeTemporal("Boleta descargada correctamente", "success");
       } else {
+
         const boletaPDF = await generarBoletaPDF(
           estudiante,
           tutores,
@@ -295,7 +300,9 @@ const BoletaPago = ({
           <p>
             <strong>Ciudad:</strong> {estudiante.provincia}
           </p>
-        </div>        <div className="boleta-seccion">
+        </div>
+
+        <div className="boleta-seccion">
           <h2>Áreas y Costos</h2>
           <table className="boleta-tabla">
             <thead>
@@ -311,12 +318,6 @@ const BoletaPago = ({
                   <td>{item.area.nombre}</td>
                   <td>Bs. {item.costo_unitario_formateado}</td>
                   <td>Bs. {item.subtotal_formateado}</td>
-                </tr>
-              )) || areasSeleccionadas.map((area, index) => (
-                <tr key={index}>
-                  <td>{area.nombre}</td>
-                  <td>Bs. 50.00</td>
-                  <td>Bs. 50.00</td>
                 </tr>
               ))}
             </tbody>

@@ -281,13 +281,9 @@ class BoletaService
             })->filter()->values()->toArray();
 
             $resumen['competidores'] = $competidores;
-
-            // Calcular cantidad de competidores basado en los detalles de boleta
-            $cantidadCompetidores = count($proceso->detalles);
-
+            $cantidadCompetidores = count(array_unique(array_column($competidores, 'id')));
             $areasSeleccionadas = collect($competidores)->pluck('area')->unique('id')->values()->toArray();
             $nivelesSeleccionados = collect($competidores)->pluck('nivel')->unique('id')->values()->toArray();
-
             $costosPorCombinacion = [];
             foreach ($areasSeleccionadas as $area) {
                 foreach ($nivelesSeleccionados as $nivel) {
@@ -296,19 +292,8 @@ class BoletaService
                         ->first();
 
                     if ($costo && isset($costo->price)) {
-                        // Contar cuántos competidores están asignados a esta combinación específica área-nivel
-                        $competidoresEnEstaArea = 0;
-                        if ($proceso->type === 'grupal') {
-                            $competidoresEnEstaArea = CompetidorAreaNivel::where('registration_process_id', $proceso->id)
-                                ->where('area_id', $area['id'])
-                                ->where('category_level_id', $nivel['id'])
-                                ->distinct('competitor_id')
-                                ->count('competitor_id');
-                        } else {
-                            $competidoresEnEstaArea = $cantidadCompetidores; // Para individual
-                        }
-
-                        $subtotal = $costo->price * $competidoresEnEstaArea;
+                        // Calcular el subtotal = costo unitario × cantidad de competidores
+                        $subtotal = $costo->price * $cantidadCompetidores;
 
                         $costosPorCombinacion[] = [
                             'area' => [
@@ -323,7 +308,7 @@ class BoletaService
                             'costo_unitario_formateado' => number_format($costo->price, 2),
                             'subtotal' => $subtotal,
                             'subtotal_formateado' => number_format($subtotal, 2),
-                            'cantidad_competidores' => $competidoresEnEstaArea
+                            'cantidad_competidores' => $cantidadCompetidores
                         ];
                     }
                 }
