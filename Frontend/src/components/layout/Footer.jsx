@@ -44,6 +44,14 @@ const Footer = () => {
       }, 100);
     }
   };
+  const handleProcesoInscripcion = (e) => {
+    e.preventDefault();
+    if (isAuthenticated) {
+      navigate("/user/inscripcion");
+    } else {
+      navigate("/login");
+    }
+  };
 
   return (
     <footer className="footer">
@@ -70,7 +78,9 @@ const Footer = () => {
               </a>
             </li>
             <li>
-              <a href="#">Proceso de inscripción</a>
+              <a href="#" onClick={handleProcesoInscripcion}>
+                Proceso de inscripción
+              </a>
             </li>
             <li>
               <a href="#">Contacto</a>

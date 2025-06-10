@@ -521,9 +521,7 @@ function FormularioOlimpiada() {
               <label className="label">
                 Cupo mínimo de participantes{" "}
                 <span className="asterisco">*</span>
-              </label>
-              <input
-                type="number"
+              </label>              <input                type="number"
                 value={formData.minParticipants}
                 onChange={(e) =>
                   setFormData({ ...formData, minParticipants: e.target.value })
@@ -532,7 +530,6 @@ function FormularioOlimpiada() {
                 min="1"
                 required
               />
-              {formData.minParticipants !== ""}
             </div>
 
             <div className="input-group">
