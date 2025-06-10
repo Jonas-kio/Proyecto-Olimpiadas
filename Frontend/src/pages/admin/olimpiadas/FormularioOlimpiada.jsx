@@ -521,14 +521,14 @@ function FormularioOlimpiada() {
               <label className="label">
                 Cupo mínimo de participantes{" "}
                 <span className="asterisco">*</span>
-              </label>              <input                type="number"
-                value={formData.minParticipants}
+              </label>              <input                type="number"                value={formData.minParticipants}
                 onChange={(e) =>
                   setFormData({ ...formData, minParticipants: e.target.value })
                 }
                 className="input"
                 min="1"
                 required
+                placeholder="Solo números enteros"
               />
             </div>
 
