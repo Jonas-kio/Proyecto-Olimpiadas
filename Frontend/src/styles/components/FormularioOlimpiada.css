@@ -59,6 +59,11 @@
   box-shadow: 0 0 0 2px #bfdbfe;
 }
 
+
+.input::placeholder {
+  color: #9CA3AF;
+}
+
 /* ===============================
    FECHAS
 ================================= */

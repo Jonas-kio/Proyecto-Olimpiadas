@@ -521,18 +521,18 @@ function FormularioOlimpiada() {
               <label className="label">
                 Cupo mínimo de participantes{" "}
                 <span className="asterisco">*</span>
-              </label>
-              <input
-                type="number"
-                value={formData.minParticipants}
-                onChange={(e) =>
-                  setFormData({ ...formData, minParticipants: e.target.value })
-                }
+              </label>              <input                type="number"                value={formData.minParticipants}
+                onChange={(e) => {
+                  const value = parseInt(e.target.value);
+                  if (value > 0 || e.target.value === "") {
+                    setFormData({ ...formData, minParticipants: e.target.value });
+                  }
+                }}
                 className="input"
-                min="1"
+                min="1" 
                 required
+                placeholder="Solo números enteros"
               />
-              {formData.minParticipants !== ""}
             </div>
 
             <div className="input-group">

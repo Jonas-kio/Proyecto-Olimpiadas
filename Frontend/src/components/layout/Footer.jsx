@@ -1,7 +1,58 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import "../../styles/components/Footer.css";
 
 const Footer = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    const checkAuth = () => {
+      const token = localStorage.getItem("token");
+      setIsAuthenticated(token !== null);
+    };
+
+    checkAuth();
+
+    window.addEventListener("storage", checkAuth);
+
+    return () => {
+      window.removeEventListener("storage", checkAuth);
+    };
+  }, []);
+
+  const handleInicio = (e) => {
+    e.preventDefault();
+    navigate(isAuthenticated ? "/user/inicio" : "/");
+  };
+
+  const handleScrollToAreas = (e) => {
+    e.preventDefault();
+    if (location.pathname === "/" || location.pathname === "/user/inicio") {
+      const seccion = document.querySelector(".areas-section");
+      if (seccion) {
+        seccion.scrollIntoView({ behavior: "smooth" });
+      }
+    } else {
+      navigate(isAuthenticated ? "/user/inicio" : "/");
+      setTimeout(() => {
+        const seccion = document.querySelector(".areas-section");
+        if (seccion) {
+          seccion.scrollIntoView({ behavior: "smooth" });
+        }
+      }, 100);
+    }
+  };
+  const handleProcesoInscripcion = (e) => {
+    e.preventDefault();
+    if (isAuthenticated) {
+      navigate("/user/inscripcion");
+    } else {
+      navigate("/login");
+    }
+  };
+
   return (
     <footer className="footer">
       <div className="footer-contenido">
@@ -17,13 +68,19 @@ const Footer = () => {
           <h3>Enlaces</h3>
           <ul>
             <li>
-              <a href="#">Inicio</a>
+              <a href="#" onClick={handleInicio}>
+                Inicio
+              </a>
             </li>
             <li>
-              <a href="#">Áreas de competencia</a>
+              <a href="#" onClick={handleScrollToAreas}>
+                Áreas de competencia
+              </a>
             </li>
             <li>
-              <a href="#">Proceso de inscripción</a>
+              <a href="#" onClick={handleProcesoInscripcion}>
+                Proceso de inscripción
+              </a>
             </li>
             <li>
               <a href="#">Contacto</a>
