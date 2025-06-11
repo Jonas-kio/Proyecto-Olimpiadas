@@ -2,7 +2,7 @@
 
 namespace App\Http;
 
-use Illuminate\Auth\Middleware\Authenticate;
+
 use Illuminate\Auth\Middleware\RedirectIfAuthenticated;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
