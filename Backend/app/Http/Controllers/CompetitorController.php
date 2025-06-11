@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Competitor;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
+
 
 class CompetitorController extends Controller
 {
