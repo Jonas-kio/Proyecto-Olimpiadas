@@ -1,7 +1,7 @@
 import axios from "axios";
 
 // Configura la URL base de la API
-const API_URL = "http://localhost:8000/api";
+const API_URL = "http://localhost/ultimoTis/Proyecto-Olimpiadas/Backend/public/api";
 
 // Crear una instancia de axios con configuración personalizada
 const api = axios.create({
