@@ -14,15 +14,17 @@ use App\Models\DetalleInscripcion;
 use App\Models\Olimpiada;
 use App\Models\RegistrationProcess;
 use App\Models\Tutor;
+use App\Models\Area;
+use App\Models\CategoryLevel;
 use App\Repositories\ProcesoInscripcionRepository;
 
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Exception;
 use Illuminate\Http\UploadedFile;
 use League\Csv\Reader;
 use League\Csv\Statement;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Cache;
 
@@ -49,8 +51,6 @@ class BoletaService
         // Obtener áreas y niveles según el tipo de inscripción
         if ($proceso->type === 'grupal') {
             // Para inscripciones grupales, obtener de la tabla CompetidorAreaNivel
-            Log::info("BoletaService: Proceso grupal detectado, obteniendo asignaciones");
-
             $asignaciones = CompetidorAreaNivel::where('registration_process_id', $proceso->id)
                 ->get();
 
@@ -62,29 +62,13 @@ class BoletaService
             $nivelesIds = $asignaciones->pluck('category_level_id')->unique()->toArray();
         } else {
             // Para inscripciones individuales, usar el método tradicional
-            Log::info("BoletaService: Proceso individual detectado, usando métodos tradicionales");
             $areasIds = $this->procesoRepository->obtenerAreasSeleccionadas($proceso->id);
             $nivelesIds = $this->procesoRepository->obtenerNivelesSeleccionados($proceso->id);
-
-            Log::info("BoletaService: Áreas y niveles obtenidos (individual)", [
-                'areas_ids' => $areasIds,
-                'niveles_ids' => $nivelesIds
-            ]);
         }
 
         if (empty($areasIds) || empty($nivelesIds)) {
-            Log::error("BoletaService: Áreas o niveles vacíos", [
-                'areas_ids' => $areasIds,
-                'niveles_ids' => $nivelesIds,
-                'tipo_proceso' => $proceso->type
-            ]);
             throw new \Exception('Debe seleccionar al menos un área y un nivel para generar la boleta');
         }
-
-        Log::info("BoletaService: Verificación exitosa, continuando con la generación", [
-            'cantidad_areas' => count($areasIds),
-            'cantidad_niveles' => count($nivelesIds)
-        ]);
 
         DB::beginTransaction();
 
@@ -92,14 +76,8 @@ class BoletaService
             $competidoresIds = [];
 
             if ($datosCompetidor) {
-                Log::info("Creando competidor permanente desde datos temporales", [
-                    'proceso_id' => $proceso->id,
-                    'nombres' => $datosCompetidor['nombres']
-                ]);
-
                 $competidor = Competitor::create($datosCompetidor);
                 $competidoresIds[] = $competidor->id;
-
 
                 $this->procesoRepository->agregarCompetidor($proceso->id, $competidor->id);
 
@@ -122,11 +100,6 @@ class BoletaService
                             'activo' => true
                         ]);
                     }
-
-                    Log::info("Tutores creados para competidor", [
-                        'competidor_id' => $competidor->id,
-                        'cantidad_tutores' => count($tutoresTemporales)
-                    ]);
                 }
             } else {
                 // Si no hay datos temporales, verificar si hay competidores registrados
@@ -142,29 +115,60 @@ class BoletaService
                 throw new \Exception('La olimpiada no tiene definida una fecha de finalización');
             }
 
-            foreach ($areasIds as $areaId) {
-                foreach ($nivelesIds as $nivelId) {
+            if ($proceso->type === 'grupal') {
+                // Para inscripciones grupales: calcular costo basado en asignaciones específicas
+                $asignaciones = CompetidorAreaNivel::where('registration_process_id', $proceso->id)->get();
+
+                foreach ($asignaciones as $asignacion) {
                     try {
-                        $costo = Cost::where('area_id', $areaId)
-                            ->where('category_id', $nivelId)
+                        $costo = Cost::where('area_id', $asignacion->area_id)
+                            ->where('category_id', $asignacion->category_level_id)
                             ->firstOrFail();
+
                         if (!isset($costo->price)) {
                             continue;
                         }
 
-                        foreach ($competidoresIds as $competidorId) {
-                            DetalleInscripcion::create([
-                                'register_process_id' => $proceso->id,
-                                'competidor_id' => $competidorId,
-                                'area_id' => $areaId,
-                                'categoria_id' => $nivelId,
-                                'monto' => $costo->price,
-                                'status' => true
-                            ]);
-                            $montoTotal += $costo->price;
-                        }
+                        DetalleInscripcion::create([
+                            'register_process_id' => $proceso->id,
+                            'competidor_id' => $asignacion->competitor_id,
+                            'area_id' => $asignacion->area_id,
+                            'categoria_id' => $asignacion->category_level_id,
+                            'monto' => $costo->price,
+                            'status' => true
+                        ]);
+                        $montoTotal += $costo->price;
+
                     } catch (\Exception $e) {
                         continue;
+                    }
+                }
+            } else {
+                // Para inscripciones individuales: usar la lógica original
+                foreach ($areasIds as $areaId) {
+                    foreach ($nivelesIds as $nivelId) {
+                        try {
+                            $costo = Cost::where('area_id', $areaId)
+                                ->where('category_id', $nivelId)
+                                ->firstOrFail();
+                            if (!isset($costo->price)) {
+                                continue;
+                            }
+
+                            foreach ($competidoresIds as $competidorId) {
+                                DetalleInscripcion::create([
+                                    'register_process_id' => $proceso->id,
+                                    'competidor_id' => $competidorId,
+                                    'area_id' => $areaId,
+                                    'categoria_id' => $nivelId,
+                                    'monto' => $costo->price,
+                                    'status' => true
+                                ]);
+                                $montoTotal += $costo->price;
+                            }
+                        } catch (\Exception $e) {
+                            continue;
+                        }
                     }
                 }
             }
@@ -204,7 +208,6 @@ class BoletaService
     {
         $fechaActual = Carbon::now()->format('Ymd');
 
-
         $prefijo = 'BOL';
         if ($tipo === 'individual') {
             $prefijo = 'BOL-IND';
@@ -220,7 +223,6 @@ class BoletaService
 
         return $codigo;
     }
-
 
     public function obtenerDatosBoleta($procesoId, $boletaId)
     {
@@ -284,8 +286,10 @@ class BoletaService
                     'documento_identidad' => $detalle->competidor->documento_identidad,
                     'correo_electronico' => $detalle->competidor->correo_electronico,
                     'telefono' => $detalle->competidor->telefono,
-                    'curso' => $detalle->competidor->curso,
+                    'curso' => $detalle->competidor->curso . ' ' . $detalle->competidor->nivel,
                     'colegio' => $detalle->competidor->colegio,
+                    'provincia' => $detalle->competidor->provincia,
+                    'fecha_nacimiento' => $detalle->competidor->fecha_nacimiento,
                     'area' => [
                         'id' => $detalle->area->id,
                         'nombre' => $detalle->area->nombre
@@ -315,34 +319,114 @@ class BoletaService
 
             $resumen['competidores'] = $competidores;
             $cantidadCompetidores = count(array_unique(array_column($competidores, 'id')));
-            $areasSeleccionadas = collect($competidores)->pluck('area')->unique('id')->values()->toArray();
-            $nivelesSeleccionados = collect($competidores)->pluck('nivel')->unique('id')->values()->toArray();
+
+            // Para inscripciones grupales: calcular costos reales por asignación específica
             $costosPorCombinacion = [];
-            foreach ($areasSeleccionadas as $area) {
-                foreach ($nivelesSeleccionados as $nivel) {
-                    $costo = Cost::where('area_id', $area['id'])
-                        ->where('category_id', $nivel['id'])
+            $areasSeleccionadas = [];
+            $nivelesSeleccionados = [];
+
+            if ($proceso->type === 'grupal') {
+                // Obtener asignaciones reales desde CompetidorAreaNivel
+                $asignaciones = CompetidorAreaNivel::where('registration_process_id', $proceso->id)
+                    ->with(['area', 'nivel'])
+                    ->get();
+
+                // Agrupar competidores por combinación área-nivel
+                $competidoresPorCombinacion = [];
+                foreach ($asignaciones as $asignacion) {
+                    $key = $asignacion->area_id . '_' . $asignacion->category_level_id;
+                    if (!isset($competidoresPorCombinacion[$key])) {
+                        $competidoresPorCombinacion[$key] = [
+                            'area' => $asignacion->area,
+                            'nivel' => $asignacion->nivel,
+                            'count' => 0
+                        ];
+                    }
+                    $competidoresPorCombinacion[$key]['count']++;
+                }
+
+                // Extraer áreas y niveles únicos para la sección de selección
+                $areasSeleccionadas = collect($asignaciones)->pluck('area')->unique('id')->map(function($area) {
+                    return [
+                        'id' => $area->id,
+                        'nombre' => $area->nombre
+                    ];
+                })->values()->toArray();
+
+                $nivelesSeleccionados = collect($asignaciones)->pluck('nivel')->unique('id')->map(function($nivel) {
+                    return [
+                        'id' => $nivel->id,
+                        'nombre' => $nivel->name
+                    ];
+                })->values()->toArray();
+
+                // Calcular costos por cada combinación real
+                foreach ($competidoresPorCombinacion as $combinacion) {
+                    $costo = Cost::where('area_id', $combinacion['area']->id)
+                        ->where('category_id', $combinacion['nivel']->id)
                         ->first();
 
                     if ($costo && isset($costo->price)) {
-                        // Calcular el subtotal = costo unitario × cantidad de competidores
-                        $subtotal = $costo->price * $cantidadCompetidores;
+                        $subtotal = $costo->price * $combinacion['count'];
 
                         $costosPorCombinacion[] = [
                             'area' => [
-                                'id' => $area['id'],
-                                'nombre' => $area['nombre']
+                                'id' => $combinacion['area']->id,
+                                'nombre' => $combinacion['area']->nombre
                             ],
                             'nivel' => [
-                                'id' => $nivel['id'],
-                                'nombre' => $nivel['nombre']
+                                'id' => $combinacion['nivel']->id,
+                                'nombre' => $combinacion['nivel']->name
                             ],
                             'costo_unitario' => $costo->price,
                             'costo_unitario_formateado' => number_format($costo->price, 2),
                             'subtotal' => $subtotal,
                             'subtotal_formateado' => number_format($subtotal, 2),
-                            'cantidad_competidores' => $cantidadCompetidores
+                            'cantidad_competidores' => $combinacion['count']
                         ];
+                    }
+                }
+            } else {
+                // Para inscripciones individuales: usar la lógica original basada en los datos de competidores
+                $areasSeleccionadas = collect($competidores)->pluck('area')->filter()->unique('id')->map(function($area) {
+                    return [
+                        'id' => $area['id'],
+                        'nombre' => $area['nombre']
+                    ];
+                })->values()->toArray();
+
+                $nivelesSeleccionados = collect($competidores)->pluck('nivel')->filter()->unique('id')->map(function($nivel) {
+                    return [
+                        'id' => $nivel['id'],
+                        'nombre' => $nivel['nombre']
+                    ];
+                })->values()->toArray();
+
+                foreach ($areasSeleccionadas as $area) {
+                    foreach ($nivelesSeleccionados as $nivel) {
+                        $costo = Cost::where('area_id', $area['id'])
+                            ->where('category_id', $nivel['id'])
+                            ->first();
+
+                        if ($costo && isset($costo->price)) {
+                            $subtotal = $costo->price * $cantidadCompetidores;
+
+                            $costosPorCombinacion[] = [
+                                'area' => [
+                                    'id' => $area['id'],
+                                    'nombre' => $area['nombre']
+                                ],
+                                'nivel' => [
+                                    'id' => $nivel['id'],
+                                    'nombre' => $nivel['nombre']
+                                ],
+                                'costo_unitario' => $costo->price,
+                                'costo_unitario_formateado' => number_format($costo->price, 2),
+                                'subtotal' => $subtotal,
+                                'subtotal_formateado' => number_format($subtotal, 2),
+                                'cantidad_competidores' => $cantidadCompetidores
+                            ];
+                        }
                     }
                 }
             }
@@ -366,19 +450,9 @@ class BoletaService
             ];
 
         } catch (Exception $e) {
-            Log::error('Error al obtener datos de boleta:', [
-                'proceso_id' => $procesoId,
-                'boleta_id' => $boletaId,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
             throw new Exception('Error al obtener los datos de la boleta: ' . $e->getMessage());
         }
     }
-
-
-
 
     public function obtenerBoletasPorOlimpiada()
     {
@@ -449,7 +523,6 @@ class BoletaService
                 }
 
                 try {
-                // Usamos DB::table directamente para la actualización
                     $actualizado = DB::table('boleta')
                     ->where('numero_boleta', $numeroBoleta)
                     ->where('estado', BoletaEstado::PENDIENTE->value)
@@ -491,4 +564,159 @@ class BoletaService
         }
     }
 
+    /**
+     * Calcula costos específicamente para inscripciones grupales
+     */
+    public function calcularCostosGrupales(RegistrationProcess $proceso, array $areasIds, array $nivelesIds)
+    {
+        $costoTotal = 0;
+        $desgloseCostos = [];
+
+        // Obtener asignaciones de competidores por área-nivel
+        $asignaciones = CompetidorAreaNivel::where('registration_process_id', $proceso->id)
+            ->with(['competidor', 'area', 'nivel'])
+            ->get();
+
+        // Si no hay asignaciones guardadas, calcular basándose en los IDs enviados
+        if ($asignaciones->isEmpty()) {
+            return $this->calcularCostosConIds($proceso, $areasIds, $nivelesIds);
+        }
+
+        // Agrupar competidores por combinación área-nivel
+        $competidoresPorCombinacion = [];
+        foreach ($asignaciones as $asignacion) {
+            $key = $asignacion->area_id . '_' . $asignacion->category_level_id;
+            if (!isset($competidoresPorCombinacion[$key])) {
+                $competidoresPorCombinacion[$key] = [
+                    'area_id' => $asignacion->area_id,
+                    'nivel_id' => $asignacion->category_level_id,
+                    'area' => $asignacion->area,
+                    'nivel' => $asignacion->nivel,
+                    'competidores' => []
+                ];
+            }
+            $competidoresPorCombinacion[$key]['competidores'][] = $asignacion->competidor;
+        }
+
+        // Calcular costos por cada combinación área-nivel
+        foreach ($competidoresPorCombinacion as $combinacion) {
+            $costo = Cost::where('area_id', $combinacion['area_id'])
+                ->where('category_id', $combinacion['nivel_id'])
+                ->first();
+
+            if ($costo && isset($costo->price)) {
+                $cantidadEnCombinacion = count($combinacion['competidores']);
+                $costoUnitario = $costo->price;
+                $subtotal = $costoUnitario * $cantidadEnCombinacion;
+
+                $desgloseCostos[] = [
+                    'area' => [
+                        'id' => $combinacion['area']->id,
+                        'nombre' => $combinacion['area']->nombre
+                    ],
+                    'nivel' => [
+                        'id' => $combinacion['nivel']->id,
+                        'nombre' => $combinacion['nivel']->name
+                    ],
+                    'costo_unitario' => $costoUnitario,
+                    'costo_unitario_formateado' => number_format($costoUnitario, 2),
+                    'subtotal' => $subtotal,
+                    'subtotal_formateado' => number_format($subtotal, 2),
+                    'cantidad_competidores' => $cantidadEnCombinacion
+                ];
+
+                $costoTotal += $subtotal;
+            }
+        }
+
+        return [
+            'monto_total' => $costoTotal,
+            'monto_total_formateado' => number_format($costoTotal, 2),
+            'desglose_costos' => $desgloseCostos,
+            'total_competidores' => $asignaciones->count()
+        ];
+    }
+
+    /**
+     * Calcula costos basándose en los IDs de áreas y niveles enviados (para inscripciones manuales)
+     */
+    private function calcularCostosConIds(RegistrationProcess $proceso, array $areasIds, array $nivelesIds)
+    {
+        $costoTotal = 0;
+        $desgloseCostos = [];
+
+        // Obtener cantidad de competidores en el proceso usando el repositorio
+        $competidoresIds = $this->procesoRepository->obtenerIdsCompetidores($proceso->id);
+        $totalCompetidores = count($competidoresIds);
+
+        if ($totalCompetidores === 0) {
+            return [
+                'monto_total' => 0,
+                'monto_total_formateado' => '0.00',
+                'desglose_costos' => [],
+                'total_competidores' => 0
+            ];
+        }
+
+        // Crear combinaciones área-nivel (mapeo 1:1 por competidor)
+        $combinacionesUnicas = [];
+        $maxItems = max(count($areasIds), count($nivelesIds));
+
+        for ($i = 0; $i < $maxItems; $i++) {
+            $areaId = $areasIds[$i] ?? $areasIds[0];
+            $nivelId = $nivelesIds[$i] ?? $nivelesIds[0];
+            $key = $areaId . '_' . $nivelId;
+
+            if (!isset($combinacionesUnicas[$key])) {
+                $combinacionesUnicas[$key] = [
+                    'area_id' => $areaId,
+                    'nivel_id' => $nivelId,
+                    'count' => 0
+                ];
+            }
+            $combinacionesUnicas[$key]['count']++;
+        }
+
+        foreach ($combinacionesUnicas as $combinacion) {
+            // Buscar el costo para esta combinación
+            $costo = Cost::where('area_id', $combinacion['area_id'])
+                ->where('category_id', $combinacion['nivel_id'])
+                ->first();
+
+            // Obtener información del área y nivel
+            $area = Area::find($combinacion['area_id']);
+            $nivel = CategoryLevel::find($combinacion['nivel_id']);
+
+            if ($costo && isset($costo->price) && $area && $nivel) {
+                $costoUnitario = (float) $costo->price;
+                $cantidadCompetidores = $combinacion['count'];
+                $subtotal = $costoUnitario * $cantidadCompetidores;
+
+                $desgloseCostos[] = [
+                    'area' => [
+                        'id' => $area->id,
+                        'nombre' => $area->nombre
+                    ],
+                    'nivel' => [
+                        'id' => $nivel->id,
+                        'nombre' => $nivel->name
+                    ],
+                    'costo_unitario' => $costoUnitario,
+                    'costo_unitario_formateado' => number_format($costoUnitario, 2),
+                    'subtotal' => $subtotal,
+                    'subtotal_formateado' => number_format($subtotal, 2),
+                    'cantidad_competidores' => $cantidadCompetidores
+                ];
+
+                $costoTotal += $subtotal;
+            }
+        }
+
+        return [
+            'monto_total' => $costoTotal,
+            'monto_total_formateado' => number_format($costoTotal, 2),
+            'desglose_costos' => $desgloseCostos,
+            'total_competidores' => $totalCompetidores
+        ];
+    }
 }

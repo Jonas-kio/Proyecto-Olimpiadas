@@ -17,6 +17,9 @@ import FormCompetidoresGrupales from "../../components/forms/FormCompetidoresGru
 import FormAreasGrupales from "../../components/forms/FormAreasGrupales";
 import FormResumenGrupal from "../../components/forms/FormResumenGrupal";
 
+// Importar componente de boleta grupal
+import BoletaPagoGrupal from "./BoletaPagoGrupal";
+
 // Componentes comunes
 import BarraPasos from "../../components/common/BarraPasos";
 import BotonesPaso from "../../components/common/BotonesPaso";
@@ -365,23 +368,26 @@ const InscripcionGrupal = () => {
     competidoresTienenAreasAsignadas() ? "" : "4 Resumen y Boleta"
   ].filter(paso => paso !== ""); // Filtrar pasos vacíos
 
+  // Si se está mostrando la boleta, renderizar el componente BoletaPagoGrupal
   if (mostrarBoleta && datosBoletaGenerada) {
+    // Extraer áreas únicas de las asignaciones para pasar al componente
+    const areasUnicas = asignacionesAreasYCategorias
+      .filter((asignacion, index, arr) => 
+        arr.findIndex(a => a.areaSeleccionada?.id === asignacion.areaSeleccionada?.id) === index
+      )
+      .map(asignacion => asignacion.areaSeleccionada)
+      .filter(area => area);
+
     return (
-      <div className="boleta-container">
-        <div className="boleta-content">
-          <h2>¡Inscripción Grupal Completada!</h2>
-          <div className="boleta-info">
-            <p><strong>Código de Boleta:</strong> {datosBoletaGenerada.codigo}</p>
-            <p><strong>ID de Boleta:</strong> {datosBoletaGenerada.boleta_id}</p>
-            <p className="boleta-mensaje">{datosBoletaGenerada.mensaje}</p>
-          </div>
-          <div className="boleta-acciones">
-            <button className="btn-primario" onClick={volverDesdeBoletaPago}>
-              Ver Mis Inscripciones
-            </button>
-          </div>
-        </div>
-      </div>
+      <BoletaPagoGrupal
+        competidores={competidores}
+        tutores={tutores}
+        areasSeleccionadas={areasUnicas}
+        numeroBoleta={datosBoletaGenerada.codigo}
+        registration_process_id={procesoId}
+        boleta_id={datosBoletaGenerada.boleta_id}
+        onVolver={volverDesdeBoletaPago}
+      />
     );
   }
 
@@ -413,15 +419,16 @@ const InscripcionGrupal = () => {
             asignacionesActuales={asignacionesAreasYCategorias}
             olimpiadaId={olimpiadaId || idOlimpiada}
             procesoId={procesoId}
-          />        )}{(paso === 4 || (paso === 3 && competidoresTienenAreasAsignadas())) && (
+          />        )}        {(paso === 4 || (paso === 3 && competidoresTienenAreasAsignadas())) && (
           <FormResumenGrupal
             tutores={tutores}
             competidores={competidores}
             asignacionesAreasYCategorias={asignacionesAreasYCategorias}
+            procesoId={procesoId}
             olimpiadaId={olimpiadaId}
             onConfirmarInscripcion={handleSubmit}
           />
-        )}        <BotonesPaso
+        )}<BotonesPaso
           paso={competidoresTienenAreasAsignadas() && paso === 3 ? 4 : paso}
           siguiente={siguiente}
           anterior={anterior}

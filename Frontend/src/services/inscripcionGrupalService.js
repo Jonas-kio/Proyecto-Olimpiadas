@@ -206,10 +206,14 @@ export const generarBoletaGrupal = async (procesoId) => {
 };
 
 // Calcular costos preliminares para inscripción grupal
-export const calcularCostosGrupales = async (procesoId, datosCalculo) => {
+// Esta función usa el endpoint específico para inscripciones grupales que calcula correctamente por área
+export const calcularCostosGrupales = async (procesoId, areasIds, nivelesIds) => {
   try {
-    console.log("📤 Calculando costos grupales:", { procesoId, datosCalculo });
-    const response = await api.post(`/inscripcion/grupal/proceso/${procesoId}/calcular-costos`, datosCalculo);
+    console.log("📤 Calculando costos grupales específicos:", { procesoId, areasIds, nivelesIds });
+    const response = await api.post(`/inscripcion/grupal/proceso/${procesoId}/calcular-costos`, {
+      areas_ids: areasIds,
+      niveles_ids: nivelesIds
+    });
     console.log("✅ Costos grupales calculados:", response.data);
     return response;
   } catch (error) {

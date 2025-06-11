@@ -22,7 +22,9 @@ export const generarBoletaPDF = async (
   tutores,
   areasSeleccionadas,
   numeroBoleta,
-  costos
+  costos,
+  esGrupal = false,
+  totalCompetidores = 1
 ) => {
   // Si no se proporciona costos, intenta usar el localStorage
   if (!costos) {
@@ -76,13 +78,12 @@ export const generarBoletaPDF = async (
     const fechaLimite = new Date(
       new Date().setDate(new Date().getDate() + 7)
     ).toLocaleDateString("es-BO");
-
-
     // ENCABEZADO
     doc.setFontSize(20);
     doc.setTextColor(26, 78, 142);
     doc.setFont("helvetica", "bold");
-    doc.text("Boleta de Pago", pageWidth / 2, 20, { align: "center" });
+    const titulo = esGrupal ? "Boleta de Pago - Inscripción Grupal" : "Boleta de Pago";
+    doc.text(titulo, pageWidth / 2, 20, { align: "center" });
 
     doc.setFontSize(16);
     doc.setTextColor(102, 102, 102);
@@ -93,29 +94,37 @@ export const generarBoletaPDF = async (
     doc.setTextColor(0, 0, 0);
     doc.text(`Nº de Boleta: ${numeroBoleta}`, 15, 40);
     doc.text(`Fecha de Emisión: ${fechaEmision}`, 15, 46);
-    doc.text(`Fecha Límite de Pago: ${fechaLimite}`, 15, 52);
+    if (esGrupal) {
+      doc.text(`Tipo: Inscripción Grupal (${totalCompetidores} competidores)`, 15, 52);
+    } else {
+      doc.text(`Fecha Límite de Pago: ${fechaLimite}`, 15, 52);    }
+
+    // Ajustar posición inicial según el tipo
+    let yPos = esGrupal ? 58 : 62;
 
     // DATOS DEL ESTUDIANTE
     doc.setFontSize(14);
     doc.setTextColor(26, 78, 142);
-    doc.text("DATOS DEL ESTUDIANTE", 15, 62);
+    doc.text("DATOS DEL ESTUDIANTE", 15, yPos);
 
+    yPos += 8;
     doc.setFontSize(10);
     doc.setTextColor(0, 0, 0);
     doc.text(
       `Nombre completo: ${estudiante.nombres} ${estudiante.apellidos}`,
       15,
-      70
+      yPos
     );
-    doc.text(`Documento: CI: ${estudiante.documento_identidad}`, 15, 76);
-    doc.text(`Contacto: ${estudiante.correo_electronico}`, 15, 82);
-
-    // DATOS DE LOS TUTORES
+    yPos += 6;
+    doc.text(`Documento: CI: ${estudiante.documento_identidad}`, 15, yPos);
+    yPos += 6;
+    doc.text(`Contacto: ${estudiante.correo_electronico}`, 15, yPos);
+    yPos += 10;    // DATOS DE LOS TUTORES
     doc.setFontSize(14);
     doc.setTextColor(26, 78, 142);
-    doc.text("DATOS DEL TUTOR", 15, 92);
+    doc.text("DATOS DEL TUTOR", 15, yPos);
 
-    let yPos = 100; // posición vertical inicial
+    yPos += 8; // ajustar posición para tutores
 
     doc.setFontSize(10);
     doc.setTextColor(0, 0, 0);

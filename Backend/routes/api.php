@@ -36,6 +36,9 @@ Route::get('/libre/olimpiadas/', [OlimpiadaController::class, 'index'])->name('o
 Route::get('libre/areas', [AreaController::class, 'index'])->name('areas.indexLibre');
 Route::get('/libre/olimpiadas/{olimpiada}', [OlimpiadaController::class, 'show']);
 
+// Ruta pública para costos (solo lectura)
+Route::get('libre/costs', [CostController::class, 'index'])->name('costs.indexLibre');
+
 
 
 
@@ -236,6 +239,10 @@ Route::middleware([IsUserAuth::class])->group(
                     // Obtener resumen de inscripción grupal
                     Route::get('/proceso/{proceso}/resumen', [InscripcionGrupalController::class, 'obtenerResumenGrupal'])
                         ->name('resumen');
+
+                    // Calcular costos grupales específicos por área
+                    Route::post('/proceso/{proceso}/calcular-costos', [InscripcionGrupalController::class, 'calcularCostosGrupales'])
+                        ->name('costos.calcular');
 
                     // Generar boleta
                     Route::post('/proceso/{proceso}/boleta', [InscripcionGrupalController::class, 'generarBoleta'])

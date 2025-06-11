@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import PropTypes from "prop-types";
-import "../../styles/components/FormulariosGrupales.css";
+import "../../styles/components/FormularioGrupal.css";
 import { descargarPlantillaExcel, procesarArchivoGrupal } from "../../services/inscripcionGrupalService";
 
 const FormCompetidoresGrupales = ({ competidores, setCompetidores, procesoId }) => {  const [modoRegistro, setModoRegistro] = useState("manual"); // "manual" o "excel"
