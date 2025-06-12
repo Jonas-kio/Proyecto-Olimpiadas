@@ -36,6 +36,9 @@ Route::get('/libre/olimpiadas/', [OlimpiadaController::class, 'index'])->name('o
 Route::get('libre/areas', [AreaController::class, 'index'])->name('areas.indexLibre');
 Route::get('/libre/olimpiadas/{olimpiada}', [OlimpiadaController::class, 'show']);
 
+// Ruta pública para costos (solo lectura)
+Route::get('libre/costs', [CostController::class, 'index'])->name('costs.indexLibre');
+
 
 
 
@@ -205,6 +208,18 @@ Route::middleware([IsUserAuth::class])->group(
                     Route::post('/proceso/{proceso}/excel', [InscripcionGrupalController::class, 'cargarArchivoExcel'])
                         ->name('excel.cargar');
 
+                    // Verificar competidores existentes
+                    Route::post('/verificar-competidores', [InscripcionGrupalController::class, 'verificarCompetidoresExistentes'])
+                        ->name('competidores.verificar');
+
+                    // Registrar competidores sin duplicados
+                    Route::post('/proceso/{proceso}/competidores-sin-duplicados', [InscripcionGrupalController::class, 'registrarCompetidoresSinDuplicados'])
+                        ->name('competidores.registrar-sin-duplicados');
+
+                    // Asociar competidores existentes
+                    Route::post('/proceso/{proceso}/asociar-competidores', [InscripcionGrupalController::class, 'asociarCompetidoresExistentes'])
+                        ->name('competidores.asociar');
+
                     // Registrar competidores manualmente
                     Route::post('/proceso/{proceso}/competidores', [InscripcionGrupalController::class, 'registrarCompetidores'])
                         ->name('competidores.registrar');
@@ -224,6 +239,10 @@ Route::middleware([IsUserAuth::class])->group(
                     // Obtener resumen de inscripción grupal
                     Route::get('/proceso/{proceso}/resumen', [InscripcionGrupalController::class, 'obtenerResumenGrupal'])
                         ->name('resumen');
+
+                    // Calcular costos grupales específicos por área
+                    Route::post('/proceso/{proceso}/calcular-costos', [InscripcionGrupalController::class, 'calcularCostosGrupales'])
+                        ->name('costos.calcular');
 
                     // Generar boleta
                     Route::post('/proceso/{proceso}/boleta', [InscripcionGrupalController::class, 'generarBoleta'])

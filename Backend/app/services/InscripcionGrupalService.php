@@ -378,6 +378,177 @@ class InscripcionGrupalService
     }
 
     /**
+     * Verifica qué competidores ya existen en la base de datos
+     *
+     * @param array $competidores Lista de competidores a verificar
+     * @return array Resultado de la verificación
+     */
+    public function verificarCompetidoresExistentes(array $competidores)
+    {
+        $resultado = [
+            'competidores_existentes' => [],
+            'competidores_nuevos' => [],
+            'total_existentes' => 0,
+            'total_nuevos' => 0
+        ];
+
+        foreach ($competidores as $index => $datosCompetidor) {
+            $competidorInfo = [
+                'indice' => $index,
+                'documento_identidad' => $datosCompetidor['documento_identidad'],
+                'correo_electronico' => $datosCompetidor['correo_electronico'],
+                'nombres' => $datosCompetidor['nombres'] ?? '',
+                'apellidos' => $datosCompetidor['apellidos'] ?? ''
+            ];
+
+            // Verificar por documento de identidad
+            $existePorDocumento = Competitor::where('documento_identidad', $datosCompetidor['documento_identidad'])->first();
+
+            // Verificar por correo electrónico
+            $existePorCorreo = Competitor::where('correo_electronico', $datosCompetidor['correo_electronico'])->first();
+
+            if ($existePorDocumento || $existePorCorreo) {
+                $competidorExistente = $existePorDocumento ?? $existePorCorreo;
+
+                $competidorInfo['existe'] = true;
+                $competidorInfo['competidor_existente'] = [
+                    'id' => $competidorExistente->id,
+                    'nombres' => $competidorExistente->nombres,
+                    'apellidos' => $competidorExistente->apellidos,
+                    'documento_identidad' => $competidorExistente->documento_identidad,
+                    'correo_electronico' => $competidorExistente->correo_electronico,
+                    'colegio' => $competidorExistente->colegio,
+                    'curso' => $competidorExistente->curso,
+                    'provincia' => $competidorExistente->provincia
+                ];
+
+                $competidorInfo['motivo_duplicado'] = [];
+                if ($existePorDocumento) {
+                    $competidorInfo['motivo_duplicado'][] = 'documento_identidad';
+                }
+                if ($existePorCorreo) {
+                    $competidorInfo['motivo_duplicado'][] = 'correo_electronico';
+                }
+
+                $resultado['competidores_existentes'][] = $competidorInfo;
+                $resultado['total_existentes']++;
+            } else {
+                $competidorInfo['existe'] = false;
+                $resultado['competidores_nuevos'][] = $competidorInfo;
+                $resultado['total_nuevos']++;
+            }
+        }
+
+        return $resultado;
+    }
+
+    /**
+     * Registra competidores saltándose los duplicados
+     *
+     * @param RegistrationProcess $proceso Proceso de inscripción
+     * @param array $competidores Lista de competidores
+     * @param array $indicesOmitir Índices de competidores a omitir
+     * @return array Competidores registrados
+     */
+    public function registrarCompetidoresSinDuplicados(RegistrationProcess $proceso, array $competidores, array $indicesOmitir = [])
+    {
+        InscripcionHelper::verificarProcesoActivo($proceso, 'registrar múltiples competidores');
+
+        if ($proceso->type !== 'grupal') {
+            throw new Exception('Esta función solo está disponible para inscripciones grupales');
+        }
+
+        $competidoresRegistrados = [];
+
+        foreach ($competidores as $index => $datos) {
+            // Saltar los competidores marcados para omitir
+            if (in_array($index, $indicesOmitir)) {
+                continue;
+            }
+
+            // Validar datos obligatorios
+            if (empty($datos['nombres']) || empty($datos['apellidos']) || empty($datos['documento_identidad'])) {
+                throw new Exception('Los campos nombres, apellidos y documento de identidad son obligatorios');
+            }
+
+            // Verificar que no exista un competidor con el mismo documento (por seguridad)
+            $existente = Competitor::where('documento_identidad', $datos['documento_identidad'])->first();
+            if ($existente) {
+                continue; // Saltar este competidor
+            }
+
+            // Crear competidor
+            $competidor = Competitor::create([
+                'nombres' => $datos['nombres'],
+                'apellidos' => $datos['apellidos'],
+                'documento_identidad' => $datos['documento_identidad'],
+                'fecha_nacimiento' => $datos['fecha_nacimiento'],
+                'correo_electronico' => $datos['correo_electronico'],
+                'colegio' => $datos['colegio'],
+                'curso' => explode(' ', $datos['curso'])[0],
+                'nivel' => explode(' ', $datos['curso'])[1],
+                'provincia' => $datos['provincia']
+            ]);
+
+            // Asociar al proceso de inscripción
+            $this->procesoRepository->agregarCompetidor($proceso->id, $competidor->id);
+
+            $competidoresRegistrados[] = [
+                'id' => $competidor->id,
+                'nombres' => $competidor->nombres,
+                'apellidos' => $competidor->apellidos,
+                'documento_identidad' => $competidor->documento_identidad,
+                'correo_electronico' => $competidor->correo_electronico,
+                'indice_original' => $index
+            ];
+        }
+
+        return $competidoresRegistrados;
+    }
+
+    /**
+     * Asocia competidores existentes a un proceso de inscripción
+     *
+     * @param RegistrationProcess $proceso Proceso de inscripción
+     * @param array $competidoresIds IDs de competidores existentes
+     * @return array Competidores asociados
+     */
+    public function asociarCompetidoresExistentes(RegistrationProcess $proceso, array $competidoresIds)
+    {
+        InscripcionHelper::verificarProcesoActivo($proceso, 'asociar competidores existentes');
+
+        if ($proceso->type !== 'grupal') {
+            throw new Exception('Esta función solo está disponible para inscripciones grupales');
+        }
+
+        $competidoresAsociados = [];
+
+        foreach ($competidoresIds as $competidorId) {
+            $competidor = Competitor::find($competidorId);
+            if (!$competidor) {
+                throw new Exception("No se encontró el competidor con ID {$competidorId}");
+            }
+
+            // Verificar si ya está asociado al proceso
+            $yaAsociado = $this->procesoRepository->competidorPerteneceAProceso($proceso->id, $competidorId);
+            if (!$yaAsociado) {
+                $this->procesoRepository->agregarCompetidor($proceso->id, $competidorId);
+            }
+
+            $competidoresAsociados[] = [
+                'id' => $competidor->id,
+                'nombres' => $competidor->nombres,
+                'apellidos' => $competidor->apellidos,
+                'documento_identidad' => $competidor->documento_identidad,
+                'correo_electronico' => $competidor->correo_electronico,
+                'ya_asociado' => $yaAsociado
+            ];
+        }
+
+        return $competidoresAsociados;
+    }
+
+    /**
      * Crea las relaciones faltantes entre tutores y competidores para un proceso de inscripción grupal
      *
      * @param RegistrationProcess $proceso Proceso de inscripción

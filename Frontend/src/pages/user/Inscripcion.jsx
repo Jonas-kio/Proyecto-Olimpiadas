@@ -78,7 +78,40 @@ const Inscripcion = () => {
             <li>✔ Carga por planilla Excel</li>
             <li>✔ Pago consolidado</li>
           </ul>
-          <button className="btn-primario">Inscripción Grupal</button>
+          <button
+            className="btn-primario"
+            onClick={async () => {
+              try {
+                const id = localStorage.getItem("idOlimpiada");
+                const tipoInscripcion = "grupal";
+
+                if (!id) {
+                  alert("ID de Olimpiada no encontrado");
+                  return;
+                }
+
+                // Llamada al backend para iniciar proceso grupal
+                const respuesta = await iniciarProceso(id, tipoInscripcion);
+                const procesoId = respuesta.data?.proceso_id;
+                console.log("Proceso grupal iniciado con ID:", procesoId);
+
+                // Guardar en localStorage
+                localStorage.setItem("procesoId", procesoId);
+                localStorage.setItem("idOlimpiada", id);
+                localStorage.setItem("tipoInscripcion", tipoInscripcion);
+
+                // Redirigir a inscripción grupal
+                navigate(`/user/inscripcion/inscripcion-grupal/${id}`);
+              } catch (error) {
+                console.error("Error al iniciar proceso grupal:", error);
+                alert(
+                  "Error al iniciar proceso de inscripción grupal. Inténtelo más tarde."
+                );
+              }
+            }}
+          >
+            Inscripción Grupal
+          </button>
         </div>
       </div>
 

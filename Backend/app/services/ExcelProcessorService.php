@@ -17,6 +17,8 @@ use Illuminate\Support\Collection;
 
 class ExcelProcessorService
 {
+    private $competidoresCreados = 0;
+
     /**
      * Guarda el archivo de carga masiva y registra en la base de datos
      *
@@ -32,8 +34,12 @@ class ExcelProcessorService
             throw new Exception('El archivo debe ser de tipo Excel (xlsx, xls) o CSV.');
         }
 
-        // Guardar el archivo en el almacenamiento
-        $path = $file->store('uploads/inscripciones');
+        // Generar nombre de archivo único con la extensión correcta
+        $fileName = uniqid() . '.' . $extension;
+        $path = 'uploads/inscripciones/' . $fileName;
+
+        // Guardar el archivo con la extensión correcta
+        Storage::put($path, file_get_contents($file->getRealPath()));
 
         // Registrar en la base de datos
         $fileCarga = FileCargaMasiva::create([
@@ -112,7 +118,12 @@ class ExcelProcessorService
         try {
             // Por ahora, solo soportar CSV debido a incompatibilidades de PHPExcel con PHP moderno
             if ($extension === 'csv') {
-                return $this->leerArchivoCSV($fullPath);
+                try {
+                    return $this->leerArchivoCSV($fullPath);
+                } catch (Exception $e) {
+                    // Si falla el método con archivos temporales, usar método directo
+                    return $this->leerArchivoCSVDirecto($fullPath);
+                }
             }
 
             // Para archivos Excel, intentar convertir usando otra biblioteca o requerir CSV
@@ -142,9 +153,39 @@ class ExcelProcessorService
      */
     private function leerArchivoCSV($fullPath)
     {
-        $handle = fopen($fullPath, 'r');
+        // Leer todo el contenido del archivo para manejar BOM UTF-8
+        $content = file_get_contents($fullPath);
+        if ($content === false) {
+            throw new Exception('No se pudo leer el archivo CSV.');
+        }
+
+        // Remover BOM UTF-8 si existe
+        if (substr($content, 0, 3) === "\xEF\xBB\xBF") {
+            $content = substr($content, 3);
+        }
+
+        // Crear un directorio temporal personalizado en el proyecto
+        $customTempDir = storage_path('app/temp');
+        if (!file_exists($customTempDir)) {
+            mkdir($customTempDir, 0755, true);
+        }
+
+        // Escribir contenido limpio a un archivo temporal personalizado
+        $tempFile = $customTempDir . DIRECTORY_SEPARATOR . 'csv_clean_' . uniqid() . '.csv';
+        $writeResult = file_put_contents($tempFile, $content);
+
+        if ($writeResult === false) {
+            throw new Exception('No se pudo crear el archivo temporal para procesar el CSV.');
+        }
+
+        // Abrir el archivo temporal limpio
+        $handle = fopen($tempFile, 'r');
         if (!$handle) {
-            throw new Exception('No se pudo abrir el archivo CSV.');
+            // Limpiar archivo temporal si no se puede abrir
+            if (file_exists($tempFile)) {
+                unlink($tempFile);
+            }
+            throw new Exception('No se pudo abrir el archivo CSV temporal.');
         }
 
         // Detectar el separador leyendo la primera línea
@@ -170,12 +211,15 @@ class ExcelProcessorService
                 // Validar encabezados esperados
                 $expectedHeaders = [
                     'nombres', 'apellidos', 'documento_identidad', 'fecha_nacimiento',
-                    'correo_electronico', 'colegio', 'curso', 'provincia', 'area_id', 'nivel_id'
+                    'correo_electronico', 'colegio', 'curso', 'provincia', 'area', 'nivel'
                 ];
 
                 foreach ($expectedHeaders as $header) {
                     if (!in_array($header, $headers)) {
                         fclose($handle);
+                        if (file_exists($tempFile)) {
+                            unlink($tempFile);
+                        }
                         throw new Exception("Falta el encabezado requerido: '{$header}'. Encabezados encontrados: " . implode(', ', $headers));
                     }
                 }
@@ -196,13 +240,36 @@ class ExcelProcessorService
                     case 'fecha_nacimiento':
                         $rowData[$header] = $this->procesarFechaExcel($value);
                         break;
-                    case 'area_id':
-                    case 'nivel_id':
-                        $rowData[$header] = (int) $value;
+                    case 'area':
+                        // Convertir nombre de área a ID
+                        $area = Area::where('nombre', $value)->first();
+                        if (!$area) {
+                            fclose($handle);
+                            if (file_exists($tempFile)) {
+                                unlink($tempFile);
+                            }
+                            throw new Exception("Área no encontrada en fila {$rowNumber}: {$value}. Áreas disponibles: " . Area::pluck('nombre')->implode(', '));
+                        }
+                        $rowData['area_id'] = $area->id;
+                        break;
+                    case 'nivel':
+                        // Convertir nombre de nivel a ID
+                        $nivel = CategoryLevel::where('name', $value)->first();
+                        if (!$nivel) {
+                            fclose($handle);
+                            if (file_exists($tempFile)) {
+                                unlink($tempFile);
+                            }
+                            throw new Exception("Nivel no encontrado en fila {$rowNumber}: {$value}. Niveles disponibles: " . CategoryLevel::pluck('name')->implode(', '));
+                        }
+                        $rowData['nivel_id'] = $nivel->id;
                         break;
                     case 'correo_electronico':
                         if (!empty($value) && !filter_var($value, FILTER_VALIDATE_EMAIL)) {
                             fclose($handle);
+                            if (file_exists($tempFile)) {
+                                unlink($tempFile);
+                            }
                             throw new Exception("Email inválido en fila {$rowNumber}: {$value}");
                         }
                         $rowData[$header] = strtolower($value);
@@ -216,6 +283,9 @@ class ExcelProcessorService
             // Validar datos mínimos
             if (empty($rowData['nombres']) || empty($rowData['apellidos']) || empty($rowData['documento_identidad'])) {
                 fclose($handle);
+                if (file_exists($tempFile)) {
+                    unlink($tempFile);
+                }
                 throw new Exception("Fila {$rowNumber} tiene datos incompletos. Se requiere al menos nombres, apellidos y documento de identidad.");
             }
 
@@ -223,6 +293,127 @@ class ExcelProcessorService
         }
 
         fclose($handle);
+
+        // Limpiar archivo temporal personalizado
+        if (file_exists($tempFile)) {
+            unlink($tempFile);
+        }
+
+        if (empty($data)) {
+            throw new Exception('No se encontraron datos válidos para procesar en el archivo.');
+        }
+
+        return $data;
+    }
+
+    /**
+     * Lee archivo CSV directamente desde memoria sin archivos temporales
+     */
+    private function leerArchivoCSVDirecto($fullPath)
+    {
+        // Leer todo el contenido del archivo
+        $content = file_get_contents($fullPath);
+        if ($content === false) {
+            throw new Exception('No se pudo leer el archivo CSV.');
+        }
+
+        // Remover BOM UTF-8 si existe
+        if (substr($content, 0, 3) === "\xEF\xBB\xBF") {
+            $content = substr($content, 3);
+        }
+
+        // Convertir contenido a array de líneas
+        $lines = explode("\n", $content);
+
+        // Detectar el separador usando la primera línea
+        $firstLine = isset($lines[0]) ? $lines[0] : '';
+        $separator = ','; // Por defecto
+        if (substr_count($firstLine, ';') > substr_count($firstLine, ',')) {
+            $separator = ';';
+        }
+
+        $data = [];
+        $headers = null;
+        $rowNumber = 0;
+
+        foreach ($lines as $line) {
+            $line = trim($line);
+            if (empty($line)) {
+                continue; // Saltar líneas vacías
+            }
+
+            $rowNumber++;
+
+            // Parsear la línea CSV manualmente
+            $row = str_getcsv($line, $separator);
+
+            if ($rowNumber === 1) {
+                // Primera fila son los encabezados
+                $headers = array_map('trim', $row);
+
+                // Validar encabezados esperados
+                $expectedHeaders = [
+                    'nombres', 'apellidos', 'documento_identidad', 'fecha_nacimiento',
+                    'correo_electronico', 'colegio', 'curso', 'provincia', 'area', 'nivel'
+                ];
+
+                foreach ($expectedHeaders as $header) {
+                    if (!in_array($header, $headers)) {
+                        throw new Exception("Falta el encabezado requerido: '{$header}'. Encabezados encontrados: " . implode(', ', $headers));
+                    }
+                }
+                continue;
+            }
+
+            // Procesar fila de datos
+            if (empty(array_filter($row))) {
+                continue; // Saltar filas vacías
+            }
+
+            $rowData = [];
+            foreach ($headers as $index => $header) {
+                $value = isset($row[$index]) ? trim($row[$index]) : '';
+
+                // Procesar valores especiales
+                switch ($header) {
+                    case 'fecha_nacimiento':
+                        $rowData[$header] = $this->procesarFechaExcel($value);
+                        break;
+                    case 'area':
+                        // Convertir nombre de área a ID
+                        $area = Area::where('nombre', $value)->first();
+                        if (!$area) {
+                            throw new Exception("Área no encontrada en fila {$rowNumber}: {$value}. Áreas disponibles: " . Area::pluck('nombre')->implode(', '));
+                        }
+                        $rowData['area_id'] = $area->id;
+                        break;
+                    case 'nivel':
+                        // Convertir nombre de nivel a ID
+                        $nivel = CategoryLevel::where('name', $value)->first();
+                        if (!$nivel) {
+                            throw new Exception("Nivel no encontrado en fila {$rowNumber}: {$value}. Niveles disponibles: " . CategoryLevel::pluck('name')->implode(', '));
+                        }
+                        $rowData['nivel_id'] = $nivel->id;
+                        break;
+                    case 'correo_electronico':
+                        if (!empty($value) && !filter_var($value, FILTER_VALIDATE_EMAIL)) {
+                            throw new Exception("Email inválido en fila {$rowNumber}: {$value}");
+                        }
+                        $rowData[$header] = strtolower($value);
+                        break;
+                    default:
+                        $rowData[$header] = $value;
+                        break;
+                }
+            }
+
+            // Validar datos mínimos
+            if (empty($rowData['nombres']) || empty($rowData['apellidos']) || empty($rowData['documento_identidad'])) {
+                throw new Exception("Fila {$rowNumber} tiene datos incompletos. Se requiere al menos nombres, apellidos y documento de identidad.");
+            }
+
+            $data[] = $rowData;
+        }
 
         if (empty($data)) {
             throw new Exception('No se encontraron datos válidos para procesar en el archivo.');
@@ -296,17 +487,29 @@ class ExcelProcessorService
             throw new Exception('El archivo no contiene datos.');
         }
 
-        $camposRequeridos = [
+        $camposRequeridosBasicos = [
             'nombres', 'apellidos', 'documento_identidad', 'fecha_nacimiento',
-            'correo_electronico', 'colegio', 'curso', 'provincia', 'area_id', 'nivel_id'
+            'correo_electronico', 'colegio', 'curso', 'provincia'
         ];
 
-        // Validar que el primer registro tenga todos los campos requeridos
+        // Validar que el primer registro tenga todos los campos básicos requeridos
         $primeraFila = $data[0];
-        foreach ($camposRequeridos as $campo) {
+        foreach ($camposRequeridosBasicos as $campo) {
             if (!array_key_exists($campo, $primeraFila)) {
                 throw new Exception("El archivo no tiene la estructura correcta. Falta el campo '{$campo}'.");
             }
+        }
+
+        // Validar que tenga área y nivel (ya sea en forma original o convertida)
+        $tieneArea = array_key_exists('area', $primeraFila) || array_key_exists('area_id', $primeraFila);
+        $tieneNivel = array_key_exists('nivel', $primeraFila) || array_key_exists('nivel_id', $primeraFila);
+
+        if (!$tieneArea) {
+            throw new Exception("El archivo no tiene la estructura correcta. Falta el campo 'area' o 'area_id'.");
+        }
+
+        if (!$tieneNivel) {
+            throw new Exception("El archivo no tiene la estructura correcta. Falta el campo 'nivel' o 'nivel_id'.");
         }
     }
 
@@ -320,10 +523,11 @@ class ExcelProcessorService
     private function crearCompetidores($data, RegistrationProcess $proceso)
     {
         $competidoresCreados = [];
+        $this->competidoresCreados = 0;
 
         foreach ($data as $row) {
             // Validar datos del competidor
-            $this->validarDatosCompetidor($row);
+            $this->verificarDuplicados($row);
 
             // Verificar que las áreas y niveles existen
             $area = Area::find($row['area_id']);
@@ -353,7 +557,7 @@ class ExcelProcessorService
             app(\App\Repositories\ProcesoInscripcionRepository::class)->agregarCompetidor($proceso->id, $competidor->id);
 
             // Asociar área y nivel al competidor
-            CompetidorAreaNivel::create([
+            $asignacion = CompetidorAreaNivel::create([
                 'competitor_id' => $competidor->id,
                 'area_id' => $row['area_id'],
                 'category_level_id' => $row['nivel_id'],
@@ -365,13 +569,22 @@ class ExcelProcessorService
             $inscripcionGrupalService = app(\App\Services\InscripcionGrupalService::class);
             $inscripcionGrupalService->crearRelacionesTutorCompetidorParaCSV($proceso, $competidor->id);
 
+            $this->competidoresCreados++;
+
             $competidoresCreados[] = [
                 'id' => $competidor->id,
                 'nombres' => $competidor->nombres,
                 'apellidos' => $competidor->apellidos,
                 'documento_identidad' => $competidor->documento_identidad,
+                'fecha_nacimiento' => $competidor->fecha_nacimiento,
+                'correo_electronico' => $competidor->correo_electronico,
+                'colegio' => $competidor->colegio,
+                'curso' => $competidor->curso . ' ' . $competidor->nivel,
+                'provincia' => $competidor->provincia,
                 'area' => $area->nombre,
-                'nivel' => $nivel->name
+                'area_id' => $area->id,
+                'nivel' => $nivel->name,
+                'nivel_id' => $nivel->id
             ];
         }
 
@@ -430,81 +643,381 @@ class ExcelProcessorService
                 'colegio',
                 'curso',
                 'provincia',
-                'area_id',
-                'nivel_id'
+                'area',
+                'nivel'
             ];
 
-            // Ejemplos de datos
+            // Generar documentos únicos para evitar duplicados
+            $timestamp = time();
+            $random1 = rand(1000, 9999);
+            $random2 = rand(1000, 9999);
+            $random3 = rand(1000, 9999);
+
+            // Ejemplos de datos con nombres reales de áreas y niveles y documentos únicos
             $ejemplos = [
                 [
                     'Juan Carlos',
                     'Pérez López',
-                    '12345678',
+                    $timestamp . $random1, // Documento único
                     '2010-05-15',
-                    'juan.perez@email.com',
+                    'juan.perez.' . $random1 . '@email.com', // Email único
                     'Colegio San Martín',
                     '3 Secundaria',
                     'La Paz',
-                    '1',
-                    '2'
+                    'Matemáticas',
+                    'Básico Primaria'
                 ],
                 [
                     'María Elena',
                     'García Mendoza',
-                    '87654321',
+                    $timestamp . $random2, // Documento único
                     '2011-07-22',
-                    'maria.garcia@email.com',
+                    'maria.garcia.' . $random2 . '@email.com', // Email único
                     'Colegio San José',
                     '2 Secundaria',
                     'Santa Cruz',
-                    '2',
-                    '3'
+                    'Física',
+                    'Física Secundaria'
+                ],
+                [
+                    'Carlos Alberto',
+                    'Mamani Quispe',
+                    $timestamp . $random3, // Documento único
+                    '2009-03-10',
+                    'carlos.mamani.' . $random3 . '@email.com', // Email único
+                    'Unidad Educativa Central',
+                    '4 Secundaria',
+                    'Cochabamba',
+                    'Química',
+                    'Química Secundaria'
                 ]
             ];
 
-            // Usar nombre fijo para reutilizar el mismo archivo
-            $fileName = 'plantilla_carga_masiva';
-            $filePath = 'plantillas/' . $fileName . '.csv';
+            // Usar nombre único para generar plantilla fresca cada vez
+            $fileName = 'plantilla_carga_masiva_' . date('Y_m_d_H_i_s');
+            $filePath = 'private/plantillas/' . $fileName . '.csv';
 
             // Crear directorio si no existe
-            Storage::makeDirectory('plantillas');
+            Storage::makeDirectory('private/plantillas');
 
-            // Si el archivo ya existe, retornarlo en lugar de crear uno nuevo
-            if (Storage::exists($filePath)) {
-                return $filePath;
-            }
-
-            // Generar archivo CSV usando funciones nativas de PHP con formato compatible para Excel
+            // Generar archivo CSV con codificación UTF-8 correcta
             $csvContent = '';
 
-            // Agregar BOM UTF-8 para Excel
+            // Agregar BOM UTF-8 para compatibilidad con Excel
             $csvContent .= "\xEF\xBB\xBF";
 
-            // Generar CSV con punto y coma como separador (formato español)
-            $tempFile = tempnam(sys_get_temp_dir(), 'plantilla_csv');
-            $handle = fopen($tempFile, 'w');
-
-            // Configurar para usar punto y coma como separador
-            fputcsv($handle, $headers, ';');
+            // Generar encabezados
+            $csvContent .= implode(';', $headers) . "\r\n";
 
             // Agregar ejemplos de datos
             foreach ($ejemplos as $ejemplo) {
-                fputcsv($handle, $ejemplo, ';');
+                $line = [];
+                foreach ($ejemplo as $campo) {
+                    // Siempre escapar campos de texto con comillas para evitar problemas de codificación
+                    // Solo no usar comillas para números simples
+                    if (is_numeric($campo) && !strpos($campo, '.') && !strpos($campo, '-')) {
+                        $line[] = $campo;
+                    } else {
+                        // Escapar comillas dobles dentro del campo y envolver en comillas
+                        $campo = '"' . str_replace('"', '""', $campo) . '"';
+                        $line[] = $campo;
+                    }
+                }
+                $csvContent .= implode(';', $line) . "\r\n";
             }
 
-            fclose($handle);
-
-            // Leer el contenido generado
-            $csvContent .= file_get_contents($tempFile);
-            unlink($tempFile);
-
-            // Guardar el archivo
+            // Guardar el archivo con codificación UTF-8
             Storage::put($filePath, $csvContent);
 
             return $filePath;
 
         } catch (Exception $e) {
             throw new Exception('Error al generar la plantilla CSV: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Procesa un CSV directamente desde el contenido sin usar archivos temporales
+     * Esta es una solución alternativa para evitar problemas de configuración de PHP
+     *
+     * @param string $csvContent Contenido del archivo CSV
+     * @param RegistrationProcess $proceso Proceso de inscripción
+     * @return array Resultado del procesamiento
+     */
+    public function procesarCSVDirecto(string $csvContent, RegistrationProcess $proceso)
+    {
+        try {
+            // Validar que el contenido no esté vacío
+            if (empty(trim($csvContent))) {
+                throw new Exception('El archivo CSV está vacío o no contiene datos válidos');
+            }
+
+            // Procesar el contenido CSV directamente
+            $data = $this->leerCSVDesdeTexto($csvContent);
+
+            if (empty($data)) {
+                throw new Exception('No se pudieron extraer datos válidos del archivo CSV');
+            }
+
+            // Validar estructura del archivo
+            $this->validarEstructuraArchivo($data);
+
+            // Procesar datos y crear competidores
+            $competidoresCreados = $this->crearCompetidores($data, $proceso);
+
+            return [
+                'success' => true,
+                'mensaje' => "Archivo procesado correctamente. {$this->getCompetidoresCreados()} competidores registrados.",
+                'competidores_creados' => count($competidoresCreados),
+                'competidores' => $competidoresCreados
+            ];
+
+        } catch (Exception $e) {
+            // Proporcionar mensajes de error más específicos
+            $mensaje = $this->getErrorMessage($e->getMessage());
+
+            return [
+                'success' => false,
+                'mensaje' => $mensaje,
+                'error' => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Obtiene un mensaje de error más amigable para el usuario
+     */
+    private function getErrorMessage(string $originalError): string
+    {
+        if (strpos($originalError, 'Falta el encabezado') !== false) {
+            return 'Error en la estructura del archivo: ' . $originalError . ' Verifique que esté usando la plantilla correcta.';
+        }
+
+        if (strpos($originalError, 'Área no encontrada') !== false) {
+            return 'Error en los datos: ' . $originalError;
+        }
+
+        if (strpos($originalError, 'Nivel no encontrado') !== false) {
+            return 'Error en los datos: ' . $originalError;
+        }
+
+        if (strpos($originalError, 'Email inválido') !== false) {
+            return 'Error en los datos: ' . $originalError;
+        }
+
+        if (strpos($originalError, 'Ya existe un competidor') !== false) {
+            return 'Error de duplicados: ' . $originalError;
+        }
+
+        if (strpos($originalError, 'archivo CSV está vacío') !== false) {
+            return 'El archivo está vacío o no contiene datos válidos. Verifique el contenido del archivo.';
+        }
+
+        return 'Error al procesar el archivo: ' . $originalError;
+    }
+
+    /**
+     * Obtiene el mensaje de competidores creados
+     */
+    private function getCompetidoresCreados(): int
+    {
+        // Esta es una variable temporal que se puede ajustar
+        return $this->competidoresCreados ?? 0;
+    }
+
+    /**
+     * Lee contenido CSV desde texto sin usar archivos temporales
+     *
+     * @param string $csvContent Contenido del CSV
+     * @return array Datos procesados
+     */
+    private function leerCSVDesdeTexto(string $csvContent)
+    {
+        try {
+            // Remover BOM UTF-8 si existe
+            if (substr($csvContent, 0, 3) === "\xEF\xBB\xBF") {
+                $csvContent = substr($csvContent, 3);
+            }
+
+            // Dividir el contenido en líneas, manejando diferentes tipos de salto de línea
+            $lines = preg_split('/\r\n|\r|\n/', $csvContent);
+
+            // Filtrar líneas vacías
+            $lines = array_filter($lines, function($line) {
+                return trim($line) !== '';
+            });
+
+            if (empty($lines)) {
+                throw new Exception('El archivo CSV está vacío o solo contiene líneas en blanco');
+            }
+
+            // Detectar separador usando la primera línea
+            $firstLine = reset($lines);
+            $separator = $this->detectarSeparadorCSV($firstLine);
+
+            $data = [];
+            $headers = null;
+            $rowNumber = 0;
+
+            foreach ($lines as $line) {
+                $rowNumber++;
+
+                // Procesar la línea CSV con manejo de comillas
+                $row = $this->parseCSVLine($line, $separator);
+
+                if ($rowNumber === 1) {
+                    // Primera fila son los encabezados
+                    $headers = array_map('trim', $row);
+
+                    // Validar encabezados esperados
+                    $this->validarEncabezadosCSV($headers);
+                    continue;
+                }
+
+                // Procesar fila de datos
+                if (empty(array_filter($row, function($cell) { return trim($cell) !== ''; }))) {
+                    continue; // Saltar filas completamente vacías
+                }
+
+                $rowData = $this->procesarFilaCSV($row, $headers, $rowNumber);
+                $data[] = $rowData;
+            }
+
+            if (empty($data)) {
+                throw new Exception('No se encontraron datos válidos para procesar en el archivo CSV');
+            }
+
+            return $data;
+
+        } catch (Exception $e) {
+            throw $e;
+        }
+    }
+
+    /**
+     * Detecta el separador más probable para el CSV
+     */
+    private function detectarSeparadorCSV(string $line): string
+    {
+        $separators = [';', ',', '\t'];
+        $counts = [];
+
+        foreach ($separators as $sep) {
+            $counts[$sep] = substr_count($line, $sep);
+        }
+
+        // Devolver el separador con más ocurrencias
+        $maxSeparator = array_search(max($counts), $counts);
+        return $maxSeparator ?: ';'; // Por defecto punto y coma
+    }
+
+    /**
+     * Parsea una línea CSV manejando comillas correctamente
+     */
+    private function parseCSVLine(string $line, string $separator): array
+    {
+        // Usar str_getcsv con el separador detectado
+        $row = str_getcsv($line, $separator, '"', '\\');
+
+        // Limpiar cada celda de espacios extra
+        return array_map(function($cell) {
+            return trim($cell, " \t\n\r\0\x0B\"");
+        }, $row);
+    }
+
+    /**
+     * Valida que los encabezados requeridos estén presentes
+     */
+    private function validarEncabezadosCSV(array $headers): void
+    {
+        $expectedHeaders = [
+            'nombres', 'apellidos', 'documento_identidad', 'fecha_nacimiento',
+            'correo_electronico', 'colegio', 'curso', 'provincia', 'area', 'nivel'
+        ];
+
+        $missingHeaders = [];
+        foreach ($expectedHeaders as $header) {
+            if (!in_array($header, $headers)) {
+                $missingHeaders[] = $header;
+            }
+        }
+
+        if (!empty($missingHeaders)) {
+            throw new Exception("Faltan los siguientes encabezados requeridos: '" . implode("', '", $missingHeaders) . "'. Encabezados encontrados: " . implode(', ', $headers));
+        }
+    }
+
+    /**
+     * Procesa una fila de datos del CSV
+     */
+    private function procesarFilaCSV(array $row, array $headers, int $rowNumber): array
+    {
+        $rowData = [];
+
+        foreach ($headers as $index => $header) {
+            $value = isset($row[$index]) ? trim($row[$index]) : '';
+
+            // Procesar valores especiales
+            switch ($header) {
+                case 'fecha_nacimiento':
+                    $rowData[$header] = $this->procesarFechaExcel($value);
+                    break;
+                case 'area':
+                    // Convertir nombre de área a ID
+                    $area = Area::where('nombre', $value)->first();
+                    if (!$area) {
+                        throw new Exception("Área no encontrada en fila {$rowNumber}: '{$value}'. Áreas disponibles: " . Area::pluck('nombre')->implode(', '));
+                    }
+                    $rowData['area_id'] = $area->id;
+                    break;
+                case 'nivel':
+                    // Convertir nombre de nivel a ID
+                    $nivel = CategoryLevel::where('name', $value)->first();
+                    if (!$nivel) {
+                        throw new Exception("Nivel no encontrado en fila {$rowNumber}: '{$value}'. Niveles disponibles: " . CategoryLevel::pluck('name')->implode(', '));
+                    }
+                    $rowData['nivel_id'] = $nivel->id;
+                    break;
+                case 'correo_electronico':
+                    if (!empty($value) && !filter_var($value, FILTER_VALIDATE_EMAIL)) {
+                        throw new Exception("Email inválido en fila {$rowNumber}: '{$value}'");
+                    }
+                    $rowData[$header] = strtolower($value);
+                    break;
+                default:
+                    $rowData[$header] = $value;
+                    break;
+            }
+        }
+
+        // Validar datos mínimos
+        if (empty($rowData['nombres']) || empty($rowData['apellidos']) || empty($rowData['documento_identidad'])) {
+            throw new Exception("Fila {$rowNumber} tiene datos incompletos. Se requiere al menos nombres, apellidos y documento de identidad.");
+        }
+
+        return $rowData;
+    }
+
+    /**
+     * Verifica duplicados de competidores
+     *
+     * @param array $datos Datos del competidor
+     * @throws Exception Si hay duplicados
+     */
+    private function verificarDuplicados($datos)
+    {
+        // Verificar que no existe un competidor con el mismo documento de identidad
+        $competidorExistente = Competitor::where('documento_identidad', $datos['documento_identidad'])->first();
+        if ($competidorExistente) {
+            throw new Exception("Ya existe un competidor con el documento de identidad {$datos['documento_identidad']}.");
+        }
+
+        // Verificar que no existe un competidor con el mismo correo electrónico si se proporciona
+        if (!empty($datos['correo_electronico'])) {
+            $competidorExistente = Competitor::where('correo_electronico', $datos['correo_electronico'])->first();
+            if ($competidorExistente) {
+                throw new Exception("Ya existe un competidor con el correo electrónico {$datos['correo_electronico']}.");
+            }
         }
     }
 }

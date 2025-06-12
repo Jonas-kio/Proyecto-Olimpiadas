@@ -64,16 +64,75 @@ class InscripcionGrupalController extends Controller
     }
 
     /**
-     * Procesa un archivo Excel para carga masiva de competidores el formato es CSV
+     * Procesa un archivo CSV para carga masiva de competidores sin usar validación estándar
+     * Solución alternativa para evitar problemas con archivos temporales de PHP
      *
-     * @param CargaMasivaExcelRequest $request
+     * @param Request $request
      * @param RegistrationProcess $proceso
      * @return JsonResponse
      */
-    public function cargarArchivoExcel(CargaMasivaExcelRequest $request, RegistrationProcess $proceso): JsonResponse
+    public function cargarArchivoExcel(Request $request, RegistrationProcess $proceso): JsonResponse
     {
         try {
-            $resultado = $this->inscripcionGrupalService->procesarArchivoExcel($proceso, $request->file('file'));
+            // Validación manual del archivo para evitar problemas de temp
+            if (!$request->hasFile('file')) {
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => 'No se ha subido ningún archivo'
+                ], 422);
+            }
+
+            $file = $request->file('file');
+
+            // Validaciones básicas manuales
+            if (!$file || $file->getError() !== UPLOAD_ERR_OK) {
+                $errorMessages = [
+                    UPLOAD_ERR_INI_SIZE => 'El archivo es demasiado grande según php.ini',
+                    UPLOAD_ERR_FORM_SIZE => 'El archivo es demasiado grande según el formulario',
+                    UPLOAD_ERR_PARTIAL => 'El archivo se subió parcialmente',
+                    UPLOAD_ERR_NO_FILE => 'No se subió ningún archivo',
+                    UPLOAD_ERR_NO_TMP_DIR => 'Problema con directorio temporal del sistema. Intente nuevamente.',
+                    UPLOAD_ERR_CANT_WRITE => 'Error al escribir el archivo al disco',
+                    UPLOAD_ERR_EXTENSION => 'Una extensión de PHP detuvo la subida'
+                ];
+
+                $errorCode = $file ? $file->getError() : UPLOAD_ERR_NO_FILE;
+                $errorMsg = $errorMessages[$errorCode] ?? 'Error desconocido en la subida';
+
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => 'Error al subir el archivo: ' . $errorMsg
+                ], 422);
+            }
+
+            // Validar extensión del archivo
+            $fileName = $file->getClientOriginalName();
+            $extension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+
+            if (!in_array($extension, ['csv', 'txt'])) {
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => 'El archivo debe ser un CSV (.csv) válido'
+                ], 422);
+            }
+
+            // Validar tamaño del archivo (máximo 10MB)
+            if ($file->getSize() > 10 * 1024 * 1024) {
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => 'El archivo es demasiado grande (máximo 10MB)'
+                ], 422);
+            }
+
+            // Leer el contenido del archivo directamente desde el path temporal
+            $csvContent = file_get_contents($file->getRealPath());
+
+            if ($csvContent === false) {
+                throw new \Exception('No se pudo leer el contenido del archivo CSV');
+            }
+
+            // Usar el método directo de procesamiento CSV
+            $resultado = $this->excelProcessorService->procesarCSVDirecto($csvContent, $proceso);
 
             return response()->json([
                 'success' => $resultado['success'],
@@ -81,10 +140,11 @@ class InscripcionGrupalController extends Controller
                 'competidores' => $resultado['success'] ? $resultado['competidores'] : null,
                 'error' => !$resultado['success'] ? $resultado['error'] : null
             ]);
+
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'mensaje' => $e->getMessage()
+                'mensaje' => 'Error al procesar el archivo: ' . $e->getMessage()
             ], 422);
         }
     }
@@ -276,5 +336,167 @@ class InscripcionGrupalController extends Controller
                 'success' => false,
                 'mensaje' => $e->getMessage()
             ], 422);        }
+    }
+
+    /**
+     * Verifica si los competidores ya existen en la base de datos
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function verificarCompetidoresExistentes(Request $request): JsonResponse
+    {
+        try {
+            $request->validate([
+                'competidores' => 'required|array|min:1',
+                'competidores.*.documento_identidad' => 'required|string|max:20',
+                'competidores.*.correo_electronico' => 'required|email|max:100',
+                'competidores.*.nombres' => 'nullable|string|max:255',
+                'competidores.*.apellidos' => 'nullable|string|max:255'
+            ]);
+
+            $resultado = $this->inscripcionGrupalService->verificarCompetidoresExistentes(
+                $request->competidores
+            );
+
+            return response()->json([
+                'success' => true,
+                'resultado' => $resultado,
+                'mensaje' => 'Verificación completada'
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'mensaje' => $e->getMessage()
+            ], 422);
+        }
+    }
+
+    /**
+     * Registra competidores omitiendo los duplicados
+     *
+     * @param Request $request
+     * @param RegistrationProcess $proceso
+     * @return JsonResponse
+     */
+    public function registrarCompetidoresSinDuplicados(Request $request, RegistrationProcess $proceso): JsonResponse
+    {
+        try {
+            $request->validate([
+                'competidores' => 'required|array|min:1',
+                'indices_omitir' => 'nullable|array',
+                'indices_omitir.*' => 'integer'
+            ]);
+
+            $competidores = $this->inscripcionGrupalService->registrarCompetidoresSinDuplicados(
+                $proceso,
+                $request->competidores,
+                $request->indices_omitir ?? []
+            );
+
+            return response()->json([
+                'success' => true,
+                'competidores' => $competidores,
+                'total_registrados' => count($competidores),
+                'mensaje' => 'Competidores registrados correctamente'
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'mensaje' => $e->getMessage()
+            ], 422);
+        }
+    }
+
+    /**
+     * Asocia competidores existentes a un proceso
+     *
+     * @param Request $request
+     * @param RegistrationProcess $proceso
+     * @return JsonResponse
+     */
+    public function asociarCompetidoresExistentes(Request $request, RegistrationProcess $proceso): JsonResponse
+    {
+        try {
+            $request->validate([
+                'competidores_ids' => 'required|array|min:1',
+                'competidores_ids.*' => 'integer|exists:competitor,id'
+            ]);
+
+            $competidores = $this->inscripcionGrupalService->asociarCompetidoresExistentes(
+                $proceso,
+                $request->competidores_ids
+            );
+
+            return response()->json([
+                'success' => true,
+                'competidores' => $competidores,
+                'total_asociados' => count($competidores),
+                'mensaje' => 'Competidores asociados correctamente'
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'mensaje' => $e->getMessage()
+            ], 422);
+        }
+    }
+
+    /**
+     * Calcula costos preliminares específicos para inscripciones grupales
+     * Este método calcula correctamente por área específica, no por total de competidores
+     *
+     * @param Request $request
+     * @param RegistrationProcess $proceso
+     * @return JsonResponse
+     */
+    public function calcularCostosGrupales(Request $request, RegistrationProcess $proceso): JsonResponse
+    {
+        try {
+            // Validación simple del tipo de proceso
+            if ($proceso->type !== 'grupal') {
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => 'Este endpoint es solo para inscripciones grupales'
+                ], 422);
+            }
+
+            // Extraer datos con múltiples métodos para debug
+            $areasIds = $request->input('areas_ids', $request->get('areas_ids', []));
+            $nivelesIds = $request->input('niveles_ids', $request->get('niveles_ids', []));
+
+            // Validaciones básicas
+            if (empty($areasIds) || !is_array($areasIds)) {
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => 'areas_ids es requerido y debe ser un array no vacío'
+                ], 422);
+            }
+
+            if (empty($nivelesIds) || !is_array($nivelesIds)) {
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => 'niveles_ids es requerido y debe ser un array no vacío'
+                ], 422);
+            }
+
+            // Convertir a enteros y validar
+            $areasIds = array_map('intval', $areasIds);
+            $nivelesIds = array_map('intval', $nivelesIds);
+
+            // Llamar al servicio
+            $resultadoCostos = $this->boletaService->calcularCostosGrupales($proceso, $areasIds, $nivelesIds);
+
+            return response()->json([
+                'success' => true,
+                'data' => $resultadoCostos
+            ]);
+
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'mensaje' => 'Error interno: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

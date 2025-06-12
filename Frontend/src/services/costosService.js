@@ -5,7 +5,7 @@ import api from './apiConfig';
 
 export const getAllCosts = async () => {
   try {
-    const response = await api.get('/costs');
+    const response = await api.get('/libre/costs');
     
     if (response.data.success) {
 

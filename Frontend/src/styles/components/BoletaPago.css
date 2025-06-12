@@ -48,6 +48,7 @@
   justify-content: space-between;
   padding: 15px;
   background-color: #f1f5f9;
+  color: #333;
   border-radius: 6px;
   margin-bottom: 20px;
 }
@@ -61,6 +62,7 @@
 
 .boleta-seccion p {
   /* background-color: #059669; */
+  color: #333;
   margin: 10px;
 }
 
@@ -84,6 +86,7 @@
   padding: 12px;
   text-align: left;
   border-bottom: 1px solid #e2e8f0;
+  color: #333;
 }
 
 .boleta-tabla th {
@@ -95,6 +98,7 @@
 .boleta-tabla tfoot td {
   font-weight: 600;
   background-color: #f1f5f9;
+  color: #1e3a8a;
 }
 
 .boleta-acciones {

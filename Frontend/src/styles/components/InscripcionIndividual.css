@@ -426,6 +426,414 @@ subseccion-tutor:last-child {
   text-align: left;
 }
 
+/* Estilos para formularios grupales */
+.form-section {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+}
+
+.form-section h2 {
+  color: #1e3a8a;
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+  text-align: left;
+  font-weight: 600;
+}
+
+.form-section > p {
+  color: #64748b;
+  margin-bottom: 2rem;
+  text-align: left;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+/* Estilos para tutores y competidores individuales */
+.tutor-form,
+.competidor-form {
+  background: #f8fafc;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  transition: all 0.3s ease;
+}
+
+.tutor-form:hover,
+.competidor-form:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.form-header h3 {
+  color: #1e3a8a;
+  font-size: 1.125rem;
+  margin: 0;
+  font-weight: 600;
+}
+
+.btn-eliminar {
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-eliminar:hover {
+  background-color: #dc2626;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+}
+
+.btn-eliminar:active {
+  transform: translateY(0);
+}
+
+/* Grid para formularios grupales */
+.tutor-form .form-grid,
+.competidor-form .form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.25rem;
+}
+
+@media (min-width: 768px) {
+  .tutor-form .form-grid,
+  .competidor-form .form-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .tutor-form .form-grid,
+  .competidor-form .form-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.tutor-form .form-group,
+.competidor-form .form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.tutor-form .form-group label,
+.competidor-form .form-group label {
+  color: #374151;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.tutor-form .form-group input,
+.tutor-form .form-group select,
+.competidor-form .form-group input,
+.competidor-form .form-group select {
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+  background-color: white;
+  color: #111827;
+}
+
+.tutor-form .form-group input:focus,
+.tutor-form .form-group select:focus,
+.competidor-form .form-group input:focus,
+.competidor-form .form-group select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.tutor-form .form-group input.error,
+.tutor-form .form-group select.error,
+.competidor-form .form-group input.error,
+.competidor-form .form-group select.error {
+  border-color: #ef4444;
+  background-color: #fef2f2;
+}
+
+.error-text {
+  color: #ef4444;
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  font-weight: 500;
+}
+
+/* Acciones del formulario */
+.form-section .form-actions {
+  margin-top: 2rem;
+  display: flex;
+  justify-content: center;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.btn-secundario {
+  background-color: #1e3a8a;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-secundario:hover {
+  background-color: #1d4ed8;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(30, 58, 138, 0.3);
+}
+
+.btn-secundario:active {
+  transform: translateY(0);
+}
+
+/* Estilos específicos para competidores grupales */
+.modo-registro {
+  background: #f1f5f9;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 2rem;
+  border: 1px solid #e2e8f0;
+}
+
+.radio-group {
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.radio-group label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-weight: 500;
+  color: #374151;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  transition: background-color 0.2s ease;
+}
+
+.radio-group label:hover {
+  background-color: #e2e8f0;
+}
+
+.radio-group input[type="radio"] {
+  width: 1rem;
+  height: 1rem;
+  accent-color: #1e3a8a;
+  margin: 0;
+}
+
+/* Sección de Excel mejorada */
+.excel-section {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.excel-section h3 {
+  color: #1e3a8a;
+  margin-bottom: 1rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.excel-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.btn-descargar,
+.btn-procesar,
+.btn-seleccionar {
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  text-decoration: none;
+}
+
+.btn-descargar {
+  background-color: #10b981;
+  color: white;
+}
+
+.btn-descargar:hover {
+  background-color: #059669;
+  transform: translateY(-1px);
+}
+
+.btn-procesar {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.btn-procesar:hover {
+  background-color: #2563eb;
+  transform: translateY(-1px);
+}
+
+.btn-procesar:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-seleccionar {
+  background-color: #6b7280;
+  color: white;
+}
+
+.btn-seleccionar:hover {
+  background-color: #4b5563;
+  transform: translateY(-1px);
+}
+
+.file-input-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.file-input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.archivo-seleccionado {
+  margin-top: 0.5rem;
+  padding: 0.75rem;
+  background-color: #ecfdf5;
+  border: 1px solid #d1fae5;
+  border-radius: 6px;
+  border-left: 4px solid #10b981;
+}
+
+.archivo-seleccionado small {
+  color: #065f46;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.excel-info {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background-color: #eff6ff;
+  border-radius: 6px;
+  border-left: 4px solid #3b82f6;
+}
+
+.excel-info h4 {
+  color: #1e40af;
+  margin-bottom: 0.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.excel-info ol {
+  color: #1e40af;
+  padding-left: 1.25rem;
+  margin: 0;
+}
+
+.excel-info li {
+  margin-bottom: 0.25rem;
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.competidores-manuales {
+  margin-top: 1rem;
+}
+
+/* Mensajes informativos mejorados */
+.requisitos-grupales {
+  background-color: #e3f2fd;
+  border: 1px solid #1976d2;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  color: #1976d2;
+  border-left: 4px solid #1976d2;
+}
+
+.contador-competidores {
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  border-left: 4px solid;
+  font-weight: 500;
+}
+
+/* Responsive improvements */
+@media (max-width: 768px) {
+  .radio-group {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .excel-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .btn-descargar,
+  .btn-procesar,
+  .btn-seleccionar {
+    justify-content: center;
+  }
+  
+  .tutor-form .form-grid,
+  .competidor-form .form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 480px) {
   .fila-resumen {
     flex-direction: column;
