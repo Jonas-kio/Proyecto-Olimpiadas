@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { PlusIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import OlympicCard from "../../components/layout/OlimpiadaCard";
-import { obtenerOlimpiadas, eliminarOlimpiada } from "../../services/apiConfig";
-import DeleteConfirmationModal from "../../components/common/DeleteConfirmationModal";
-import SuccessModal from "../../components/common/SuccessModal";
-import LoadingModal from "../../components/modals/LoadingModal";
-import {getInscritosPorOlimpiada} from "../../services/reportesService";
-import "../../styles/components/DasboardOlimpiada.css";
+import OlympicCard from "../../../components/layout/OlimpiadaCard";
+import { obtenerOlimpiadas, eliminarOlimpiada } from "../../../services/apiConfig";
+import DeleteConfirmationModal from "../../../components/common/DeleteConfirmationModal";
+import SuccessModal from "../../../components/common/SuccessModal";
+import LoadingModal from "../../../components/modals/LoadingModal";
+import {getInscritosPorOlimpiada} from "../../../services/reportesService";
+import "../../../styles/components/DasboardOlimpiada.css";
 
 function DasboardOlimpiada() {
   const navigate = useNavigate();

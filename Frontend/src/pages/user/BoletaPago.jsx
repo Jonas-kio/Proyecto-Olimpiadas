@@ -1,6 +1,7 @@
 /* eslint-disable react/prop-types */
 // components/boleta/BoletaPago.jsx
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   generarBoletaPDF,
   generarEnlacesCorreo,
@@ -17,6 +18,7 @@ import {
   FaArrowLeft,
   FaGoogle,
   FaMicrosoft,
+  FaEye,
 } from "react-icons/fa";
 
 // Costo predeterminado por área
@@ -40,6 +42,8 @@ const BoletaPago = ({
 
   const [datosBoleta, setDatosBoleta] = useState(null);
   const [cargando, setCargando] = useState(true);
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     const cargarDatosBoleta = async () => {
@@ -403,11 +407,17 @@ const BoletaPago = ({
               </>
             ) : (
               <>
-                <FaDownload /> Descargar PDF
+                <FaDownload /> Descargar Boleta
               </>
             )}
           </button>
-        </div>
+          <button
+              className="boleta-btn-pdf"
+              onClick={() =>navigate("/user/mis-inscripciones")}
+>
+               <FaEye /> Ver detalle de mi inscripcion
+          </button>   
+       </div>
 
         {mensaje && (
           <div className={`boleta-mensaje boleta-mensaje-${estadoMensaje}`}>
